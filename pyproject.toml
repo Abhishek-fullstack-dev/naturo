@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "naturo"
+version = "0.1.0"
+description = "Windows desktop automation engine — see, click, type, automate."
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.9"
+dependencies = [
+    "click>=8.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov",
+]
+ai = [
+    "anthropic>=0.20",
+    "openai>=1.0",
+]
+
+[project.scripts]
+naturo = "naturo.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["naturo*"]
+
+[tool.setuptools.package-data]
+naturo = ["bin/*.dll", "bin/*.so", "bin/*.dylib"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "ui: marks tests that need a desktop session (deselect with '-m \"not ui\"')",
+]

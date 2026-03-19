@@ -1,0 +1,48 @@
+# C++ build
+build/
+cmake-build-*/
+*.o
+*.obj
+*.lib
+*.dll
+*.so
+*.dylib
+*.exp
+*.pdb
+CMakeCache.txt
+CMakeFiles/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+*.egg
+.eggs/
+*.whl
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
+# Distribution
+naturo/bin/*.dll
+naturo/bin/*.so
+naturo/bin/*.dylib
