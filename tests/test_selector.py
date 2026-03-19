@@ -205,6 +205,7 @@ def _element_tree_accessible():
 class TestSelectorE2EWindows:
     """T073, T074, T078, T079, T081, T082 – E2E element tree tests."""
 
+    @pytest.mark.xfail(reason="Calculator may not be available in CI environments")
     def test_calculator_button_elements(self):
         """T073 – Calculator: button elements found."""
         import subprocess
