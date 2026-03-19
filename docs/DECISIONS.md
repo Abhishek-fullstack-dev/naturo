@@ -77,42 +77,37 @@
 
 This is Naturo's core differentiator vs Peekaboo and other automation tools.
 
-## 7. Modular CLI Files
+## 7. Cross-Platform Architecture (2026-03-19)
 
-**Decision:** Split CLI into `naturo/cli/` package with separate modules.
+**Decision**: Build a unified API with platform-specific backends rather than separate tools per OS.
 
-**Why:**
-- Single cli.py was getting unwieldy with 30+ commands
-- Each module is independently testable
-- Clear separation of concerns (core/interaction/system/ai/extensions)
-- Easy to add new command groups without touching existing files
+**Options considered**:
+- A: Windows-only tool → limited market
+- B: Separate tools per platform → fragmented, harder to maintain
+- C: Unified API + native backends → one tool, maximum reach ✅
 
-## 8. vcpkg for C++ Dependencies
+**Rationale**: Users and AI agents want one command (`naturo click`) that works everywhere. The backend abstraction isolates platform complexity. Peekaboo already proved the macOS approach; we add Windows depth and Linux breadth.
 
-**Decision:** vcpkg
+## 8. macOS Strategy: Wrap Peekaboo First (2026-03-19)
 
-**Why:**
-- Standard C++ package manager
-- Excellent CI/CD support (GitHub Actions integration)
-- Cross-platform (Windows primary, but also Linux/macOS)
-- Manifest mode (vcpkg.json) for reproducible builds
+**Decision**: Use Peekaboo CLI as macOS backend initially, with pyobjc as future alternative.
 
-## 9. GitHub Actions Windows Runner
+**Rationale**: Peekaboo is MIT-licensed, mature, and actively maintained. Wrapping it gets us macOS support with minimal effort. If Peekaboo becomes unmaintained or we need deeper control, we switch to pyobjc direct calls. The backend abstraction makes this swap transparent to users.
 
-**Decision:** Use GitHub-hosted Windows runners for CI
+## 9. Linux Strategy: AT-SPI2 + xdotool/ydotool (2026-03-19)
 
-**Why:**
-- Zero local build requirement
-- Pre-installed MSVC compiler
-- Consistent build environment
-- Free for public repos, included in private repo minutes
+**Decision**: Use AT-SPI2 for accessibility/element inspection, xdotool (X11) or ydotool (Wayland) for input simulation.
 
-## 10. MIT License
+**Rationale**: AT-SPI2 is the standard Linux accessibility framework (GNOME, KDE, UOS all support it). xdotool is the most mature X11 automation tool. ydotool provides Wayland compatibility. This combination covers >95% of Linux desktop environments including national OS distributions.
 
-**Decision:** MIT
+## 10. National OS Compatibility (2026-03-19)
 
-**Why:**
-- Matches Peekaboo (macOS counterpart)
-- Maximizes adoption — no restrictions on commercial use
-- Simple and well-understood
-- Standard for developer tools
+**Decision**: Treat national OS (UOS, Kylin, openEuler) as Linux variants, not separate backends.
+
+**Rationale**: UOS (Deepin) uses DDE desktop which is Qt-based and supports AT-SPI2. Kylin uses UKUI which also supports AT-SPI2. The Linux backend should work with minimal or no adaptation. We'll add targeted compatibility tests and adapters only if specific issues arise.
+
+## 11. CI Matrix Strategy (2026-03-19)
+
+**Decision**: Three-tier CI — Windows (full), Ubuntu (Python), macOS (Python) now; expand later.
+
+**Rationale**: Windows is the primary target with C++ build. Ubuntu and macOS run Python-only tests to verify cross-platform compatibility of the API layer. Full UI tests on Linux (xvfb) and macOS (Peekaboo) will be added when those backends are implemented.

@@ -5,8 +5,9 @@
 - CI/CD pipeline (GitHub Actions)
 - Version function + basic CLI
 - TDD infrastructure
+- Cross-platform backend abstraction layer
 
-**Checkpoint:** CI green, `naturo version` works.
+**Checkpoint:** CI green, `naturo version` works, backend auto-detection works on all platforms.
 
 ## Phase 1 — 看 (See)
 - Screen capture (DirectX / GDI)
@@ -55,6 +56,45 @@
 - Package as standalone executable
 
 **Checkpoint:** Production-ready for all common Windows apps.
+
+## Phase 6 — macOS Backend
+
+**Goal**: Full macOS support via Peekaboo CLI wrapper
+
+| Step | Deliverable |
+|------|------------|
+| 6.1 | Peekaboo CLI detection + subprocess wrapper |
+| 6.2 | capture/list/see via Peekaboo |
+| 6.3 | click/type/press/hotkey via Peekaboo |
+| 6.4 | app/window/menu via Peekaboo |
+| 6.5 | dock/space mapping to Peekaboo equivalents |
+| 6.6 | CI: macOS runner integration tests |
+| 6.7 | Fallback: pyobjc direct calls for Peekaboo-free environments |
+
+## Phase 7 — Linux Backend
+
+**Goal**: Linux (X11 + Wayland) support
+
+| Step | Deliverable |
+|------|------------|
+| 7.1 | X11 backend: xdotool + python-xlib |
+| 7.2 | AT-SPI2 element inspection (pyatspi2) |
+| 7.3 | Screenshot via Xlib / dbus portal |
+| 7.4 | Wayland backend: ydotool + wlr protocols |
+| 7.5 | CI: Ubuntu + xvfb UI tests |
+| 7.6 | GNOME + KDE compatibility testing |
+
+## Phase 8 — National OS & Enterprise
+
+**Goal**: UOS, Kylin, openEuler support + enterprise features
+
+| Step | Deliverable |
+|------|------------|
+| 8.1 | DDE (Deepin Desktop) compatibility testing |
+| 8.2 | Kylin adapters (if needed beyond Linux backend) |
+| 8.3 | Self-hosted CI runner for national OS |
+| 8.4 | Enterprise: recording/playback engine |
+| 8.5 | Enterprise: visual regression testing |
 
 ---
 
