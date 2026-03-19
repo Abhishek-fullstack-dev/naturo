@@ -4,7 +4,19 @@
 
 Windows desktop automation engine. C++ core + Python wrapper.
 
+## Language
+
+- **All code, comments, docstrings, commit messages, docs, and issue titles must be in English.**
+- No Chinese or other non-English text in the codebase, including TODOs and inline comments.
+- Variable names, function names, class names — all English.
+- This is non-negotiable for open-source readiness.
+
 ## Code Style
+
+### General
+- **Comments must be complete and meaningful.** Every public function, class, and module needs a docstring or header comment explaining what it does, its parameters, and return values.
+- Avoid "TODO" without context — always include what needs to be done and why.
+- Self-documenting code is preferred, but complex logic requires inline comments.
 
 ### C++ (core/)
 - Standard: C++17
@@ -12,12 +24,14 @@ Windows desktop automation engine. C++ core + Python wrapper.
 - Naming: `snake_case` for functions, `PascalCase` for classes
 - All public APIs must be `extern "C"` with `NATURO_API` macro
 - Include guards, not `#pragma once`
+- Every exported function in `exports.h` must have a Doxygen-style comment
 
 ### Python (naturo/, tests/)
 - Version: 3.9+
-- Type hints where practical
-- Docstrings for public APIs
+- Type hints on all public APIs (required), internal functions (encouraged)
+- Docstrings for all public classes, methods, and functions (Google style)
 - No `from __future__` imports needed (3.9+ baseline)
+- Test functions must have descriptive names and a brief docstring
 
 ## Testing
 
