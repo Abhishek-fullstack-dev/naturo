@@ -29,5 +29,9 @@ if(BUILD_TESTS)
     enable_testing()
     add_executable(test_naturo_core tests/test_version.cpp)
     target_link_libraries(test_naturo_core PRIVATE naturo_core)
+    # Put test exe next to DLL so it can find it at runtime
+    set_target_properties(test_naturo_core PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+    )
     add_test(NAME test_version COMMAND test_naturo_core)
 endif()
