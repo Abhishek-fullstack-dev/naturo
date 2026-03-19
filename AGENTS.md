@@ -138,6 +138,25 @@ All test cases are defined in `docs/TEST_PLAN.md`.
 - No phase is complete until all mapped test cases pass
 - Role-based acceptance tests (R-QA, R-PD, R-SEC, R-DEV) validate real-world scenarios from QA, Product, Security, and DevOps perspectives
 
+## Feature Completeness Standard
+
+**Every feature change must ship with ALL of the following. No exceptions.**
+
+1. **Architecture** — Design doc or architecture notes updated (in `docs/`)
+2. **Implementation** — Code with complete comments and docstrings
+3. **Tests** — TEST_PLAN.md updated + all mapped test cases implemented and passing
+4. **Documentation** — README, ROADMAP, CLI help text, and any relevant docs updated
+5. **CI/CD** — Build pipeline covers the new code; CI must be green before merge
+
+A Phase is NOT complete until all 5 are verified. PRs missing any of these will be rejected.
+
+### Snapshot System Standard (Peekaboo Parity)
+
+Every observation command (capture, see, list) should persist results to `~/.naturo/snapshots/{GUID}/`:
+- Screenshot image (PNG)
+- `snapshot.json` with full metadata: app info, window bounds, UI element tree (role/label/frame/isActionable/children), timestamp, version
+- This is the data foundation for AI agent decision-making
+
 ## Key Files
 
 - `core/include/naturo/exports.h` — Public C API (add new functions here)
