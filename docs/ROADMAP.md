@@ -9,7 +9,7 @@
 
 **Checkpoint:** CI green, `naturo version` works, backend auto-detection works on all platforms.
 
-## Phase 1 — 看 (See)
+## Phase 1 — See
 - Screen capture (DirectX / GDI)
 - Window enumeration
 - UI tree inspection (MSAA + UIA)
@@ -19,7 +19,7 @@
 
 **Checkpoint:** Can capture screenshot, list windows, inspect UI tree.
 
-## Phase 2 — 做 (Act)
+## Phase 2 — Act
 - Mouse input (click, double-click, right-click, drag)
 - Keyboard input (type text, press keys, combos)
 - Element finding by selector
@@ -29,7 +29,7 @@
 
 **Checkpoint:** Can automate Notepad (open, type, save, close).
 
-## Phase 3 — 稳 (Stabilize)
+## Phase 3 — Stabilize
 - Error handling and recovery
 - Element wait/retry strategies
 - Process management (launch, attach, monitor)
@@ -38,7 +38,7 @@
 
 **Checkpoint:** Can handle real-world apps reliably.
 
-## Phase 4 — 智 (AI Integration)
+## Phase 4 — AI Integration
 - MCP server implementation
 - Screenshot → AI vision pipeline
 - Natural language element finding
@@ -47,7 +47,7 @@
 
 **Checkpoint:** AI agent can drive Windows apps end-to-end.
 
-## Phase 5 — 全 (Complete)
+## Phase 5 — Complete
 - Multi-monitor support
 - DPI/scaling awareness
 - Virtual desktop support
