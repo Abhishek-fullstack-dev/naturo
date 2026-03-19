@@ -110,9 +110,12 @@
 | 2.5.4 | Issue templates (bug report, feature request) |
 | 2.5.5 | PR template |
 | 2.5.6 | README hero GIF — notepad end-to-end automation demo |
-| 2.5.7 | README badges (CI status, PyPI version, license, platform) |
+| 2.5.7 | README badges — static badges first (license, platform, Python version), CI/DeepWiki after public |
 | 2.5.8 | First PyPI release (`pip install naturo` works) |
 | 2.5.9 | OpenClaw skill published to ClawHub |
+| 2.5.10a | Nuitka/PyInstaller packaging — `naturo.exe` standalone binary |
+| 2.5.10b | 代码签名证书 — 购买 OV/OSS 证书，CI 集成自动签名，解决杀软误报 |
+| 2.5.10c | npm 包发布 — 平台检测 + 二进制下载，`npx naturo mcp` 一行启动 |
 
 **Launch day activities:**
 
