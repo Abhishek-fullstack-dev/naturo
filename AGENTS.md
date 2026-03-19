@@ -73,11 +73,47 @@ docs: update architecture diagram
 chore: bump vcpkg dependencies
 ```
 
-## Branch Strategy
+## Branch Strategy & Git Workflow
 
-- `main` only (for now)
-- Feature branches when team grows
-- All CI must pass before merge
+**main is production. Never push directly to main.**
+
+### Workflow
+
+1. Create a feature branch from main:
+   ```bash
+   git checkout -b feat/capture-screen
+   ```
+2. Develop with TDD (write tests → implement → refactor)
+3. Push the branch and create a PR:
+   ```bash
+   git push origin feat/capture-screen
+   gh pr create --title "feat: add screen capture API" --body "..."
+   ```
+4. Wait for CI to pass (all 4 jobs must be green)
+5. Self-review with QA/PD/Security lenses
+6. Squash merge to main:
+   ```bash
+   gh pr merge --squash
+   ```
+
+### Branch Naming
+
+| Prefix | Purpose | Example |
+|--------|---------|---------|
+| `feat/` | New feature | `feat/capture-screen` |
+| `fix/` | Bug fix | `fix/dpi-scaling` |
+| `docs/` | Documentation | `docs/api-reference` |
+| `test/` | Test additions | `test/notepad-e2e` |
+| `chore/` | Maintenance | `chore/bump-vcpkg` |
+| `refactor/` | Code restructure | `refactor/backend-api` |
+
+### Rules
+
+- **Squash merge only** — keeps main history clean, one commit per feature
+- **Delete branch after merge** — no stale branches
+- **CI must pass** before merge — no exceptions
+- **Commit early, commit often** on feature branches — messy is fine there
+- **main should always be deployable**
 
 ## Build
 
