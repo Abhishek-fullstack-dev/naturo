@@ -4,6 +4,10 @@
  *
  * Walks the UIAutomation tree to build a JSON representation of UI elements.
  * Uses IUIAutomation, IUIAutomationElement, and IUIAutomationTreeWalker.
+ *
+ * Performance: Uses IUIAutomationCacheRequest to batch-fetch properties
+ * (Name, ControlType, AutomationId, BoundingRectangle) in a single
+ * cross-process COM call per element, reducing IPC overhead by ~4x.
  */
 
 #ifdef _WIN32
@@ -104,22 +108,115 @@ static const char* control_type_to_role(CONTROLTYPEID type) {
 }
 
 /**
- * @brief Recursively build a JSON representation of a UI element and its children.
+ * @brief Read cached properties from a UIAutomation element and append JSON.
+ *
+ * Uses get_CachedXxx methods which read from the pre-fetched cache,
+ * avoiding additional cross-process COM calls.
+ *
+ * @param element Element with cached properties.
+ * @param out Output string to append JSON to.
+ */
+static void append_element_json_cached(IUIAutomationElement* element,
+                                        std::string& out) {
+    // Read from cache (no IPC — properties already fetched in batch)
+    BSTR name_bstr = NULL;
+    HRESULT hr = element->get_CachedName(&name_bstr);
+    std::string name;
+    if (SUCCEEDED(hr) && name_bstr) {
+        name = json_escape(name_bstr);
+        SysFreeString(name_bstr);
+    }
+
+    CONTROLTYPEID control_type = 0;
+    hr = element->get_CachedControlType(&control_type);
+    if (FAILED(hr)) control_type = 0;
+    const char* role = control_type_to_role(control_type);
+
+    BSTR auto_id_bstr = NULL;
+    hr = element->get_CachedAutomationId(&auto_id_bstr);
+    std::string auto_id;
+    if (SUCCEEDED(hr) && auto_id_bstr) {
+        auto_id = json_escape(auto_id_bstr);
+        SysFreeString(auto_id_bstr);
+    }
+
+    RECT rect = {0, 0, 0, 0};
+    hr = element->get_CachedBoundingRectangle(&rect);
+    if (FAILED(hr)) {
+        rect = {0, 0, 0, 0};
+    }
+
+    char buf[1024];
+    snprintf(buf, sizeof(buf),
+        "{\"id\":\"%s\",\"role\":\"%s\",\"name\":\"%s\",\"value\":null,"
+        "\"x\":%ld,\"y\":%ld,\"width\":%ld,\"height\":%ld",
+        auto_id.c_str(), role, name.c_str(),
+        rect.left, rect.top,
+        rect.right - rect.left,
+        rect.bottom - rect.top);
+    out += buf;
+}
+
+/**
+ * @brief Recursively build a JSON element tree using cached tree walking.
+ *
+ * Uses GetFirstChildElementBuildCache/GetNextSiblingElementBuildCache
+ * to navigate the tree, fetching all properties in one COM call per
+ * navigation step instead of separate calls for each property.
+ *
  * @param walker The UIAutomation tree walker.
- * @param element The current element.
+ * @param element The current element (must have cached properties).
+ * @param cache_request The cache request for property batching.
  * @param depth Remaining depth to traverse.
  * @param out Output string to append JSON to.
  * @param count Running count of elements processed.
  */
-static void build_element_json(IUIAutomationTreeWalker* walker,
-                                IUIAutomationElement* element,
-                                int depth, std::string& out,
-                                int& count) {
+static void build_element_json_cached(IUIAutomationTreeWalker* walker,
+                                       IUIAutomationElement* element,
+                                       IUIAutomationCacheRequest* cache_request,
+                                       int depth, std::string& out,
+                                       int& count) {
+    if (!element) return;
+
+    count++;
+    append_element_json_cached(element, out);
+
+    // Children
+    out += ",\"children\":[";
+    if (depth > 1) {
+        IUIAutomationElement* child = NULL;
+        HRESULT hr = walker->GetFirstChildElementBuildCache(
+            element, cache_request, &child);
+        bool first = true;
+        while (SUCCEEDED(hr) && child) {
+            if (!first) out += ",";
+            first = false;
+            build_element_json_cached(walker, child, cache_request,
+                                       depth - 1, out, count);
+
+            IUIAutomationElement* next = NULL;
+            hr = walker->GetNextSiblingElementBuildCache(
+                child, cache_request, &next);
+            child->Release();
+            child = next;
+        }
+    }
+    out += "]}";
+}
+
+/**
+ * @brief Fallback: build element JSON using Current (non-cached) properties.
+ *
+ * Used when CacheRequest creation fails (should not happen normally).
+ */
+static void build_element_json_current(IUIAutomationTreeWalker* walker,
+                                        IUIAutomationElement* element,
+                                        int depth, std::string& out,
+                                        int& count) {
     if (!element) return;
 
     count++;
 
-    // Get element properties
     BSTR name_bstr = NULL;
     element->get_CurrentName(&name_bstr);
     std::string name = name_bstr ? json_escape(name_bstr) : "";
@@ -129,17 +226,14 @@ static void build_element_json(IUIAutomationTreeWalker* walker,
     element->get_CurrentControlType(&control_type);
     const char* role = control_type_to_role(control_type);
 
-    // Get automation ID as element id
     BSTR auto_id_bstr = NULL;
     element->get_CurrentAutomationId(&auto_id_bstr);
     std::string auto_id = auto_id_bstr ? json_escape(auto_id_bstr) : "";
     if (auto_id_bstr) SysFreeString(auto_id_bstr);
 
-    // Get bounding rectangle
     RECT rect = {0, 0, 0, 0};
     element->get_CurrentBoundingRectangle(&rect);
 
-    // Build this element's JSON
     char buf[1024];
     snprintf(buf, sizeof(buf),
         "{\"id\":\"%s\",\"role\":\"%s\",\"name\":\"%s\",\"value\":null,"
@@ -150,7 +244,6 @@ static void build_element_json(IUIAutomationTreeWalker* walker,
         rect.bottom - rect.top);
     out += buf;
 
-    // Children
     out += ",\"children\":[";
     if (depth > 1) {
         IUIAutomationElement* child = NULL;
@@ -159,7 +252,7 @@ static void build_element_json(IUIAutomationTreeWalker* walker,
         while (SUCCEEDED(hr) && child) {
             if (!first) out += ",";
             first = false;
-            build_element_json(walker, child, depth - 1, out, count);
+            build_element_json_current(walker, child, depth - 1, out, count);
 
             IUIAutomationElement* next = NULL;
             hr = walker->GetNextSiblingElement(child, &next);
@@ -171,6 +264,33 @@ static void build_element_json(IUIAutomationTreeWalker* walker,
 }
 
 extern "C" {
+
+/**
+ * @brief Create a CacheRequest for the standard element properties.
+ *
+ * Batches Name, ControlType, AutomationId, and BoundingRectangle
+ * into a single fetch per element.
+ *
+ * @param uia The UIAutomation instance.
+ * @param[out] cache_request Receives the created cache request.
+ * @return S_OK on success, error HRESULT on failure.
+ */
+static HRESULT create_element_cache_request(
+    IUIAutomation* uia, IUIAutomationCacheRequest** cache_request) {
+
+    HRESULT hr = uia->CreateCacheRequest(cache_request);
+    if (FAILED(hr) || !*cache_request) return hr;
+
+    (*cache_request)->AddProperty(UIA_NamePropertyId);
+    (*cache_request)->AddProperty(UIA_ControlTypePropertyId);
+    (*cache_request)->AddProperty(UIA_AutomationIdPropertyId);
+    (*cache_request)->AddProperty(UIA_BoundingRectanglePropertyId);
+
+    // Fetch direct children scope for tree walking
+    (*cache_request)->put_TreeScope(TreeScope_Element);
+
+    return S_OK;
+}
 
 NATURO_API int naturo_get_element_tree(uintptr_t hwnd, int depth,
                                        char* result_json, int buf_size) {
@@ -190,9 +310,20 @@ NATURO_API int naturo_get_element_tree(uintptr_t hwnd, int depth,
                                   (void**)&uia);
     if (FAILED(hr) || !uia) return -2;
 
+    // Create CacheRequest for batch property fetching
+    IUIAutomationCacheRequest* cache_request = NULL;
+    hr = create_element_cache_request(uia, &cache_request);
+    bool use_cache = SUCCEEDED(hr) && cache_request;
+
     IUIAutomationElement* root = NULL;
-    hr = uia->ElementFromHandle(target, &root);
+    if (use_cache) {
+        // ElementFromHandleBuildCache: fetch root + its properties in one call
+        hr = uia->ElementFromHandleBuildCache(target, cache_request, &root);
+    } else {
+        hr = uia->ElementFromHandle(target, &root);
+    }
     if (FAILED(hr) || !root) {
+        if (cache_request) cache_request->Release();
         uia->Release();
         return -2;
     }
@@ -201,6 +332,7 @@ NATURO_API int naturo_get_element_tree(uintptr_t hwnd, int depth,
     hr = uia->get_ControlViewWalker(&walker);
     if (FAILED(hr) || !walker) {
         root->Release();
+        if (cache_request) cache_request->Release();
         uia->Release();
         return -2;
     }
@@ -208,10 +340,17 @@ NATURO_API int naturo_get_element_tree(uintptr_t hwnd, int depth,
     std::string json;
     json.reserve(8192);
     int count = 0;
-    build_element_json(walker, root, depth, json, count);
+
+    if (use_cache) {
+        build_element_json_cached(walker, root, cache_request, depth, json, count);
+    } else {
+        // Fallback to non-cached path
+        build_element_json_current(walker, root, depth, json, count);
+    }
 
     walker->Release();
     root->Release();
+    if (cache_request) cache_request->Release();
     uia->Release();
 
     if ((int)json.size() + 1 > buf_size) {
@@ -251,12 +390,15 @@ NATURO_API int naturo_find_element(uintptr_t hwnd, const char* role,
         return -2;
     }
 
+    // Create CacheRequest for batch property fetching on found element
+    IUIAutomationCacheRequest* cache_request = NULL;
+    hr = create_element_cache_request(uia, &cache_request);
+    bool use_cache = SUCCEEDED(hr) && cache_request;
+
     // Build search condition
     IUIAutomationCondition* condition = NULL;
 
     if (role && name) {
-        // Find the control type ID for the role string
-        // We search by name condition and then filter by role in results
         BSTR name_bstr = NULL;
         int name_len = MultiByteToWideChar(CP_UTF8, 0, name, -1, NULL, 0);
         wchar_t* name_wide = new wchar_t[name_len];
@@ -286,22 +428,29 @@ NATURO_API int naturo_find_element(uintptr_t hwnd, const char* role,
         uia->CreatePropertyCondition(UIA_NamePropertyId, var, &condition);
         SysFreeString(name_bstr);
     } else {
-        // role only — we search with TrueCondition and filter
         uia->CreateTrueCondition(&condition);
     }
 
     if (!condition) {
         root->Release();
+        if (cache_request) cache_request->Release();
         uia->Release();
         return -2;
     }
 
     IUIAutomationElement* found = NULL;
-    hr = root->FindFirst(TreeScope_Descendants, condition, &found);
+    if (use_cache) {
+        // FindFirstBuildCache: find + fetch properties in one COM round-trip
+        hr = root->FindFirstBuildCache(TreeScope_Descendants, condition,
+                                        cache_request, &found);
+    } else {
+        hr = root->FindFirst(TreeScope_Descendants, condition, &found);
+    }
     condition->Release();
 
     if (FAILED(hr) || !found) {
         root->Release();
+        if (cache_request) cache_request->Release();
         uia->Release();
         return 1;  // Not found
     }
@@ -309,15 +458,24 @@ NATURO_API int naturo_find_element(uintptr_t hwnd, const char* role,
     // If role filter was specified, verify the match
     if (role) {
         CONTROLTYPEID ct = 0;
-        found->get_CurrentControlType(&ct);
+        if (use_cache) {
+            found->get_CachedControlType(&ct);
+        } else {
+            found->get_CurrentControlType(&ct);
+        }
         const char* found_role = control_type_to_role(ct);
         if (_stricmp(found_role, role) != 0) {
-            // Role doesn't match — need to search more thoroughly
-            // For simplicity, search all descendants and filter
+            // Role doesn't match — search all descendants and filter
             IUIAutomationElementArray* all = NULL;
             IUIAutomationCondition* true_cond = NULL;
             uia->CreateTrueCondition(&true_cond);
-            hr = root->FindAll(TreeScope_Descendants, true_cond, &all);
+
+            if (use_cache) {
+                hr = root->FindAllBuildCache(TreeScope_Descendants, true_cond,
+                                              cache_request, &all);
+            } else {
+                hr = root->FindAll(TreeScope_Descendants, true_cond, &all);
+            }
             true_cond->Release();
             found->Release();
             found = NULL;
@@ -331,7 +489,11 @@ NATURO_API int naturo_find_element(uintptr_t hwnd, const char* role,
                     if (!elem) continue;
 
                     CONTROLTYPEID elem_ct = 0;
-                    elem->get_CurrentControlType(&elem_ct);
+                    if (use_cache) {
+                        elem->get_CachedControlType(&elem_ct);
+                    } else {
+                        elem->get_CurrentControlType(&elem_ct);
+                    }
                     const char* elem_role = control_type_to_role(elem_ct);
 
                     bool role_match = (_stricmp(elem_role, role) == 0);
@@ -339,12 +501,17 @@ NATURO_API int naturo_find_element(uintptr_t hwnd, const char* role,
 
                     if (name) {
                         BSTR elem_name = NULL;
-                        elem->get_CurrentName(&elem_name);
+                        if (use_cache) {
+                            elem->get_CachedName(&elem_name);
+                        } else {
+                            elem->get_CurrentName(&elem_name);
+                        }
                         if (elem_name) {
-                            // Convert to UTF-8 for comparison
-                            int needed = WideCharToMultiByte(CP_UTF8, 0, elem_name, -1, NULL, 0, NULL, NULL);
+                            int needed = WideCharToMultiByte(CP_UTF8, 0, elem_name, -1,
+                                                             NULL, 0, NULL, NULL);
                             char* utf8 = new char[needed];
-                            WideCharToMultiByte(CP_UTF8, 0, elem_name, -1, utf8, needed, NULL, NULL);
+                            WideCharToMultiByte(CP_UTF8, 0, elem_name, -1,
+                                                utf8, needed, NULL, NULL);
                             name_match = (_stricmp(utf8, name) == 0);
                             delete[] utf8;
                             SysFreeString(elem_name);
@@ -354,7 +521,7 @@ NATURO_API int naturo_find_element(uintptr_t hwnd, const char* role,
                     }
 
                     if (role_match && name_match) {
-                        found = elem;  // Transfer ownership
+                        found = elem;
                         break;
                     }
                     elem->Release();
@@ -366,26 +533,43 @@ NATURO_API int naturo_find_element(uintptr_t hwnd, const char* role,
 
     if (!found) {
         root->Release();
+        if (cache_request) cache_request->Release();
         uia->Release();
         return 1;  // Not found
     }
 
-    // Build JSON for the found element
+    // Build JSON for the found element using cached properties
     BSTR found_name_bstr = NULL;
-    found->get_CurrentName(&found_name_bstr);
+    if (use_cache) {
+        found->get_CachedName(&found_name_bstr);
+    } else {
+        found->get_CurrentName(&found_name_bstr);
+    }
     std::string found_name = found_name_bstr ? json_escape(found_name_bstr) : "";
     if (found_name_bstr) SysFreeString(found_name_bstr);
 
     CONTROLTYPEID found_ct = 0;
-    found->get_CurrentControlType(&found_ct);
+    if (use_cache) {
+        found->get_CachedControlType(&found_ct);
+    } else {
+        found->get_CurrentControlType(&found_ct);
+    }
 
     BSTR found_aid_bstr = NULL;
-    found->get_CurrentAutomationId(&found_aid_bstr);
+    if (use_cache) {
+        found->get_CachedAutomationId(&found_aid_bstr);
+    } else {
+        found->get_CurrentAutomationId(&found_aid_bstr);
+    }
     std::string found_aid = found_aid_bstr ? json_escape(found_aid_bstr) : "";
     if (found_aid_bstr) SysFreeString(found_aid_bstr);
 
     RECT found_rect = {0, 0, 0, 0};
-    found->get_CurrentBoundingRectangle(&found_rect);
+    if (use_cache) {
+        found->get_CachedBoundingRectangle(&found_rect);
+    } else {
+        found->get_CurrentBoundingRectangle(&found_rect);
+    }
 
     char buf[1024];
     snprintf(buf, sizeof(buf),
@@ -402,6 +586,7 @@ NATURO_API int naturo_find_element(uintptr_t hwnd, const char* role,
 
     found->Release();
     root->Release();
+    if (cache_request) cache_request->Release();
     uia->Release();
 
     if ((int)json.size() + 1 > buf_size) {
