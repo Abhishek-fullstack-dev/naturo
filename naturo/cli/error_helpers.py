@@ -186,6 +186,22 @@ _RECOVERY_HINTS: dict[str, tuple[str, bool]] = {
         "for dependent services that must be stopped first.",
         True,
     ),
+    "NOT_ELECTRON": (
+        "The application is not Electron-based. Try running "
+        "`naturo electron list` to see detected Electron apps.",
+        False,
+    ),
+    "NO_DEBUG_PORT": (
+        "The Electron app is running but without remote debugging. Try "
+        "restarting it with --remote-debugging-port=9229 or run "
+        "`naturo electron launch <path> --port 9229`.",
+        True,
+    ),
+    "ELECTRON_ERROR": (
+        "An error occurred during Electron app detection. Check that the "
+        "application is running and try `naturo electron detect <app>`.",
+        True,
+    ),
 }
 
 

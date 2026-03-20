@@ -255,7 +255,7 @@ def open_cmd(target, app, json_output):
 
     try:
         backend = get_backend()
-        # TODO: --app option for opening with specific application
+        # Future: --app option for opening with specific application
         backend.open_uri(uri=target)
         if json_output:
             click.echo(_json.dumps({"success": True, "target": target}))
