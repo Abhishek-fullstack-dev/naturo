@@ -109,9 +109,9 @@
 
 | Step | Deliverable | Status |
 |------|------------|--------|
-| 5A.1 | **Multi-Monitor Capture** — `naturo capture --screen 1` 指定显示器 | 🔜 |
-| 5A.2 | **DPI/Scaling Awareness** — 正确处理 125%/150%/200% 缩放下的坐标和截图 | 🔜 |
-| 5A.3 | **Virtual Desktop** — Windows 10/11 虚拟桌面切换和窗口管理 | 🔜 |
+| 5A.1 | **Multi-Monitor Capture** — `naturo capture --screen 1` 指定显示器 | ✅ Done |
+| 5A.2 | **DPI/Scaling Awareness** — 正确处理 125%/150%/200% 缩放下的坐标和截图 | ✅ Done |
+| 5A.3 | **Virtual Desktop** — Windows 10/11 虚拟桌面切换和窗口管理 | ✅ Done |
 
 ### 5B — 自然机器人引擎移植（核心差异化）
 

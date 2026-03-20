@@ -1,43 +1,37 @@
 # Dev Status
 
-**最后更新**: 2026-03-21 02:15 (Asia/Shanghai)
-
-## 当前状态
-🚀 Phase 4.5/4.6 Action Recording & Replay 完成 → Phase 4 全部完成
-
-## 本轮工作
-- **Phase 4.5/4.6 实现**: Action Recording & Replay 引擎
-  - `naturo/recording.py`: ActionStep/Recording 数据模型，持久化（JSON），回放引擎
-  - `naturo/cli/record_cmd.py`: record start/stop/list/show/play/delete CLI 命令
-  - 交互命令自动录制：click/type/press/hotkey/scroll/drag/move 的 recording hooks
-  - 回放支持速度控制、dry-run、步骤回调
-  - 41 个新测试，全通过
-  - 1023 passed, 221 skipped
-  - commit f48dd0f
-
-## Phase 4 进度 — ✅ 全部完成
-- 4.1 MCP Server ✅
-- 4.2 Vision (describe) ✅
-- 4.3 AI Find ✅
-- 4.4 Agent Command ✅
-- 4.5 Action Recording ✅ ← 本轮完成
-- 4.6 Action Replay ✅ ← 本轮完成（与 4.5 合并实现）
-- 4.7 Agent-friendly Errors ✅
-- 4.8 Multi AI Provider ✅
-
-## Bug 清单状态
-- 全部 ✅ Verified，无 Open bug
+## 最近工作
+- **Phase 5A.3 完成** — Virtual Desktop management CLI + MCP tools (commit d4c02bc)
+  - 新 CLI 命令组: `naturo desktop {list,switch,create,close,move-window}`
+  - 5 个 MCP tools: virtual_desktop_{list,switch,create,close,move_window}
+  - 替换 system.py 中的 stub，独立文件 desktop_cmd.py
+  - 输入校验、错误处理、JSON 输出一致性
+  - 29 个新测试
+- **BUG-055 修复** — `find --json` 和 `menu-inspect --json` 返回裸数组 → 包装为对象格式
+- **Phase 5A.2 完成** — DPI/Scaling Awareness Integration
+- **Phase 5A.1 完成** — Multi-monitor enumeration
 
 ## 技术评估
-- **代码健康度**: 良好
-- **测试覆盖**: 1023 passed + 221 skipped
-- **技术债**: 无重大技术债
-- **Phase 4 全部完成**: 8/8 deliverables done
+- 代码健康度：良好
+- 测试：1186 passed, 243 skipped
+- MCP server: 38 tools (33 + 5 virtual desktop)
+- 当前无 🔴 Open bug，BUG-055 待 QA 验证
+
+## Phase 进度
+- Phase 4: ✅ Complete
+- Phase 4.5: ✅ Complete
+- Phase 5A.1: ✅ Complete (Multi-Monitor Enumeration)
+- Phase 5A.2: ✅ Complete (DPI/Scaling Awareness)
+- Phase 5A.3: ✅ Complete (Virtual Desktop)
+- **下一步: Merge feat/phase5a-multimonitor → main，然后开始 Phase 5B**
+
+## 风险预警
+- 编译机 192.168.31.52 凌晨不可达（SSH refused），新代码尚未在真实 Windows 环境验证
+- DPI 坐标转换函数已就绪但尚未集成到 click/move/drag 命令中
+- Virtual Desktop 依赖 pyvda 库，编译机需要先安装
 
 ## 下一步
-- Phase 4 完成 → merge 到 main
-- Phase 4.5 Dialog & System Integration (ROADMAP 中的独立 Phase)
-  - 4.5.1 Dialog Detection
-  - 4.5.2 Dialog Interaction
-  - 4.5.4 Taskbar Interaction
-  - 4.5.5 System Tray
+1. Merge feat/phase5a-multimonitor → main（Phase 5A 全部完成）
+2. 编译机上线后同步验证 + 安装 pyvda
+3. 更新 README.md（Phase 5A 功能说明）
+4. 开始 Phase 5B 或 5C 评估
