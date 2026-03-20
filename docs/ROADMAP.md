@@ -131,8 +131,8 @@
 | Step | Deliverable | Status |
 |------|------------|--------|
 | 5C.1 | **Excel COM Automation** — 读写单元格、运行宏、创建图表 | 🔜 |
-| 5C.2 | **Windows Registry** — 读写注册表 | 🔜 |
-| 5C.3 | **Windows Service** — 管理 Windows 服务 | 🔜 |
+| 5C.2 | **Windows Registry** — 读写注册表 | ✅ Done |
+| 5C.3 | **Windows Service** — 管理 Windows 服务 | ✅ Done |
 | 5C.4 | **Electron/CEF App Support** — 识别 Electron 应用并提供 DOM 级操作 | 🔜 |
 
 ### 5D — Packaging

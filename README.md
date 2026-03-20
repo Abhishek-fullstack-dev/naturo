@@ -21,6 +21,8 @@
 - 🖥️ **Multi-Monitor** — Enumerate monitors, capture specific screens, DPI-aware coordinates
 - 🗂️ **Virtual Desktops** — List, switch, create, close desktops and move windows between them
 - 🌐 **Chrome DevTools** — Control Chrome via CDP (navigate, click, type, screenshot, eval JS)
+- 🗃️ **Windows Registry** — Read, write, list, delete, and search registry keys/values
+- 🔧 **Windows Services** — List, start, stop, restart, and query service status
 - 🤖 **AI-Ready** — JSON output, agent-friendly CLI, MCP server (38 tools)
 
 ## System Requirements
@@ -182,6 +184,16 @@ naturo chrome html --selector "#main"      # Get element HTML
 | `chrome title` | Get page title | ✅ 5B |
 | `chrome html` | Get page/element HTML | ✅ 5B |
 | `chrome version` | Show Chrome version info | ✅ 5B |
+| `registry read` | Read registry value | ✅ 5C |
+| `registry write` | Write registry value | ✅ 5C |
+| `registry list` | List subkeys/values | ✅ 5C |
+| `registry delete` | Delete key/value | ✅ 5C |
+| `registry search` | Search registry | ✅ 5C |
+| `service list` | List Windows services | ✅ 5C |
+| `service start` | Start a service | ✅ 5C |
+| `service stop` | Stop a service | ✅ 5C |
+| `service restart` | Restart a service | ✅ 5C |
+| `service status` | Query service status | ✅ 5C |
 
 ## Snapshot System
 
