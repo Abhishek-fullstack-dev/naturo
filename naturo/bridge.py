@@ -245,6 +245,21 @@ class NaturoCore:
             ctypes.c_char_p, ctypes.c_int
         ]
 
+        # Phase 5B.2 — IAccessible2
+        self._lib.naturo_ia2_get_element_tree.restype = ctypes.c_int
+        self._lib.naturo_ia2_get_element_tree.argtypes = [
+            ctypes.c_size_t, ctypes.c_int, ctypes.c_char_p, ctypes.c_int
+        ]
+
+        self._lib.naturo_ia2_find_element.restype = ctypes.c_int
+        self._lib.naturo_ia2_find_element.argtypes = [
+            ctypes.c_size_t, ctypes.c_char_p, ctypes.c_char_p,
+            ctypes.c_char_p, ctypes.c_int
+        ]
+
+        self._lib.naturo_ia2_check_support.restype = ctypes.c_int
+        self._lib.naturo_ia2_check_support.argtypes = [ctypes.c_size_t]
+
     def _load(self, lib_path: str | None) -> ctypes.CDLL:
         """Load the native library from the given path or search standard locations.
 
@@ -687,6 +702,95 @@ class NaturoCore:
             return None
         if rc < 0:
             raise NaturoCoreError(rc, "msaa_find_element")
+
+        data = json.loads(_decode_native(buf.value))
+        return _parse_element(data)
+
+    # ── Phase 5B.2: IAccessible2 ─────────────────────
+
+    def ia2_check_support(self, hwnd: int = 0) -> bool:
+        """Check if a window supports IAccessible2.
+
+        Args:
+            hwnd: Window handle. 0 for the foreground window.
+
+        Returns:
+            True if the window's application implements IA2.
+        """
+        rc = self._lib.naturo_ia2_check_support(hwnd)
+        return rc == 1
+
+    def ia2_get_element_tree(self, hwnd: int = 0, depth: int = 3) -> Optional[ElementInfo]:
+        """Inspect the IAccessible2 element tree of a window.
+
+        Provides extended accessibility info for IA2-enabled applications
+        (Firefox, Thunderbird, LibreOffice, etc.). Includes IA2-specific
+        properties like object attributes, extended roles, and states.
+
+        Args:
+            hwnd: Window handle. 0 for the foreground window.
+            depth: Maximum tree depth (1-10).
+
+        Returns:
+            Root ElementInfo with children, or None if no window found
+            or IA2 not supported.
+
+        Raises:
+            NaturoCoreError: On COM or buffer error.
+        """
+        buf_size = 1 << 20  # 1 MB
+        buf = ctypes.create_string_buffer(buf_size)
+        count = self._lib.naturo_ia2_get_element_tree(hwnd, depth, buf, buf_size)
+
+        if count == -4:
+            buf_size = 8 << 20  # 8 MB retry
+            buf = ctypes.create_string_buffer(buf_size)
+            count = self._lib.naturo_ia2_get_element_tree(hwnd, depth, buf, buf_size)
+
+        if count == -2:
+            return None
+        if count == -5:
+            return None  # IA2 not supported
+        if count < 0:
+            raise NaturoCoreError(count, "ia2_get_element_tree")
+
+        data = json.loads(_decode_native(buf.value))
+        return _parse_element(data)
+
+    def ia2_find_element(
+        self, hwnd: int = 0, role: Optional[str] = None, name: Optional[str] = None
+    ) -> Optional[ElementInfo]:
+        """Find an IA2 element by role and/or name within a window.
+
+        Uses BFS traversal of the IAccessible2 tree. Role matching uses
+        both MSAA and IA2-extended role names (e.g., "Heading", "Paragraph",
+        "Landmark").
+
+        Args:
+            hwnd: Window handle. 0 for the foreground window.
+            role: Element role filter (case-insensitive). None for any.
+            name: Element name filter (case-insensitive). None for any.
+
+        Returns:
+            ElementInfo if found, None if not found or IA2 not supported.
+
+        Raises:
+            NaturoCoreError: On error (invalid args, COM failure, etc.).
+        """
+        buf_size = 4096
+        buf = ctypes.create_string_buffer(buf_size)
+
+        role_bytes = role.encode("utf-8") if role else None
+        name_bytes = name.encode("utf-8") if name else None
+
+        rc = self._lib.naturo_ia2_find_element(hwnd, role_bytes, name_bytes, buf, buf_size)
+
+        if rc == 1:
+            return None
+        if rc == -2 or rc == -5:
+            return None
+        if rc < 0:
+            raise NaturoCoreError(rc, "ia2_find_element")
 
         data = json.loads(_decode_native(buf.value))
         return _parse_element(data)

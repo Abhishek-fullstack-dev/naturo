@@ -222,6 +222,57 @@ NATURO_API int naturo_msaa_find_element(uintptr_t hwnd, const char* role,
                                          const char* name,
                                          char* result_json, int buf_size);
 
+/* ── IAccessible2 ─────────────────────────────────── */
+
+/**
+ * @brief Inspect the IAccessible2 element tree of a window.
+ *
+ * Provides extended accessibility info for IA2-enabled applications
+ * (Firefox, Thunderbird, LibreOffice, etc.). Includes IA2-specific
+ * properties like object attributes, extended roles, and states.
+ *
+ * @param hwnd Window handle. Pass 0 for the foreground window.
+ * @param depth Maximum tree depth to traverse (clamped to 1-10).
+ * @param result_json Buffer to receive a JSON tree of IA2 elements.
+ *        Each element: {"id":"aN","role":"...","role_id":N,"name":"...",
+ *        "value":"...","x":N,"y":N,"width":N,"height":N,"state":N,
+ *        "keyboard_shortcut":"...","backend":"ia2","ia2":true|false,
+ *        "ia2_states":N,"ia2_unique_id":N,"ia2_attributes":"...",
+ *        "children":[...]}
+ * @param buf_size Size of the buffer in bytes.
+ * @return Number of elements found (>= 0), -2 on COM error,
+ *         -4 if buffer too small, -5 if IA2 not supported by application.
+ */
+NATURO_API int naturo_ia2_get_element_tree(uintptr_t hwnd, int depth,
+                                            char* result_json, int buf_size);
+
+/**
+ * @brief Find an IA2 element by role and/or name within a window.
+ *
+ * Uses BFS traversal of the IAccessible2 tree. Role matching uses
+ * both MSAA and IA2-extended role names (e.g., "Heading", "Paragraph",
+ * "Landmark" for IA2-specific roles).
+ *
+ * @param hwnd Window handle. Pass 0 for the foreground window.
+ * @param role Element role filter (case-insensitive). NULL for any role.
+ * @param name Element name filter (case-insensitive). NULL for any name.
+ * @param result_json Buffer to receive a JSON object of the found element.
+ * @param buf_size Size of the buffer in bytes.
+ * @return 0 if found, 1 if not found, -1 on invalid argument,
+ *         -2 on COM error, -4 if buffer too small, -5 if IA2 not supported.
+ */
+NATURO_API int naturo_ia2_find_element(uintptr_t hwnd, const char* role,
+                                        const char* name,
+                                        char* result_json, int buf_size);
+
+/**
+ * @brief Check if a window supports IAccessible2.
+ *
+ * @param hwnd Window handle. Pass 0 for the foreground window.
+ * @return 1 if IA2 supported, 0 if not supported, -2 on COM error.
+ */
+NATURO_API int naturo_ia2_check_support(uintptr_t hwnd);
+
 #ifdef __cplusplus
 }
 #endif

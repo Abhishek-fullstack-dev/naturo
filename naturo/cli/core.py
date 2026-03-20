@@ -362,9 +362,9 @@ def permissions(json_output):
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 @click.option(
     "--backend", "-b",
-    type=click.Choice(["uia", "msaa", "auto"]),
+    type=click.Choice(["uia", "msaa", "ia2", "auto"]),
     default="uia",
-    help="Accessibility backend: uia (default), msaa (legacy apps), auto (try UIA then MSAA)",
+    help="Accessibility backend: uia (default), msaa (legacy apps), ia2 (Firefox/Thunderbird), auto",
 )
 def see(app, window_title, hwnd, pid, mode, depth, path, annotate, store_snapshot, json_output, backend):
     """Capture screenshot and analyze UI elements.
@@ -375,8 +375,9 @@ def see(app, window_title, hwnd, pid, mode, depth, path, annotate, store_snapsho
     subsequent commands can reference elements by ID.
 
     Use --backend msaa for legacy applications (MFC, VB6, Delphi) that
-    don't expose UIAutomation elements. Use --backend auto to try UIA
-    first and fall back to MSAA automatically.
+    don't expose UIAutomation elements. Use --backend ia2 for IA2-enabled
+    applications (Firefox, Thunderbird, LibreOffice). Use --backend auto to
+    try UIA first, then IA2, then MSAA automatically.
     """
     # BUG-028: Validate --depth range (before platform check — input validation first)
     if depth < 1 or depth > 10:
@@ -563,9 +564,9 @@ def see(app, window_title, hwnd, pid, mode, depth, path, annotate, store_snapsho
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 @click.option(
     "--backend", "-b",
-    type=click.Choice(["uia", "msaa", "auto"]),
+    type=click.Choice(["uia", "msaa", "ia2", "auto"]),
     default="uia",
-    help="Accessibility backend: uia (default), msaa (legacy apps), auto",
+    help="Accessibility backend: uia (default), msaa (legacy apps), ia2 (Firefox/Thunderbird), auto",
 )
 def find_cmd(query, role, actionable, depth, limit, ai, provider, screenshot, ai_app, json_output, backend):
     """Search for UI elements matching a query.
@@ -573,6 +574,7 @@ def find_cmd(query, role, actionable, depth, limit, ai, provider, screenshot, ai
     Supports fuzzy name matching, role filtering, and combined queries.
     Use --ai for natural language element finding powered by AI vision.
     Use --backend msaa for legacy applications that lack UIA support.
+    Use --backend ia2 for IA2-enabled apps (Firefox, Thunderbird, LibreOffice).
 
     \b
     Examples:

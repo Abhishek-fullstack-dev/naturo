@@ -772,14 +772,21 @@ class WindowsBackend(Backend):
         core = self._ensure_core()
         handle = self._resolve_hwnd(app=app, window_title=window_title, hwnd=hwnd)
 
-        if backend == "msaa":
+        if backend == "ia2":
+            result = core.ia2_get_element_tree(hwnd=handle, depth=depth)
+        elif backend == "msaa":
             result = core.msaa_get_element_tree(hwnd=handle, depth=depth)
         elif backend == "auto":
             result = core.get_element_tree(hwnd=handle, depth=depth)
             if result is None or (not result.children and not result.name):
-                msaa_result = core.msaa_get_element_tree(hwnd=handle, depth=depth)
-                if msaa_result is not None:
-                    result = msaa_result
+                # Try IA2 first (Firefox/Thunderbird/LibreOffice), then MSAA
+                ia2_result = core.ia2_get_element_tree(hwnd=handle, depth=depth)
+                if ia2_result is not None:
+                    result = ia2_result
+                else:
+                    msaa_result = core.msaa_get_element_tree(hwnd=handle, depth=depth)
+                    if msaa_result is not None:
+                        result = msaa_result
         else:
             result = core.get_element_tree(hwnd=handle, depth=depth)
 
