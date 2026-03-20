@@ -21,45 +21,45 @@ from naturo.recording import (
     list_recordings,
     delete_recording,
     replay_recording,
+    get_active_recording,
+    set_active_recording,
+    append_step_to_active,
 )
 
 
-# Module-level active recording state
+# Legacy aliases for backward compatibility and in-process test usage.
 _active_recording: Recording | None = None
 
 
 def _get_active_recording() -> Recording | None:
-    """Get the currently active recording, if any.
+    """Get the currently active recording (file-backed).
 
     Returns:
         The active Recording instance, or None.
     """
-    return _active_recording
+    return get_active_recording()
 
 
 def _set_active_recording(rec: Recording | None) -> None:
-    """Set or clear the active recording.
+    """Set or clear the active recording (file-backed).
 
     Args:
         rec: Recording instance to set as active, or None to clear.
     """
-    global _active_recording
-    _active_recording = rec
+    set_active_recording(rec)
 
 
 def record_action(command: str, args: dict, duration_ms: float = 0.0) -> None:
     """Record an action step if recording is active.
 
-    Called by other CLI commands to record their actions.
+    Persists the step to disk so it survives across CLI process invocations.
 
     Args:
         command: The naturo command name (click, type, press, etc.).
         args: Command arguments as a dictionary.
         duration_ms: Execution duration in milliseconds.
     """
-    rec = _get_active_recording()
-    if rec is not None:
-        rec.add_step(command, args, duration_ms)
+    append_step_to_active(command, args, duration_ms)
 
 
 @click.group()
@@ -81,7 +81,7 @@ def start(name, json_output):
         naturo record start --name "Login flow"
         naturo record start
     """
-    if _get_active_recording() is not None:
+    if get_active_recording() is not None:
         msg = "A recording is already in progress. Stop it first with 'naturo record stop'."
         if json_output:
             click.echo(_json_error_str("RECORDING_ACTIVE", msg))
@@ -99,7 +99,7 @@ def start(name, json_output):
         recording_id=rec_id,
         created_at=now,
     )
-    _set_active_recording(rec)
+    set_active_recording(rec)
 
     if json_output:
         click.echo(json_module.dumps({
@@ -124,7 +124,7 @@ def stop(json_output):
         naturo record stop
         naturo record stop --json
     """
-    rec = _get_active_recording()
+    rec = get_active_recording()
     if rec is None:
         msg = "No recording in progress. Start one with 'naturo record start'."
         if json_output:
@@ -136,7 +136,7 @@ def stop(json_output):
 
     filepath = save_recording(rec)
     step_count = len(rec.steps)
-    _set_active_recording(None)
+    set_active_recording(None)
 
     if json_output:
         click.echo(json_module.dumps({

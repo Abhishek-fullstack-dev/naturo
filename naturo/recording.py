@@ -145,6 +145,87 @@ def _ensure_recordings_dir(directory: Optional[Path] = None) -> Path:
     return d
 
 
+def _active_file_path(directory: Optional[Path] = None) -> Path:
+    """Get the path to the active recording state file.
+
+    Args:
+        directory: Custom recordings directory. Uses default if None.
+
+    Returns:
+        Path to .active.json in the recordings directory.
+    """
+    d = _ensure_recordings_dir(directory)
+    return d / ".active.json"
+
+
+def get_active_recording(directory: Optional[Path] = None) -> Optional[Recording]:
+    """Load the active recording from the persistent state file.
+
+    Args:
+        directory: Custom recordings directory. Uses default if None.
+
+    Returns:
+        The active Recording instance, or None if no recording is in progress.
+    """
+    active_path = _active_file_path(directory)
+    if not active_path.exists():
+        return None
+    try:
+        with open(active_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return Recording.from_dict(data)
+    except (json.JSONDecodeError, KeyError, OSError):
+        return None
+
+
+def set_active_recording(
+    rec: Optional[Recording],
+    directory: Optional[Path] = None,
+) -> None:
+    """Persist or clear the active recording state.
+
+    Args:
+        rec: Recording instance to persist, or None to clear the active state.
+        directory: Custom recordings directory. Uses default if None.
+    """
+    active_path = _active_file_path(directory)
+    if rec is None:
+        if active_path.exists():
+            active_path.unlink()
+    else:
+        _ensure_recordings_dir(directory)
+        with open(active_path, "w", encoding="utf-8") as f:
+            json.dump(rec.to_dict(), f, indent=2, ensure_ascii=False)
+
+
+def append_step_to_active(
+    command: str,
+    args: dict,
+    duration_ms: float = 0.0,
+    directory: Optional[Path] = None,
+) -> bool:
+    """Append an action step to the active recording on disk.
+
+    This is the cross-process replacement for the in-memory record_action().
+    Each CLI invocation calls this to persist the step immediately.
+
+    Args:
+        command: The naturo command name (click, type, press, etc.).
+        args: Command arguments as a dictionary.
+        duration_ms: Execution duration in milliseconds.
+        directory: Custom recordings directory. Uses default if None.
+
+    Returns:
+        True if a step was appended, False if no active recording.
+    """
+    rec = get_active_recording(directory)
+    if rec is None:
+        return False
+    rec.add_step(command, args, duration_ms)
+    set_active_recording(rec, directory)
+    return True
+
+
 def generate_recording_id() -> str:
     """Generate a unique recording ID based on current timestamp.
 

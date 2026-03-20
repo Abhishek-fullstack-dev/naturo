@@ -18,6 +18,9 @@ from naturo.recording import (
     list_recordings,
     delete_recording,
     replay_recording,
+    get_active_recording,
+    set_active_recording,
+    append_step_to_active,
 )
 from naturo.cli.record_cmd import (
     record,
@@ -259,13 +262,112 @@ class TestRecordActionHook:
         rec = Recording(name="Test", recording_id="rec_test", created_at="2026-01-01T00:00:00Z")
         _set_active_recording(rec)
         record_action("click", {"x": 100, "y": 200})
-        assert len(rec.steps) == 1
-        assert rec.steps[0].command == "click"
+        # Re-read from disk since record_action persists to file
+        rec2 = _get_active_recording()
+        assert rec2 is not None
+        assert len(rec2.steps) == 1
+        assert rec2.steps[0].command == "click"
         _set_active_recording(None)
+
+
+class TestActiveRecordingPersistence:
+    """Tests for file-backed active recording state (BUG-053 fix)."""
+
+    def test_set_and_get_active(self, tmp_recordings_dir):
+        """Active recording should survive across get/set calls (simulating separate processes)."""
+        rec = Recording(name="Persist Test", recording_id="rec_persist", created_at="2026-01-01T00:00:00Z")
+        rec.add_step("click", {"x": 10, "y": 20})
+
+        set_active_recording(rec, directory=tmp_recordings_dir)
+
+        # Simulate a new process reading the state
+        loaded = get_active_recording(directory=tmp_recordings_dir)
+        assert loaded is not None
+        assert loaded.recording_id == "rec_persist"
+        assert loaded.name == "Persist Test"
+        assert len(loaded.steps) == 1
+        assert loaded.steps[0].command == "click"
+
+    def test_clear_active(self, tmp_recordings_dir):
+        """Setting active to None should remove the file."""
+        rec = Recording(name="Clear Test", recording_id="rec_clear", created_at="2026-01-01T00:00:00Z")
+        set_active_recording(rec, directory=tmp_recordings_dir)
+        assert get_active_recording(directory=tmp_recordings_dir) is not None
+
+        set_active_recording(None, directory=tmp_recordings_dir)
+        assert get_active_recording(directory=tmp_recordings_dir) is None
+
+    def test_no_active_returns_none(self, tmp_recordings_dir):
+        """When no .active.json exists, should return None."""
+        assert get_active_recording(directory=tmp_recordings_dir) is None
+
+    def test_append_step_to_active(self, tmp_recordings_dir):
+        """append_step_to_active should persist steps across calls."""
+        rec = Recording(name="Append Test", recording_id="rec_append", created_at="2026-01-01T00:00:00Z")
+        set_active_recording(rec, directory=tmp_recordings_dir)
+
+        # Simulate separate CLI invocations appending steps
+        assert append_step_to_active("click", {"x": 1, "y": 2}, directory=tmp_recordings_dir)
+        assert append_step_to_active("type", {"text": "hi"}, directory=tmp_recordings_dir)
+        assert append_step_to_active("press", {"key": "enter"}, directory=tmp_recordings_dir)
+
+        loaded = get_active_recording(directory=tmp_recordings_dir)
+        assert loaded is not None
+        assert len(loaded.steps) == 3
+        assert loaded.steps[0].command == "click"
+        assert loaded.steps[1].command == "type"
+        assert loaded.steps[2].command == "press"
+
+    def test_append_step_no_active(self, tmp_recordings_dir):
+        """append_step_to_active should return False when no recording is active."""
+        assert not append_step_to_active("click", {"x": 1, "y": 2}, directory=tmp_recordings_dir)
+
+    def test_corrupt_active_file_returns_none(self, tmp_recordings_dir):
+        """Corrupted .active.json should not crash, returns None."""
+        active_path = tmp_recordings_dir / ".active.json"
+        tmp_recordings_dir.mkdir(parents=True, exist_ok=True)
+        active_path.write_text("not valid json")
+        assert get_active_recording(directory=tmp_recordings_dir) is None
+
+    def test_start_stop_cross_process_simulation(self, tmp_recordings_dir):
+        """Full start → action → action → stop flow using file persistence."""
+        # Process 1: start
+        rec = Recording(name="Cross Process", recording_id="rec_xproc", created_at="2026-01-01T00:00:00Z")
+        set_active_recording(rec, directory=tmp_recordings_dir)
+
+        # Process 2: click
+        append_step_to_active("click", {"x": 100, "y": 200}, directory=tmp_recordings_dir)
+
+        # Process 3: type
+        append_step_to_active("type", {"text": "hello"}, directory=tmp_recordings_dir)
+
+        # Process 4: stop
+        final_rec = get_active_recording(directory=tmp_recordings_dir)
+        assert final_rec is not None
+        assert len(final_rec.steps) == 2
+        filepath = save_recording(final_rec, directory=tmp_recordings_dir)
+        set_active_recording(None, directory=tmp_recordings_dir)
+
+        # Verify saved recording
+        assert filepath.exists()
+        loaded = load_recording("rec_xproc", directory=tmp_recordings_dir)
+        assert loaded.name == "Cross Process"
+        assert len(loaded.steps) == 2
+
+        # Verify active is cleared
+        assert get_active_recording(directory=tmp_recordings_dir) is None
 
 
 class TestRecordCLI:
     """Tests for record CLI commands."""
+
+    def setup_method(self):
+        """Clear active recording state before each test."""
+        _set_active_recording(None)
+
+    def teardown_method(self):
+        """Clean up active recording state after each test."""
+        _set_active_recording(None)
 
     def test_record_start(self):
         runner = CliRunner()
@@ -275,8 +377,6 @@ class TestRecordCLI:
         assert data["success"] is True
         assert data["name"] == "My Test"
         assert "recording_id" in data
-        # Clean up
-        _set_active_recording(None)
 
     def test_record_start_already_active(self):
         _set_active_recording(
@@ -288,7 +388,6 @@ class TestRecordCLI:
         data = json.loads(result.output)
         assert data["success"] is False
         assert data["error"]["code"] == "RECORDING_ACTIVE"
-        _set_active_recording(None)
 
     def test_record_stop_no_active(self):
         runner = CliRunner()
@@ -377,13 +476,20 @@ class TestRecordCLI:
 class TestRecordPlainText:
     """Tests for record CLI plain-text output."""
 
+    def setup_method(self):
+        """Clear active recording state before each test."""
+        _set_active_recording(None)
+
+    def teardown_method(self):
+        """Clean up active recording state after each test."""
+        _set_active_recording(None)
+
     def test_record_start_plain(self):
         runner = CliRunner()
         result = runner.invoke(main, ["record", "start", "--name", "Plain Test"])
         assert result.exit_code == 0
         assert "Recording started" in result.output
         assert "Plain Test" in result.output
-        _set_active_recording(None)
 
     def test_record_list_no_recordings(self):
         runner = CliRunner()
