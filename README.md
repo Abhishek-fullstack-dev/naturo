@@ -17,7 +17,9 @@
 - 📦 **App Control** — Launch, quit, switch, hide/unhide applications
 - 💬 **Dialog Handling** — Detect and interact with system dialogs (message boxes, file pickers)
 - 📌 **Taskbar & Tray** — List and click taskbar items and system tray icons
-- 🤖 **AI-Ready** — JSON output, agent-friendly CLI, MCP server (33 tools)
+- 🖥️ **Multi-Monitor** — Enumerate monitors, capture specific screens, DPI-aware coordinates
+- 🗂️ **Virtual Desktops** — List, switch, create, close desktops and move windows between them
+- 🤖 **AI-Ready** — JSON output, agent-friendly CLI, MCP server (38 tools)
 
 ## System Requirements
 
@@ -89,6 +91,13 @@ naturo taskbar click "Chrome"              # Click taskbar button
 naturo tray list                           # List tray icons
 naturo tray click "Volume"                 # Left-click tray icon
 naturo tray click "Wi-Fi" --right          # Right-click for menu
+
+# Virtual desktops (Windows 10/11)
+naturo desktop list                        # List virtual desktops
+naturo desktop switch 1                    # Switch to desktop 1
+naturo desktop create --name "Work"        # Create named desktop
+naturo desktop close                       # Close current desktop
+naturo desktop move-window 1 --app "Notepad"  # Move window to desktop 1
 ```
 
 ## CLI Commands
@@ -144,6 +153,11 @@ naturo tray click "Wi-Fi" --right          # Right-click for menu
 | `taskbar click` | Click taskbar item | ✅ 4.5 |
 | `tray list` | List system tray icons | ✅ 4.5 |
 | `tray click` | Click tray icon (left/right/double) | ✅ 4.5 |
+| `desktop list` | List virtual desktops | ✅ 5A |
+| `desktop switch` | Switch to a virtual desktop | ✅ 5A |
+| `desktop create` | Create a new virtual desktop | ✅ 5A |
+| `desktop close` | Close a virtual desktop | ✅ 5A |
+| `desktop move-window` | Move window to another desktop | ✅ 5A |
 
 ## Snapshot System
 
