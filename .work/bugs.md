@@ -209,7 +209,7 @@
 ## 🆕 Round 29 自发现（Phase 5A 代码审查 + JSON 一致性扫描）
 
 ### BUG-055: `find --json` 和 `menu-inspect --json` 成功时返回裸数组
-- **状态**: 🟢 Fixed (commit 05b4b7d)
+- **状态**: ✅ Verified (Round 30 代码审查) — `find --json` 返回 `{"success": true, "elements": [...], "count": N}`，`menu-inspect --json` 返回 `{"success": true, "menu_items": [...]}`。编译机离线，运行时验证待补。
 - **严重度**: 🟡 中等（同 BUG-029 类型 — JSON schema 不一致，影响 AI agent 集成）
 - **现象**: BUG-029 修复了 `list windows --json` 和 `snapshot list --json` 的裸数组问题，但 `find --json` 和 `menu-inspect --json` 存在相同问题：
   - `find --json` 返回 `[{"id":..., "role":...}, ...]`（裸数组，第 646 行）
@@ -443,3 +443,31 @@
 - **根因**: agent 函数在 max_steps 校验后直接调用 `_get_agent_provider()`，没有先校验 instruction 是否为空或纯空白
 - **修复建议**: 在 max_steps 校验之后、provider 初始化之前，加入 `if not instruction.strip():` 校验
 - **文件**: naturo/cli/ai.py（agent 函数，约第 55 行）
+
+---
+
+## 🆕 Round 30 自发现（Phase 5B/5C 新代码审查）
+
+### BUG-056: `chrome screenshot --quality` 无边界校验
+- **状态**: 🟢 Fixed (代码审查确认已实现校验 — chrome_cmd.py _validate_port + quality 1-100 校验)
+- **严重度**: 🟢 低（同 BUG-019/025/032 类型 — 边界值无校验）
+- **现象**: `--quality 0`、`--quality -1`、`--quality 999` 不报错，直接传给 CDP backend。帮助文档写 "1-100" 但无校验
+- **命令**: `naturo chrome screenshot --quality 0`, `naturo chrome screenshot --quality -1`
+- **预期**: 校验 `--quality` 在 1-100 范围，否则报 "Error: --quality must be between 1 and 100, got X"
+- **文件**: naturo/cli/chrome_cmd.py（chrome_screenshot 函数，第 173 行）
+
+### BUG-057: `chrome` 所有子命令 `--port` 无边界校验
+- **状态**: 🟢 Fixed (代码审查确认已实现 _validate_port 函数，所有9个子命令均调用)
+- **严重度**: 🟢 低（同 BUG-056 — electron launch 有校验但 chrome 没有）
+- **现象**: `--port 0`、`--port -1`、`--port 99999` 不报错，直接传给 `_get_client()`。`electron launch` 已有 1-65535 校验，chrome 一致性缺失
+- **影响范围**: chrome tabs/version/eval/screenshot/navigate/click/type/title/html — 全部 9 个子命令
+- **预期**: 校验 `--port` 在 1-65535 范围
+- **文件**: naturo/cli/chrome_cmd.py（所有子命令的 port 参数）
+
+### BUG-058: Registry/Service MCP 工具缺失
+- **状态**: 🟢 Fixed (代码审查确认 registry_get/set/list/delete/search + service_list/start/stop/restart/status 共10个工具均已注册 @server.tool() + @_safe_tool)
+- **严重度**: 🟡 中等（AI agent 通过 MCP 无法使用 Phase 5C.2/5C.3 功能）
+- **现象**: `naturo registry` 和 `naturo service` 有完整的 CLI 实现，但 MCP server 中无对应的 `@server.tool()` 注册。AI agent 通过 MCP 协议无法发现或调用这些功能
+- **影响**: registry get/set/list/delete/search 和 service list/start/stop/restart/status 共 10 个命令无 MCP 入口
+- **对比**: chrome 和 electron 的 MCP 工具已注册
+- **文件**: naturo/mcp_server.py（需添加 registry 和 service 相关 @server.tool）

@@ -85,7 +85,7 @@ class SnapshotManager:
             The new snapshot ID (``"<unix-ms>-<4-digit-random>"``).
         """
         ts_ms = int(time.time() * 1000)
-        suffix = str(uuid.uuid4().int)[:4]
+        suffix = str(uuid.uuid4().int)[:8]
         snapshot_id = f"{ts_ms}-{suffix}"
 
         snap_dir = self._snap_dir(snapshot_id)
