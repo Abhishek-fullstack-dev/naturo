@@ -643,7 +643,7 @@ def find_cmd(query, role, actionable, depth, limit, ai, provider, screenshot, ai
                 }
                 for r in results
             ]
-            click.echo(json_module.dumps(data, indent=2))
+            click.echo(json_module.dumps({"success": True, "elements": data, "count": len(data)}, indent=2))
         else:
             if not results:
                 click.echo(f"No elements found matching: {query}")
@@ -820,9 +820,9 @@ def menu_inspect(app, flat, json_output):
                 flat_items = []
                 for item in items:
                     flat_items.extend(item.flatten())
-                click.echo(json_module.dumps(flat_items, indent=2))
+                click.echo(json_module.dumps({"success": True, "menu_items": flat_items}, indent=2))
             else:
-                click.echo(json_module.dumps([item.to_dict() for item in items], indent=2))
+                click.echo(json_module.dumps({"success": True, "menu_items": [item.to_dict() for item in items]}, indent=2))
         else:
             if flat:
                 for item in items:
