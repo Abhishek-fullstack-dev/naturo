@@ -97,8 +97,8 @@
 | 4.5.1 | **Dialog Detection** — 自动检测文件选择器、消息框、确认框 | ✅ Done |
 | 4.5.2 | **Dialog Interaction** — `naturo dialog accept/dismiss/fill` | ✅ Done |
 | 4.5.3 | **Clipboard Enhanced** — `naturo clipboard get/set` 命令（已有 backend，需暴露 CLI） | ✅ Done |
-| 4.5.4 | **Taskbar Interaction** — 任务栏 pin/unpin/click | 🔜 |
-| 4.5.5 | **System Tray** — 系统托盘图标交互 | 🔜 |
+| 4.5.4 | **Taskbar Interaction** — 任务栏 list/click | ✅ Done |
+| 4.5.5 | **System Tray** — 系统托盘图标 list/click (left/right/double) | ✅ Done |
 | 4.5.6 | **Open Command** — `naturo open <url/file>` 用默认应用打开 | ✅ Done |
 
 ## Phase 5 — Complete (生产级 + 自然机器人差异化引擎)

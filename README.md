@@ -15,7 +15,9 @@
 - 📋 **Menu Traversal** — Extract app menu structures with shortcuts
 - 🪟 **Window Management** — Focus, close, minimize, maximize, move, resize windows
 - 📦 **App Control** — Launch, quit, switch, hide/unhide applications
-- 🤖 **AI-Ready** — JSON output, agent-friendly CLI, MCP server (29 tools)
+- 💬 **Dialog Handling** — Detect and interact with system dialogs (message boxes, file pickers)
+- 📌 **Taskbar & Tray** — List and click taskbar items and system tray icons
+- 🤖 **AI-Ready** — JSON output, agent-friendly CLI, MCP server (33 tools)
 
 ## System Requirements
 
@@ -74,6 +76,19 @@ naturo app launch "notepad"
 naturo app switch "chrome"
 naturo app hide "notepad"
 naturo app unhide "notepad"
+
+# Dialog handling
+naturo dialog detect                       # Detect active dialogs
+naturo dialog accept                       # Click OK/Yes
+naturo dialog dismiss                      # Click Cancel/No
+naturo dialog type "hello.txt" --accept    # Type filename then OK
+
+# Taskbar & tray
+naturo taskbar list                        # List taskbar items
+naturo taskbar click "Chrome"              # Click taskbar button
+naturo tray list                           # List tray icons
+naturo tray click "Volume"                 # Left-click tray icon
+naturo tray click "Wi-Fi" --right          # Right-click for menu
 ```
 
 ## CLI Commands
@@ -115,6 +130,20 @@ naturo app unhide "notepad"
 | `window list` | List windows with filters | ✅ 3.5 |
 | `open` | Open URL/file with default app | ✅ 4 |
 | `mcp start` | Start MCP server | ✅ 4 |
+| `describe` | AI-powered screenshot analysis | ✅ 4 |
+| `agent` | Natural language automation | ✅ 4 |
+| `record start/stop` | Record action sequences | ✅ 4 |
+| `record list/play` | List/replay recordings | ✅ 4 |
+| `dialog detect` | Detect active system dialogs | ✅ 4.5 |
+| `dialog accept` | Accept (OK/Yes) a dialog | ✅ 4.5 |
+| `dialog dismiss` | Dismiss (Cancel/No) a dialog | ✅ 4.5 |
+| `dialog click-button` | Click specific dialog button | ✅ 4.5 |
+| `dialog type` | Type in dialog input field | ✅ 4.5 |
+| `clipboard get/set` | Get/set clipboard contents | ✅ 4.5 |
+| `taskbar list` | List taskbar items | ✅ 4.5 |
+| `taskbar click` | Click taskbar item | ✅ 4.5 |
+| `tray list` | List system tray icons | ✅ 4.5 |
+| `tray click` | Click tray icon (left/right/double) | ✅ 4.5 |
 
 ## Snapshot System
 
