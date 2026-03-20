@@ -51,7 +51,7 @@ def snapshot_list(json_output: bool) -> None:
             }
             for s in infos
         ]
-        click.echo(json_module.dumps(data, indent=2))
+        click.echo(json_module.dumps({"success": True, "snapshots": data}, indent=2))
     else:
         if not infos:
             click.echo("No snapshots found.")
@@ -82,8 +82,20 @@ def snapshot_clean(days: int | None, clean_all: bool, yes: bool, json_output: bo
     to wipe everything.  Without either flag the command shows a help message.
     """
     if not clean_all and days is None:
-        click.echo("Specify --days N or --all.  Run with --help for usage.")
-        raise SystemExit(0)
+        msg = "Specify --days N or --all.  Run with --help for usage."
+        if json_output:
+            click.echo(json_module.dumps({"success": False, "error": {"code": "INVALID_INPUT", "message": msg}}))
+        else:
+            click.echo(f"Error: {msg}", err=True)
+        raise SystemExit(1)
+
+    if days is not None and days < 0:
+        msg = f"--days must be >= 0, got {days}"
+        if json_output:
+            click.echo(json_module.dumps({"success": False, "error": {"code": "INVALID_INPUT", "message": msg}}))
+        else:
+            click.echo(f"Error: {msg}", err=True)
+        raise SystemExit(1)
 
     mgr = _get_manager()
 
@@ -103,7 +115,7 @@ def snapshot_clean(days: int | None, clean_all: bool, yes: bool, json_output: bo
         count = mgr.clean_older_than(days)  # type: ignore[arg-type]
 
     if json_output:
-        click.echo(json_module.dumps({"deleted": count}))
+        click.echo(json_module.dumps({"success": True, "deleted": count}))
     else:
         click.echo(f"Deleted {count} snapshot(s).")
 

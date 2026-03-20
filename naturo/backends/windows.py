@@ -65,11 +65,40 @@ class WindowsBackend(Backend):
 
     # === Capture (Phase 1) ===
 
+    @staticmethod
+    def _convert_bmp(bmp_path: str, output_path: str) -> tuple[int, int, str]:
+        """Convert a BMP file to the format implied by *output_path* extension.
+
+        Uses Pillow so we always deliver PNG/JPEG/etc. to users, regardless
+        of the native BMP format produced by the C++ DLL (GDI BitBlt).
+
+        Returns:
+            (width, height, format_name) tuple.
+        """
+        import os
+        from PIL import Image
+
+        img = Image.open(bmp_path)
+        width, height = img.size
+        ext = output_path.rsplit(".", 1)[-1].lower() if "." in output_path else "png"
+        fmt = {"jpg": "JPEG", "jpeg": "JPEG", "bmp": "BMP"}.get(ext, "PNG")
+
+        if os.path.abspath(bmp_path) != os.path.abspath(output_path) or fmt != "BMP":
+            img.save(output_path, fmt)
+            # Remove the temp BMP if it differs from the final path
+            if os.path.abspath(bmp_path) != os.path.abspath(output_path):
+                try:
+                    os.remove(bmp_path)
+                except OSError:
+                    pass
+
+        return width, height, ext
+
     def capture_screen(self, screen_index: int = 0, output_path: str = "capture.png") -> CaptureResult:
         """Capture a screenshot of the specified monitor.
 
-        Uses GDI BitBlt. Saves as BMP natively; the output_path extension
-        is used as-is (caller should use .bmp or convert afterward).
+        The C++ DLL captures via GDI BitBlt to a temporary BMP, then Pillow
+        converts to the requested format (PNG by default, matching Peekaboo).
 
         Args:
             screen_index: Zero-based monitor index (0 = primary).
@@ -78,22 +107,30 @@ class WindowsBackend(Backend):
         Returns:
             CaptureResult with the output path and dimensions.
         """
+        import tempfile, os
         core = self._ensure_core()
-        core.capture_screen(screen_index, output_path)
 
-        # Read BMP header to get dimensions (offset 18 = width, 22 = height)
-        width, height = 0, 0
+        # DLL writes BMP; use a temp file in a safe directory to avoid
+        # encoding issues with Chinese/Unicode paths on Windows
+        output_dir = os.path.dirname(os.path.abspath(output_path)) or "."
         try:
-            with open(output_path, "rb") as f:
-                header = f.read(26)
-                if len(header) >= 26:
-                    import struct
-                    width = struct.unpack_from("<i", header, 18)[0]
-                    height = abs(struct.unpack_from("<i", header, 22)[0])
-        except (OSError, struct.error):
-            pass
+            fd, tmp_bmp = tempfile.mkstemp(suffix=".bmp", dir=output_dir)
+            os.close(fd)
+        except OSError:
+            # Fallback to system temp dir if output dir fails
+            fd, tmp_bmp = tempfile.mkstemp(suffix=".bmp")
+            os.close(fd)
 
-        fmt = output_path.rsplit(".", 1)[-1] if "." in output_path else "bmp"
+        try:
+            core.capture_screen(screen_index, tmp_bmp)
+            width, height, fmt = self._convert_bmp(tmp_bmp, output_path)
+        except Exception:
+            # Clean up temp file on failure
+            try:
+                os.remove(tmp_bmp)
+            except OSError:
+                pass
+            raise
         return CaptureResult(path=output_path, width=width, height=height, format=fmt)
 
     def capture_window(self, window_title: Optional[str] = None, hwnd: Optional[int] = None,
@@ -102,6 +139,7 @@ class WindowsBackend(Backend):
 
         Uses PrintWindow for accurate off-screen capture. If neither
         window_title nor hwnd is provided, captures the foreground window.
+        Output is PNG by default (matching Peekaboo).
 
         Args:
             window_title: Window title to search for (not yet implemented — use hwnd).
@@ -111,22 +149,28 @@ class WindowsBackend(Backend):
         Returns:
             CaptureResult with the output path and dimensions.
         """
+        import tempfile, os
         core = self._ensure_core()
         handle = hwnd if hwnd else 0
-        core.capture_window(handle, output_path)
 
-        width, height = 0, 0
+        # Use a safe temp file to avoid encoding issues with Unicode paths
+        output_dir = os.path.dirname(os.path.abspath(output_path)) or "."
         try:
-            with open(output_path, "rb") as f:
-                header = f.read(26)
-                if len(header) >= 26:
-                    import struct
-                    width = struct.unpack_from("<i", header, 18)[0]
-                    height = abs(struct.unpack_from("<i", header, 22)[0])
-        except (OSError, struct.error):
-            pass
+            fd, tmp_bmp = tempfile.mkstemp(suffix=".bmp", dir=output_dir)
+            os.close(fd)
+        except OSError:
+            fd, tmp_bmp = tempfile.mkstemp(suffix=".bmp")
+            os.close(fd)
 
-        fmt = output_path.rsplit(".", 1)[-1] if "." in output_path else "bmp"
+        try:
+            core.capture_window(handle, tmp_bmp)
+            width, height, fmt = self._convert_bmp(tmp_bmp, output_path)
+        except Exception:
+            try:
+                os.remove(tmp_bmp)
+            except OSError:
+                pass
+            raise
         return CaptureResult(path=output_path, width=width, height=height, format=fmt)
 
     # === Window Management (Phase 1: list only) ===
@@ -155,31 +199,240 @@ class WindowsBackend(Backend):
             for w in bridge_windows
         ]
 
-    def focus_window(self, title: Optional[str] = None, hwnd: Optional[int] = None) -> None:
-        """Focus a window by title or handle."""
-        raise NotImplementedError("Coming in Phase 2")
+    def _ensure_win32(self) -> None:
+        """Verify we are running on Windows; raise NotImplementedError otherwise.
 
-    def close_window(self, title: Optional[str] = None, hwnd: Optional[int] = None) -> None:
-        """Close a window by title or handle."""
-        raise NotImplementedError("Coming in Phase 2")
+        Raises:
+            NotImplementedError: When running on a non-Windows platform.
+        """
+        import platform as _platform
+        if _platform.system() != "Windows":
+            raise NotImplementedError("Window management requires Windows")
+
+    def _get_window_rect(self, handle: int) -> tuple[int, int, int, int]:
+        """Get window rectangle (left, top, right, bottom) via Win32 GetWindowRect.
+
+        Args:
+            handle: Window handle (HWND).
+
+        Returns:
+            Tuple of (left, top, right, bottom).
+
+        Raises:
+            naturo.errors.WindowNotFoundError: If the handle is invalid.
+        """
+        import ctypes
+        import ctypes.wintypes
+        rect = ctypes.wintypes.RECT()
+        result = ctypes.windll.user32.GetWindowRect(handle, ctypes.byref(rect))
+        if not result:
+            from naturo.errors import WindowNotFoundError
+            raise WindowNotFoundError(str(handle))
+        return rect.left, rect.top, rect.right, rect.bottom
+
+    def _is_iconic(self, handle: int) -> bool:
+        """Check if a window is minimized (iconic).
+
+        Args:
+            handle: Window handle (HWND).
+
+        Returns:
+            True if the window is minimized.
+        """
+        import ctypes
+        return bool(ctypes.windll.user32.IsIconic(handle))
+
+    def focus_window(self, title: Optional[str] = None, hwnd: Optional[int] = None) -> None:
+        """Focus a window by title or handle.
+
+        Brings the window to the foreground. If the window is minimized,
+        it is restored first.
+
+        Args:
+            title: Window title pattern (partial, case-insensitive).
+            hwnd: Direct window handle (takes priority over title).
+
+        Raises:
+            NotImplementedError: On non-Windows platforms.
+            WindowNotFoundError: If no matching window is found.
+        """
+        self._ensure_win32()
+        import ctypes
+        handle = self._resolve_hwnd(window_title=title, hwnd=hwnd)
+        if not handle:
+            from naturo.errors import WindowNotFoundError
+            raise WindowNotFoundError(title or "foreground")
+        SW_RESTORE = 9
+        if self._is_iconic(handle):
+            ctypes.windll.user32.ShowWindow(handle, SW_RESTORE)
+        ctypes.windll.user32.SetForegroundWindow(handle)
+
+    def close_window(self, title: Optional[str] = None, hwnd: Optional[int] = None,
+                     force: bool = False) -> None:
+        """Close a window by title or handle.
+
+        Sends WM_CLOSE for graceful close, or terminates the process if force is True.
+
+        Args:
+            title: Window title pattern (partial, case-insensitive).
+            hwnd: Direct window handle (takes priority over title).
+            force: If True, forcefully terminate the owning process.
+
+        Raises:
+            NotImplementedError: On non-Windows platforms.
+            WindowNotFoundError: If no matching window is found.
+        """
+        self._ensure_win32()
+        import ctypes
+        handle = self._resolve_hwnd(window_title=title, hwnd=hwnd)
+        if not handle:
+            from naturo.errors import WindowNotFoundError
+            raise WindowNotFoundError(title or "foreground")
+
+        if force:
+            # Get PID and terminate the process
+            pid = ctypes.wintypes.DWORD()
+            ctypes.windll.user32.GetWindowThreadProcessId(handle, ctypes.byref(pid))
+            PROCESS_TERMINATE = 0x0001
+            proc_handle = ctypes.windll.kernel32.OpenProcess(PROCESS_TERMINATE, False, pid.value)
+            if proc_handle:
+                ctypes.windll.kernel32.TerminateProcess(proc_handle, 1)
+                ctypes.windll.kernel32.CloseHandle(proc_handle)
+        else:
+            WM_CLOSE = 0x0010
+            ctypes.windll.user32.SendMessageW(handle, WM_CLOSE, 0, 0)
 
     def minimize_window(self, title: Optional[str] = None, hwnd: Optional[int] = None) -> None:
-        """Minimize a window."""
-        raise NotImplementedError("Coming in Phase 2")
+        """Minimize a window.
+
+        Args:
+            title: Window title pattern (partial, case-insensitive).
+            hwnd: Direct window handle (takes priority over title).
+
+        Raises:
+            NotImplementedError: On non-Windows platforms.
+            WindowNotFoundError: If no matching window is found.
+        """
+        self._ensure_win32()
+        import ctypes
+        handle = self._resolve_hwnd(window_title=title, hwnd=hwnd)
+        if not handle:
+            from naturo.errors import WindowNotFoundError
+            raise WindowNotFoundError(title or "foreground")
+        SW_MINIMIZE = 6
+        ctypes.windll.user32.ShowWindow(handle, SW_MINIMIZE)
 
     def maximize_window(self, title: Optional[str] = None, hwnd: Optional[int] = None) -> None:
-        """Maximize a window."""
-        raise NotImplementedError("Coming in Phase 2")
+        """Maximize a window.
+
+        Args:
+            title: Window title pattern (partial, case-insensitive).
+            hwnd: Direct window handle (takes priority over title).
+
+        Raises:
+            NotImplementedError: On non-Windows platforms.
+            WindowNotFoundError: If no matching window is found.
+        """
+        self._ensure_win32()
+        import ctypes
+        handle = self._resolve_hwnd(window_title=title, hwnd=hwnd)
+        if not handle:
+            from naturo.errors import WindowNotFoundError
+            raise WindowNotFoundError(title or "foreground")
+        SW_MAXIMIZE = 3
+        ctypes.windll.user32.ShowWindow(handle, SW_MAXIMIZE)
+
+    def restore_window(self, title: Optional[str] = None, hwnd: Optional[int] = None) -> None:
+        """Restore a minimized or maximized window to its normal state.
+
+        Args:
+            title: Window title pattern (partial, case-insensitive).
+            hwnd: Direct window handle (takes priority over title).
+
+        Raises:
+            NotImplementedError: On non-Windows platforms.
+            WindowNotFoundError: If no matching window is found.
+        """
+        self._ensure_win32()
+        import ctypes
+        handle = self._resolve_hwnd(window_title=title, hwnd=hwnd)
+        if not handle:
+            from naturo.errors import WindowNotFoundError
+            raise WindowNotFoundError(title or "foreground")
+        SW_RESTORE = 9
+        ctypes.windll.user32.ShowWindow(handle, SW_RESTORE)
 
     def move_window(self, x: int = 0, y: int = 0, title: Optional[str] = None,
                     hwnd: Optional[int] = None) -> None:
-        """Move a window to specified coordinates."""
-        raise NotImplementedError("Coming in Phase 2")
+        """Move a window to specified coordinates, keeping current size.
+
+        Args:
+            x: Target X coordinate.
+            y: Target Y coordinate.
+            title: Window title pattern (partial, case-insensitive).
+            hwnd: Direct window handle (takes priority over title).
+
+        Raises:
+            NotImplementedError: On non-Windows platforms.
+            WindowNotFoundError: If no matching window is found.
+        """
+        self._ensure_win32()
+        import ctypes
+        handle = self._resolve_hwnd(window_title=title, hwnd=hwnd)
+        if not handle:
+            from naturo.errors import WindowNotFoundError
+            raise WindowNotFoundError(title or "foreground")
+        left, top, right, bottom = self._get_window_rect(handle)
+        w = right - left
+        h = bottom - top
+        ctypes.windll.user32.MoveWindow(handle, x, y, w, h, True)
 
     def resize_window(self, width: int = 800, height: int = 600,
                       title: Optional[str] = None, hwnd: Optional[int] = None) -> None:
-        """Resize a window."""
-        raise NotImplementedError("Coming in Phase 2")
+        """Resize a window, keeping current position.
+
+        Args:
+            width: Target width in pixels.
+            height: Target height in pixels.
+            title: Window title pattern (partial, case-insensitive).
+            hwnd: Direct window handle (takes priority over title).
+
+        Raises:
+            NotImplementedError: On non-Windows platforms.
+            WindowNotFoundError: If no matching window is found.
+        """
+        self._ensure_win32()
+        import ctypes
+        handle = self._resolve_hwnd(window_title=title, hwnd=hwnd)
+        if not handle:
+            from naturo.errors import WindowNotFoundError
+            raise WindowNotFoundError(title or "foreground")
+        left, top, _right, _bottom = self._get_window_rect(handle)
+        ctypes.windll.user32.MoveWindow(handle, left, top, width, height, True)
+
+    def set_bounds(self, x: int, y: int, width: int, height: int,
+                   title: Optional[str] = None, hwnd: Optional[int] = None) -> None:
+        """Set window position and size in one call.
+
+        Args:
+            x: Target X coordinate.
+            y: Target Y coordinate.
+            width: Target width in pixels.
+            height: Target height in pixels.
+            title: Window title pattern (partial, case-insensitive).
+            hwnd: Direct window handle (takes priority over title).
+
+        Raises:
+            NotImplementedError: On non-Windows platforms.
+            WindowNotFoundError: If no matching window is found.
+        """
+        self._ensure_win32()
+        import ctypes
+        handle = self._resolve_hwnd(window_title=title, hwnd=hwnd)
+        if not handle:
+            from naturo.errors import WindowNotFoundError
+            raise WindowNotFoundError(title or "foreground")
+        ctypes.windll.user32.MoveWindow(handle, x, y, width, height, True)
 
     # === UI Element Inspection (Phase 1) ===
 
@@ -224,22 +477,56 @@ class WindowsBackend(Backend):
             properties={},
         )
 
+    def _resolve_hwnd(self, app: Optional[str] = None,
+                      window_title: Optional[str] = None,
+                      hwnd: Optional[int] = None) -> int:
+        """Resolve a window handle from app name, window title, or direct hwnd.
+
+        Args:
+            app: Application/process name to search for (case-insensitive, partial match).
+            window_title: Window title pattern (case-insensitive, partial match).
+            hwnd: Direct window handle (takes priority).
+
+        Returns:
+            Window handle (HWND), or 0 for the foreground window.
+        """
+        if hwnd:
+            return hwnd
+
+        search = app or window_title
+        if not search:
+            return 0  # foreground window
+
+        search_lower = search.lower()
+        windows = self.list_windows()
+        for w in windows:
+            if search_lower in w.title.lower() or search_lower in w.process_name.lower():
+                return w.handle
+
+        from naturo.errors import WindowNotFoundError
+        raise WindowNotFoundError(search)
+
     def get_element_tree(self, window_title: Optional[str] = None,
-                         depth: int = 3) -> Optional[BaseElementInfo]:
+                         depth: int = 3,
+                         app: Optional[str] = None,
+                         hwnd: Optional[int] = None) -> Optional[BaseElementInfo]:
         """Get the UI element tree for a window.
 
         Fills parent_id, children IDs, and keyboard_shortcut for all elements
         via Python-layer post-processing (the C++ DLL does not emit these).
 
         Args:
-            window_title: Not yet used (reserved for future).
+            window_title: Window title pattern (partial match, case-insensitive).
             depth: Maximum depth to traverse (1-10).
+            app: Application name to search for (partial match, case-insensitive).
+            hwnd: Direct window handle. Overrides app/window_title.
 
         Returns:
             Root ElementInfo with nested children, or None.
         """
         core = self._ensure_core()
-        result = core.get_element_tree(hwnd=0, depth=depth)
+        handle = self._resolve_hwnd(app=app, window_title=window_title, hwnd=hwnd)
+        result = core.get_element_tree(hwnd=handle, depth=depth)
         if result is None:
             return None
 

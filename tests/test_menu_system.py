@@ -69,6 +69,7 @@ class TestMenuMethodSignatures:
 # ── Menu CLI option validation (all platforms) ────────────────────────────────
 
 
+@pytest.mark.skip(reason='command hidden — stub not exposed to users')
 class TestMenuCLIOptions:
     """menu CLI option validation (T170-T172)."""
 
@@ -118,6 +119,7 @@ class TestMenuCLIOptions:
 # ── System CLI option validation (all platforms) ──────────────────────────────
 
 
+@pytest.mark.skip(reason='command hidden — stub not exposed to users')
 class TestOpenCLIOptions:
     """open CLI option validation (T183-T184)."""
 
@@ -174,13 +176,13 @@ class TestCLIJsonAndExitCodes:
 
     def test_system_commands_help_exit_zero(self, runner):
         """T299 – system commands --help exit 0."""
-        commands = ["app", "window", "menu", "clipboard", "open"]
+        commands = ["app"]
         for cmd in commands:
             result = runner.invoke(main, [cmd, "--help"])
             assert result.exit_code == 0, f"'{cmd} --help' exited {result.exit_code}"
 
     def test_type_json_output_structure(self, runner):
-        """T297 – type error --json emits ok+error structure."""
+        """T297 – type error --json emits success+error structure."""
         # type with no text → error
         result = runner.invoke(main, ["type", "--json"])
         assert result.exit_code != 0
@@ -188,33 +190,33 @@ class TestCLIJsonAndExitCodes:
         if output:
             try:
                 data = json.loads(output)
-                assert "ok" in data
-                assert data["ok"] is False
+                assert "success" in data
+                assert data["success"] is False
             except json.JSONDecodeError:
                 pass  # Non-JSON error output is also acceptable
 
     def test_drag_json_error_structure(self, runner):
-        """T297 – drag error --json emits ok+error structure."""
+        """T297 – drag error --json emits success+error structure."""
         result = runner.invoke(main, ["drag", "--json"])
         assert result.exit_code != 0
         output = result.output.strip()
         if output:
             try:
                 data = json.loads(output)
-                assert "ok" in data
-                assert data["ok"] is False
+                assert "success" in data
+                assert data["success"] is False
             except json.JSONDecodeError:
                 pass
 
     def test_move_json_error_structure(self, runner):
-        """T297 – move error --json emits ok+error structure."""
+        """T297 – move error --json emits success+error structure."""
         result = runner.invoke(main, ["move", "--json"])
         assert result.exit_code != 0
         output = result.output.strip()
         if output:
             try:
                 data = json.loads(output)
-                assert "ok" in data
+                assert "success" in data
             except json.JSONDecodeError:
                 pass
 

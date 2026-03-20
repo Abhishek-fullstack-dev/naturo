@@ -20,16 +20,21 @@ def _get_backend():
 def _json_ok(data: dict, json_output: bool) -> None:
     """Emit success result as JSON or plain text."""
     if json_output:
-        click.echo(json.dumps({"ok": True, **data}))
+        click.echo(json.dumps({"success": True, "data": data}))
     else:
         for k, v in data.items():
             click.echo(f"{k}: {v}")
 
 
-def _json_err(msg: str, json_output: bool, exit_code: int = 1) -> None:
-    """Emit error result as JSON or plain text, then exit."""
+def _json_err(msg: str, json_output: bool, exit_code: int = 1,
+              code: str = "ACTION_ERROR") -> None:
+    """Emit error result as JSON or plain text, then exit.
+
+    Includes agent-friendly recovery hints from the error_helpers registry.
+    """
     if json_output:
-        click.echo(json.dumps({"ok": False, "error": msg}))
+        from naturo.cli.error_helpers import json_error
+        click.echo(json_error(code, msg))
     else:
         click.echo(f"Error: {msg}", err=True)
     sys.exit(exit_code)
@@ -49,7 +54,7 @@ def _json_err(msg: str, json_output: bool, exit_code: int = 1) -> None:
 @click.option("--pid", type=int, help="Process ID")
 @click.option("--window-title", help="Window title pattern")
 @click.option("--window-id", "--hwnd", "window_id", type=int, help="Window handle (HWND)")
-@click.option("--wait-for", type=float, help="Wait for element (seconds)")
+@click.option("--wait-for", type=float, help="Wait for element (seconds)", hidden=True)
 @click.option(
     "--input-mode",
     type=click.Choice(["normal", "hardware", "hook"]),
@@ -93,7 +98,7 @@ def click_cmd(query, on_text, element_id, coords, double, right, app, pid,
         target_id = selector
         x, y = None, None
     else:
-        _json_err("Specify --coords X Y, --id, or --on TEXT", json_output)
+        _json_err("Specify --coords X Y, --id, or --on TEXT", json_output, code="INVALID_INPUT")
         return
 
     try:
@@ -156,7 +161,11 @@ def type_cmd(text, delay, profile, wpm, press_return, tab_count, escape,
       naturo type "text" --profile human --wpm 60
     """
     if not text:
-        _json_err("TEXT argument is required", json_output)
+        _json_err("TEXT argument is required", json_output, code="INVALID_INPUT")
+        return
+
+    if wpm < 1:
+        _json_err(f"--wpm must be >= 1, got {wpm}", json_output, code="INVALID_INPUT")
         return
 
     backend = _get_backend()
@@ -213,6 +222,10 @@ def press(key, count, delay, app, window_title, hwnd, input_mode, json_output):
       naturo press tab --count 3
       naturo press f5
     """
+    if count < 1:
+        _json_err(f"--count must be >= 1, got {count}", json_output, code="INVALID_INPUT")
+        return
+
     import time
     backend = _get_backend()
 
@@ -264,7 +277,11 @@ def hotkey(keys, keys_option, hold_duration, app, window_title, hwnd,
     elif keys_option:
         key_list = list(keys_option)
     else:
-        _json_err("Specify keys as 'ctrl+c' or via --keys ctrl --keys c", json_output)
+        _json_err("Specify keys as 'ctrl+c' or via --keys ctrl --keys c", json_output, code="INVALID_INPUT")
+        return
+
+    if hold_duration is not None and hold_duration < 0:
+        _json_err(f"--hold-duration must be >= 0, got {hold_duration}", json_output, code="INVALID_INPUT")
         return
 
     try:
@@ -305,6 +322,10 @@ def scroll(direction, amount, on_text, smooth, delay, app, window_title,
       naturo scroll --direction down --amount 5
       naturo scroll -d up -a 3
     """
+    if amount < 1:
+        _json_err(f"--amount must be >= 1, got {amount}", json_output, code="INVALID_INPUT")
+        return
+
     backend = _get_backend()
 
     try:
@@ -345,10 +366,17 @@ def drag(from_text, from_coords, to_text, to_coords, duration, steps,
       naturo drag --from-coords 100 100 --to-coords 500 300
     """
     if not from_coords:
-        _json_err("Specify --from-coords X Y (element-based drag coming in Phase 3)", json_output)
+        _json_err("Specify --from-coords X Y (element-based drag coming in Phase 3)", json_output, code="INVALID_INPUT")
         return
     if not to_coords:
-        _json_err("Specify --to-coords X Y", json_output)
+        _json_err("Specify --to-coords X Y", json_output, code="INVALID_INPUT")
+        return
+
+    if steps < 1:
+        _json_err(f"--steps must be >= 1, got {steps}", json_output, code="INVALID_INPUT")
+        return
+    if duration < 0:
+        _json_err(f"--duration must be >= 0, got {duration}", json_output, code="INVALID_INPUT")
         return
 
     backend = _get_backend()
@@ -379,7 +407,7 @@ def drag(from_text, from_coords, to_text, to_coords, duration, steps,
 @click.option("--to", "to_text", help="Target element text")
 @click.option("--coords", nargs=2, type=int, metavar="X Y", help="Target X Y coordinates")
 @click.option("--id", "element_id", help="Target element automation ID")
-@click.option("--duration", type=float, default=0.0, help="Move duration (seconds)")
+@click.option("--duration", type=float, default=0.0, help="Move duration (seconds)", hidden=True)
 @click.option("--app", help="Application name")
 @click.option("--window-title", help="Window title pattern")
 @click.option("--hwnd", type=int, help="Window handle (HWND)")
@@ -392,7 +420,7 @@ def move(to_text, coords, element_id, duration, app, window_title, hwnd,
       naturo move --coords 500 300
     """
     if not coords:
-        _json_err("Specify --coords X Y", json_output)
+        _json_err("Specify --coords X Y", json_output, code="INVALID_INPUT")
         return
 
     backend = _get_backend()
@@ -412,7 +440,7 @@ def move(to_text, coords, element_id, duration, app, window_title, hwnd,
 
 @click.command()
 @click.argument("text", required=False)
-@click.option("--file", "file_path", type=click.Path(exists=True), help="File to paste from")
+@click.option("--file", "file_path", type=click.Path(), help="File to paste from")
 @click.option("--restore", is_flag=True, default=True, help="Restore clipboard after paste")
 @click.option("--app", help="Application name")
 @click.option("--window-title", help="Window title pattern")
@@ -430,12 +458,20 @@ def paste(text, file_path, restore, app, window_title, hwnd, json_output):
     backend = _get_backend()
 
     if file_path:
-        with open(file_path, "r", encoding="utf-8") as f:
-            content = f.read()
+        import os
+        if not os.path.exists(file_path):
+            _json_err(f"File not found: {file_path}", json_output, code="INVALID_INPUT")
+            return
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+        except Exception as exc:
+            _json_err(str(exc), json_output, code="FILE_ERROR")
+            return
     elif text:
         content = text
     else:
-        _json_err("Specify TEXT or --file", json_output)
+        _json_err("Specify TEXT or --file", json_output, code="INVALID_INPUT")
         return
 
     try:
