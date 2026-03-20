@@ -119,11 +119,11 @@
 |------|------------|------|--------|
 | 5B.1 | **MSAA / IAccessible** — 传统可访问性 API，覆盖 UIA 不支持的老应用 | Naturobot_Client_Engine | ✅ Done |
 | 5B.2 | **IAccessible2** — Firefox/Thunderbird/LibreOffice 等 IA2 应用支持 | Naturobot_Client_Engine | ✅ Done |
-| 5B.3 | **Java Access Bridge** — Java/Swing/AWT 应用自动化 | Naturobot_Client_Engine | 🔜 |
+| 5B.3 | **Java Access Bridge** — Java/Swing/AWT 应用自动化 | Naturobot_Client_Engine | ✅ Done |
 | 5B.4 | **SAP GUI Scripting** — SAP ERP 应用自动化 | Naturobot_Client_Engine | 🔜 |
 | 5B.5 | **硬件级键盘 (Phys32)** — 绕过 SendInput 检测的底层键盘输入，适用于游戏/安全软件 | Naturobot_Client_Engine | 🔜 |
 | 5B.6 | **MinHook 注入** — 函数钩子，拦截/修改 Windows API 调用 | Naturobot_Client_Engine | 🔜 |
-| 5B.7 | **UIA 缓存优化** — 批量获取属性、减少跨进程 COM 调用、CacheRequest 模式 | Naturobot_Client_Engine | 🔜 |
+| 5B.7 | **UIA 缓存优化** — 批量获取属性、减少跨进程 COM 调用、CacheRequest 模式 | Naturobot_Client_Engine | ✅ Done |
 | 5B.8 | **Chrome Native Host** — 通过 Chrome DevTools Protocol 直接操作浏览器 DOM | Naturobot_Client_Engine | 🔜 |
 
 ### 5C — Enterprise Features
