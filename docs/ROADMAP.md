@@ -81,8 +81,8 @@
 | 4.2 | **Screenshot → AI Vision** — 截图发给 AI 分析 UI 元素，返回结构化描述 | ✅ Done |
 | 4.3 | **Natural Language Element Finding** — `naturo find "the save button"` 用 AI 理解自然语言 | ✅ Done |
 | 4.4 | **Agent Command** — `naturo agent "打开记事本，输入Hello World，保存到桌面"` 多步骤自动执行 | ✅ Done |
-| 4.5 | **Action Recording** — 录制用户操作序列，生成可回放的脚本 | 🔜 |
-| 4.6 | **Action Replay** — 回放录制的操作序列，支持参数化 | 🔜 |
+| 4.5 | **Action Recording** — 录制用户操作序列，生成可回放的脚本 | ✅ Done |
+| 4.6 | **Action Replay** — 回放录制的操作序列，支持参数化 | ✅ Done |
 | 4.7 | **Agent-friendly Error Messages** — 错误信息包含恢复建议，帮助 AI 自我纠正 | ✅ Done |
 | 4.8 | **Multi AI Provider** — Anthropic / OpenAI / Ollama / 自定义，类似 Peekaboo Tachikoma | ✅ Done |
 

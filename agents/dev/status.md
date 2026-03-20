@@ -1,41 +1,43 @@
 # Dev Status
 
-**最后更新**: 2026-03-21 01:45 (Asia/Shanghai)
+**最后更新**: 2026-03-21 02:15 (Asia/Shanghai)
 
 ## 当前状态
-🚀 Phase 4.8 Multi AI Provider — OpenAI agent provider 完成
+🚀 Phase 4.5/4.6 Action Recording & Replay 完成 → Phase 4 全部完成
 
 ## 本轮工作
-- **Phase 4.8**: Multi AI Provider
-  - 新建 `naturo/providers/openai_agent.py` — OpenAI tool-use agent provider
-  - 完整的 function-calling 实现（18 个 tool 定义，对齐 Anthropic agent 的能力）
-  - 支持 GPT-4o 及任何 OpenAI 兼容 API（Ollama /v1、vLLM、LM Studio）
-  - 自定义 base_url 支持（`--base-url` 或 `OPENAI_BASE_URL` 环境变量）
-  - 重构 `_get_agent_provider` 为注册表模式，方便扩展新 provider
-  - 27 新测试：provider 构造、消息构建、响应解析、CLI 集成、错误处理
-  - commit 87e76a4
+- **Phase 4.5/4.6 实现**: Action Recording & Replay 引擎
+  - `naturo/recording.py`: ActionStep/Recording 数据模型，持久化（JSON），回放引擎
+  - `naturo/cli/record_cmd.py`: record start/stop/list/show/play/delete CLI 命令
+  - 交互命令自动录制：click/type/press/hotkey/scroll/drag/move 的 recording hooks
+  - 回放支持速度控制、dry-run、步骤回调
+  - 41 个新测试，全通过
+  - 1023 passed, 221 skipped
+  - commit f48dd0f
 
-## Phase 4 进度
+## Phase 4 进度 — ✅ 全部完成
 - 4.1 MCP Server ✅
 - 4.2 Vision (describe) ✅
 - 4.3 AI Find ✅
 - 4.4 Agent Command ✅
-- 4.5 Action Recording 🔜
-- 4.6 Action Replay 🔜
+- 4.5 Action Recording ✅ ← 本轮完成
+- 4.6 Action Replay ✅ ← 本轮完成（与 4.5 合并实现）
 - 4.7 Agent-friendly Errors ✅
-- 4.8 Multi AI Provider ✅ ← 刚完成（vision: anthropic/openai/ollama, agent: anthropic/openai）
+- 4.8 Multi AI Provider ✅
 
 ## Bug 清单状态
 - 全部 ✅ Verified，无 Open bug
 
 ## 技术评估
 - **代码健康度**: 良好
-- **测试覆盖**: 979 passed + 221 skipped
+- **测试覆盖**: 1023 passed + 221 skipped
 - **技术债**: 无重大技术债
-- **Provider 矩阵**:
-  - Vision: Anthropic ✅ | OpenAI ✅ | Ollama ✅
-  - Agent: Anthropic ✅ | OpenAI ✅ | Ollama (可通过 OpenAI 兼容 API)
+- **Phase 4 全部完成**: 8/8 deliverables done
 
 ## 下一步
-- Phase 4.5 Action Recording — 录制用户操作序列
-- Phase 4.6 Action Replay — 回放录制的操作序列
+- Phase 4 完成 → merge 到 main
+- Phase 4.5 Dialog & System Integration (ROADMAP 中的独立 Phase)
+  - 4.5.1 Dialog Detection
+  - 4.5.2 Dialog Interaction
+  - 4.5.4 Taskbar Interaction
+  - 4.5.5 System Tray
