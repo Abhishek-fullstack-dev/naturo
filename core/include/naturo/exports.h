@@ -273,6 +273,54 @@ NATURO_API int naturo_ia2_find_element(uintptr_t hwnd, const char* role,
  */
 NATURO_API int naturo_ia2_check_support(uintptr_t hwnd);
 
+/* ── Java Access Bridge (JAB) ─────────────────────── */
+
+/**
+ * @brief Inspect the Java Access Bridge element tree of a window.
+ *
+ * Provides element inspection for Java/Swing/AWT applications via
+ * the Windows Java Access Bridge API. Requires a JRE/JDK with
+ * accessibility enabled and WindowsAccessBridge-64.dll available.
+ *
+ * @param hwnd Window handle. Pass 0 for the foreground window.
+ * @param depth Maximum tree depth to traverse (clamped to 1-10).
+ * @param result_json Buffer to receive a JSON tree of JAB elements.
+ *        Each element: {"id":"jN","role":"...","name":"...","value":"...",
+ *        "x":N,"y":N,"width":N,"height":N,"states":"...","jab_role":"...",
+ *        "backend":"jab","children":[...]}
+ * @param buf_size Size of the buffer in bytes.
+ * @return Number of elements found (>= 0), -2 on JAB error,
+ *         -4 if buffer too small, -6 if JAB not available.
+ */
+NATURO_API int naturo_jab_get_element_tree(uintptr_t hwnd, int depth,
+                                            char* result_json, int buf_size);
+
+/**
+ * @brief Find a JAB element by role and/or name within a window.
+ *
+ * Uses BFS traversal of the Java accessibility tree. Role matching
+ * uses normalized role names (e.g., "Button", "Edit", "MenuItem").
+ *
+ * @param hwnd Window handle. Pass 0 for the foreground window.
+ * @param role Element role filter (case-insensitive). NULL for any role.
+ * @param name Element name filter (case-insensitive). NULL for any name.
+ * @param result_json Buffer to receive a JSON object of the found element.
+ * @param buf_size Size of the buffer in bytes.
+ * @return 0 if found, 1 if not found, -1 on invalid argument,
+ *         -2 on JAB error, -4 if buffer too small, -6 if JAB not available.
+ */
+NATURO_API int naturo_jab_find_element(uintptr_t hwnd, const char* role,
+                                        const char* name,
+                                        char* result_json, int buf_size);
+
+/**
+ * @brief Check if a window supports Java Access Bridge.
+ *
+ * @param hwnd Window handle. Pass 0 to check for any Java window.
+ * @return 1 if JAB supported, 0 if not supported.
+ */
+NATURO_API int naturo_jab_check_support(uintptr_t hwnd);
+
 #ifdef __cplusplus
 }
 #endif

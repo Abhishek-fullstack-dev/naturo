@@ -260,6 +260,21 @@ class NaturoCore:
         self._lib.naturo_ia2_check_support.restype = ctypes.c_int
         self._lib.naturo_ia2_check_support.argtypes = [ctypes.c_size_t]
 
+        # JAB (Java Access Bridge)
+        self._lib.naturo_jab_get_element_tree.restype = ctypes.c_int
+        self._lib.naturo_jab_get_element_tree.argtypes = [
+            ctypes.c_size_t, ctypes.c_int, ctypes.c_char_p, ctypes.c_int
+        ]
+
+        self._lib.naturo_jab_find_element.restype = ctypes.c_int
+        self._lib.naturo_jab_find_element.argtypes = [
+            ctypes.c_size_t, ctypes.c_char_p, ctypes.c_char_p,
+            ctypes.c_char_p, ctypes.c_int
+        ]
+
+        self._lib.naturo_jab_check_support.restype = ctypes.c_int
+        self._lib.naturo_jab_check_support.argtypes = [ctypes.c_size_t]
+
     def _load(self, lib_path: str | None) -> ctypes.CDLL:
         """Load the native library from the given path or search standard locations.
 
@@ -791,6 +806,94 @@ class NaturoCore:
             return None
         if rc < 0:
             raise NaturoCoreError(rc, "ia2_find_element")
+
+        data = json.loads(_decode_native(buf.value))
+        return _parse_element(data)
+
+    # ── JAB (Java Access Bridge) ─────────────────────
+
+    def jab_check_support(self, hwnd: int = 0) -> bool:
+        """Check if a window supports Java Access Bridge.
+
+        Args:
+            hwnd: Window handle. 0 to check for any Java window.
+
+        Returns:
+            True if JAB is available for the window.
+        """
+        rc = self._lib.naturo_jab_check_support(hwnd)
+        return rc == 1
+
+    def jab_get_element_tree(self, hwnd: int = 0, depth: int = 3) -> Optional[ElementInfo]:
+        """Inspect the Java Access Bridge element tree of a window.
+
+        Provides element inspection for Java/Swing/AWT applications.
+        Requires a JRE/JDK with accessibility enabled and
+        WindowsAccessBridge-64.dll on the system PATH.
+
+        Args:
+            hwnd: Window handle. 0 for the foreground window.
+            depth: Maximum tree depth (1-10). Default 3.
+
+        Returns:
+            Root ElementInfo, or None if no Java window or JAB unavailable.
+
+        Raises:
+            NaturoCoreError: On error (invalid args, buffer too small).
+        """
+        buf_size = 2 << 20  # 2 MB
+        buf = ctypes.create_string_buffer(buf_size)
+
+        count = self._lib.naturo_jab_get_element_tree(hwnd, depth, buf, buf_size)
+
+        if count == -4:
+            buf_size = 8 << 20  # 8 MB retry
+            buf = ctypes.create_string_buffer(buf_size)
+            count = self._lib.naturo_jab_get_element_tree(hwnd, depth, buf, buf_size)
+
+        if count == -2:
+            return None
+        if count == -6:
+            return None  # JAB not available
+        if count < 0:
+            raise NaturoCoreError(count, "jab_get_element_tree")
+
+        data = json.loads(_decode_native(buf.value))
+        return _parse_element(data)
+
+    def jab_find_element(
+        self, hwnd: int = 0, role: Optional[str] = None, name: Optional[str] = None
+    ) -> Optional[ElementInfo]:
+        """Find a JAB element by role and/or name within a window.
+
+        Uses BFS traversal of the Java accessibility tree. Role matching
+        uses normalized role names (e.g., "Button", "Edit", "MenuItem").
+
+        Args:
+            hwnd: Window handle. 0 for the foreground window.
+            role: Element role filter (case-insensitive). None for any.
+            name: Element name filter (case-insensitive). None for any.
+
+        Returns:
+            ElementInfo if found, None if not found or JAB unavailable.
+
+        Raises:
+            NaturoCoreError: On error (invalid args, COM failure, etc.).
+        """
+        buf_size = 4096
+        buf = ctypes.create_string_buffer(buf_size)
+
+        role_bytes = role.encode("utf-8") if role else None
+        name_bytes = name.encode("utf-8") if name else None
+
+        rc = self._lib.naturo_jab_find_element(hwnd, role_bytes, name_bytes, buf, buf_size)
+
+        if rc == 1:
+            return None
+        if rc == -2 or rc == -6:
+            return None
+        if rc < 0:
+            raise NaturoCoreError(rc, "jab_find_element")
 
         data = json.loads(_decode_native(buf.value))
         return _parse_element(data)

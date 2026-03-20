@@ -153,7 +153,7 @@ class WindowsBackend(Backend):
         return {
             "platform": "windows",
             "input_modes": ["normal", "hardware", "hook"],
-            "accessibility": ["uia", "msaa", "ia2"],
+            "accessibility": ["uia", "msaa", "ia2", "jab"],
             "extensions": ["excel", "java", "sap", "registry", "service"],
         }
 
@@ -772,7 +772,9 @@ class WindowsBackend(Backend):
         core = self._ensure_core()
         handle = self._resolve_hwnd(app=app, window_title=window_title, hwnd=hwnd)
 
-        if backend == "ia2":
+        if backend == "jab":
+            result = core.jab_get_element_tree(hwnd=handle, depth=depth)
+        elif backend == "ia2":
             result = core.ia2_get_element_tree(hwnd=handle, depth=depth)
         elif backend == "msaa":
             result = core.msaa_get_element_tree(hwnd=handle, depth=depth)
@@ -784,9 +786,14 @@ class WindowsBackend(Backend):
                 if ia2_result is not None:
                     result = ia2_result
                 else:
-                    msaa_result = core.msaa_get_element_tree(hwnd=handle, depth=depth)
-                    if msaa_result is not None:
-                        result = msaa_result
+                    # Try JAB for Java applications
+                    jab_result = core.jab_get_element_tree(hwnd=handle, depth=depth)
+                    if jab_result is not None:
+                        result = jab_result
+                    else:
+                        msaa_result = core.msaa_get_element_tree(hwnd=handle, depth=depth)
+                        if msaa_result is not None:
+                            result = msaa_result
         else:
             result = core.get_element_tree(hwnd=handle, depth=depth)
 

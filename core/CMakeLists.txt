@@ -13,6 +13,7 @@ add_library(naturo_core SHARED
     src/input.cpp
     src/msaa.cpp
     src/ia2.cpp
+    src/jab.cpp
 )
 
 target_include_directories(naturo_core PUBLIC
