@@ -18,6 +18,22 @@ import click
 from naturo.cli.error_helpers import json_error
 
 
+def _validate_port(port: int, as_json: bool) -> None:
+    """Validate port is in 1-65535 range, exit with error if not.
+
+    Args:
+        port: Port number to validate.
+        as_json: Whether to emit JSON error output.
+    """
+    if port < 1 or port > 65535:
+        if as_json:
+            click.echo(json_error("INVALID_INPUT",
+                                  f"--port must be between 1 and 65535, got {port}"))
+        else:
+            click.echo(f"Error: --port must be between 1 and 65535, got {port}", err=True)
+        sys.exit(1)
+
+
 @click.group("chrome")
 def chrome_group() -> None:
     """Chrome browser automation via DevTools Protocol (CDP).
@@ -43,6 +59,7 @@ def _get_client(
 @click.option("--json", "as_json", is_flag=True, help="JSON output.")
 def chrome_tabs(host: str, port: int, as_json: bool) -> None:
     """List open Chrome tabs."""
+    _validate_port(port, as_json)
     from naturo.cdp import CDPConnectionError, CDPError
 
     try:
@@ -87,6 +104,7 @@ def chrome_tabs(host: str, port: int, as_json: bool) -> None:
 @click.option("--json", "as_json", is_flag=True, help="JSON output.")
 def chrome_version(host: str, port: int, as_json: bool) -> None:
     """Show Chrome browser version info."""
+    _validate_port(port, as_json)
     from naturo.cdp import CDPConnectionError, CDPError
 
     try:
@@ -130,6 +148,7 @@ def chrome_eval(
 
     Example: naturo chrome eval "document.title"
     """
+    _validate_port(port, as_json)
     from naturo.cdp import CDPConnectionError, CDPError
 
     try:
@@ -185,7 +204,16 @@ def chrome_screenshot(
 
     Uses Chrome's own rendering engine — pixel-perfect browser screenshots.
     """
+    _validate_port(port, as_json)
     from naturo.cdp import CDPConnectionError, CDPError
+
+    if quality < 1 or quality > 100:
+        if as_json:
+            click.echo(json_error("INVALID_INPUT",
+                                  f"--quality must be between 1 and 100, got {quality}"))
+        else:
+            click.echo(f"Error: --quality must be between 1 and 100, got {quality}", err=True)
+        sys.exit(1)
 
     try:
         client = _get_client(host=host, port=port)
@@ -244,6 +272,7 @@ def chrome_navigate(
 
     Example: naturo chrome navigate "https://example.com"
     """
+    _validate_port(port, as_json)
     from naturo.cdp import CDPConnectionError, CDPError
 
     try:
@@ -295,6 +324,7 @@ def chrome_click(
 
     Example: naturo chrome click "button#submit"
     """
+    _validate_port(port, as_json)
     from naturo.cdp import CDPConnectionError, CDPError
 
     try:
@@ -347,6 +377,7 @@ def chrome_type_text(
 
     Example: naturo chrome type "input#search" "hello world"
     """
+    _validate_port(port, as_json)
     from naturo.cdp import CDPConnectionError, CDPError
 
     try:
@@ -393,6 +424,7 @@ def chrome_title(
     as_json: bool,
 ) -> None:
     """Get the current page title."""
+    _validate_port(port, as_json)
     from naturo.cdp import CDPConnectionError, CDPError
 
     try:
@@ -440,6 +472,7 @@ def chrome_html(
     as_json: bool,
 ) -> None:
     """Get page HTML or element HTML."""
+    _validate_port(port, as_json)
     from naturo.cdp import CDPConnectionError, CDPError
 
     try:

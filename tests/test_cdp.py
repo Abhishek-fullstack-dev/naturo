@@ -642,3 +642,91 @@ class TestChromeCLI:
         assert "tabs" in result.output
         assert "eval" in result.output
         assert "screenshot" in result.output
+
+    def test_chrome_port_validation_zero(self):
+        """BUG-057: --port 0 should be rejected."""
+        from click.testing import CliRunner
+        from naturo.cli import main
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["chrome", "tabs", "--port", "0", "--json"])
+        assert result.exit_code != 0
+        data = json.loads(result.output)
+        assert data["success"] is False
+        assert data["error"]["code"] == "INVALID_INPUT"
+        assert "1 and 65535" in data["error"]["message"]
+
+    def test_chrome_port_validation_negative(self):
+        """BUG-057: --port -1 should be rejected."""
+        from click.testing import CliRunner
+        from naturo.cli import main
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["chrome", "version", "--port", "-1", "--json"])
+        assert result.exit_code != 0
+        data = json.loads(result.output)
+        assert data["success"] is False
+        assert data["error"]["code"] == "INVALID_INPUT"
+
+    def test_chrome_port_validation_too_high(self):
+        """BUG-057: --port 99999 should be rejected."""
+        from click.testing import CliRunner
+        from naturo.cli import main
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["chrome", "tabs", "--port", "99999", "--json"])
+        assert result.exit_code != 0
+        data = json.loads(result.output)
+        assert data["success"] is False
+        assert "65535" in data["error"]["message"]
+
+    def test_chrome_port_validation_text_mode(self):
+        """BUG-057: --port -1 in text mode exits with error."""
+        from click.testing import CliRunner
+        from naturo.cli import main
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["chrome", "tabs", "--port", "-1"])
+        assert result.exit_code != 0
+
+    def test_chrome_screenshot_quality_validation_zero(self):
+        """BUG-056: --quality 0 should be rejected."""
+        from click.testing import CliRunner
+        from naturo.cli import main
+
+        runner = CliRunner()
+        result = runner.invoke(main, [
+            "chrome", "screenshot", "--quality", "0", "--json",
+        ])
+        assert result.exit_code != 0
+        data = json.loads(result.output)
+        assert data["success"] is False
+        assert data["error"]["code"] == "INVALID_INPUT"
+        assert "1 and 100" in data["error"]["message"]
+
+    def test_chrome_screenshot_quality_validation_negative(self):
+        """BUG-056: --quality -1 should be rejected."""
+        from click.testing import CliRunner
+        from naturo.cli import main
+
+        runner = CliRunner()
+        result = runner.invoke(main, [
+            "chrome", "screenshot", "--quality", "-1", "--json",
+        ])
+        assert result.exit_code != 0
+        data = json.loads(result.output)
+        assert data["success"] is False
+
+    def test_chrome_screenshot_quality_validation_over_100(self):
+        """BUG-056: --quality 999 should be rejected."""
+        from click.testing import CliRunner
+        from naturo.cli import main
+
+        runner = CliRunner()
+        result = runner.invoke(main, [
+            "chrome", "screenshot", "--quality", "999", "--json",
+        ])
+        assert result.exit_code != 0
+        data = json.loads(result.output)
+        assert data["success"] is False
+        assert "1 and 100" in data["error"]["message"]
