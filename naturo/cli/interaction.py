@@ -2,8 +2,11 @@
 import json
 import platform
 import sys
+import time as _time
 
 import click
+
+from naturo.cli.record_cmd import record_action as _record_action
 
 # ── Shared helper ────────────────────────────────────────────────────────────
 
@@ -112,6 +115,11 @@ def click_cmd(query, on_text, element_id, coords, double, right, app, pid,
         _json_err(str(exc), json_output)
         return
 
+    # Record the action
+    _record_action("click", {
+        "x": x, "y": y, "button": button, "double_click": double,
+    })
+
     action = "double-clicked" if double else "clicked"
     loc = f"({x}, {y})" if coords else (target_id or "element")
     _json_ok({"action": action, "target": str(loc), "button": button}, json_output)
@@ -192,6 +200,9 @@ def type_cmd(text, delay, profile, wpm, press_return, tab_count, escape,
         _json_err(str(exc), json_output)
         return
 
+    # Record the action
+    _record_action("type", {"text": text, "wpm": wpm})
+
     _json_ok({"action": "typed", "text": text, "length": len(text)}, json_output)
 
 
@@ -237,6 +248,9 @@ def press(key, count, delay, app, window_title, hwnd, input_mode, json_output):
     except Exception as exc:
         _json_err(str(exc), json_output)
         return
+
+    # Record the action
+    _record_action("press", {"key": key, "count": count})
 
     _json_ok({"action": "pressed", "key": key, "count": count}, json_output)
 
@@ -291,6 +305,9 @@ def hotkey(keys, keys_option, hold_duration, app, window_title, hwnd,
         _json_err(str(exc), json_output)
         return
 
+    # Record the action
+    _record_action("hotkey", {"keys": key_list, "hold_duration": hold_duration or 0.05})
+
     combo = "+".join(key_list)
     _json_ok({"action": "hotkey", "combo": combo}, json_output)
 
@@ -333,6 +350,9 @@ def scroll(direction, amount, on_text, smooth, delay, app, window_title,
     except Exception as exc:
         _json_err(str(exc), json_output)
         return
+
+    # Record the action
+    _record_action("scroll", {"direction": direction, "amount": amount})
 
     _json_ok({"action": "scrolled", "direction": direction, "amount": amount}, json_output)
 
@@ -392,6 +412,12 @@ def drag(from_text, from_coords, to_text, to_coords, duration, steps,
         _json_err(str(exc), json_output)
         return
 
+    # Record the action
+    _record_action("drag", {
+        "from_x": fx, "from_y": fy, "to_x": tx, "to_y": ty,
+        "steps": steps, "duration": duration,
+    })
+
     _json_ok({
         "action": "dragged",
         "from": [fx, fy],
@@ -431,6 +457,9 @@ def move(to_text, coords, element_id, duration, app, window_title, hwnd,
     except Exception as exc:
         _json_err(str(exc), json_output)
         return
+
+    # Record the action
+    _record_action("move", {"x": x, "y": y})
 
     _json_ok({"action": "moved", "x": x, "y": y}, json_output)
 

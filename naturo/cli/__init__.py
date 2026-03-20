@@ -32,6 +32,7 @@ from naturo.cli.app_cmd import app_launch, app_quit, app_relaunch, app_list, app
 from naturo.cli.window_cmd import window
 from naturo.cli.diff_cmd import diff
 from naturo.cli.ai import mcp, describe, agent
+from naturo.cli.record_cmd import record
 
 
 @click.group()
@@ -95,6 +96,7 @@ main.add_command(diff)
 main.add_command(agent)
 main.add_command(describe)
 main.add_command(mcp)
+main.add_command(record)
 
 # Replace stub app subcommands with working implementations
 app.add_command(app_launch, "launch")
