@@ -142,6 +142,21 @@ _RECOVERY_HINTS: dict[str, tuple[str, bool]] = {
         "Use 'naturo list windows' to verify the window still exists.",
         True,
     ),
+    "REGISTRY_NOT_FOUND": (
+        "Registry key or value not found. Use 'naturo registry list <path>' to "
+        "browse available keys and values.",
+        False,
+    ),
+    "REGISTRY_ERROR": (
+        "Registry operation failed. Check the key path format (e.g., "
+        "HKCU\\Software\\MyApp) and ensure you have the required permissions.",
+        True,
+    ),
+    "REGISTRY_HAS_SUBKEYS": (
+        "Cannot delete a key that has subkeys. Try running the command again "
+        "with --recursive to delete the key and all its subkeys.",
+        False,
+    ),
 }
 
 

@@ -144,17 +144,35 @@ def registry():
     """Windows Registry operations (Windows-specific).
 
     Read, write, and manage Windows Registry keys and values.
+    Supports HKCU, HKLM, HKCR, HKU, HKCC hives with both short and long names.
     """
     pass
 
 
 @registry.command(name="get")
 @click.argument("key_path")
-@click.option("--value", "-v", "value_name", help="Value name (default: (Default))")
+@click.option("--value", "-v", "value_name", default=None, help="Value name (default: (Default))")
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 def reg_get(key_path, value_name, json_output):
-    """Read a registry value."""
-    click.echo("Not implemented yet — coming in Phase 5")
+    """Read a registry value.
+
+    KEY_PATH is the full registry path, e.g. HKCU\\Software\\MyApp.
+    """
+    import json as json_module
+    import sys
+    from naturo.cli.error_helpers import emit_error, emit_exception_error
+
+    try:
+        from naturo.registry import reg_get as _reg_get
+        result = _reg_get(key_path, value_name)
+    except Exception as exc:
+        emit_exception_error(exc, json_output, fallback_code="REGISTRY_ERROR")
+        return
+
+    if json_output:
+        click.echo(json_module.dumps({"success": True, **result}))
+    else:
+        click.echo(f"{result['name']}: {result['data']} ({result['type_name']})")
 
 
 @registry.command(name="set")
@@ -167,26 +185,144 @@ def reg_get(key_path, value_name, json_output):
               default="REG_SZ", help="Registry value type")
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 def reg_set(key_path, value_name, data, reg_type, json_output):
-    """Write a registry value."""
-    click.echo("Not implemented yet — coming in Phase 5")
+    """Write a registry value. Creates the key if it does not exist.
+
+    KEY_PATH is the full registry path, e.g. HKCU\\Software\\MyApp.
+    """
+    import json as json_module
+    import sys
+    from naturo.cli.error_helpers import emit_error, emit_exception_error
+
+    try:
+        from naturo.registry import reg_set as _reg_set
+        result = _reg_set(key_path, value_name, data, reg_type)
+    except Exception as exc:
+        emit_exception_error(exc, json_output, fallback_code="REGISTRY_ERROR")
+        return
+
+    if json_output:
+        click.echo(json_module.dumps({"success": True, **result}))
+    else:
+        click.echo(f"Set {result['name']} = {result['data']} ({result['type_name']}) in {result['key']}")
 
 
 @registry.command(name="list")
 @click.argument("key_path")
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 def reg_list(key_path, json_output):
-    """List registry subkeys and values."""
-    click.echo("Not implemented yet — coming in Phase 5")
+    """List registry subkeys and values.
+
+    KEY_PATH is the full registry path, e.g. HKCU\\Software.
+    """
+    import json as json_module
+    import sys
+    from naturo.cli.error_helpers import emit_error, emit_exception_error
+
+    try:
+        from naturo.registry import reg_list as _reg_list
+        result = _reg_list(key_path)
+    except Exception as exc:
+        emit_exception_error(exc, json_output, fallback_code="REGISTRY_ERROR")
+        return
+
+    if json_output:
+        click.echo(json_module.dumps({"success": True, **result}))
+    else:
+        if result["subkeys"]:
+            click.echo("Subkeys:")
+            for sk in result["subkeys"]:
+                click.echo(f"  {sk}")
+        if result["values"]:
+            click.echo("Values:")
+            for v in result["values"]:
+                click.echo(f"  {v['name']}: {v['data']} ({v['type_name']})")
+        if not result["subkeys"] and not result["values"]:
+            click.echo(f"(empty key: {key_path})")
 
 
 @registry.command()
 @click.argument("key_path")
-@click.option("--value", "-v", "value_name", help="Delete specific value (omit to delete key)")
+@click.option("--value", "-v", "value_name", default=None, help="Delete specific value (omit to delete key)")
 @click.option("--recursive", "-r", is_flag=True, help="Delete key recursively")
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 def delete(key_path, value_name, recursive, json_output):
-    """Delete a registry key or value."""
-    click.echo("Not implemented yet — coming in Phase 5")
+    """Delete a registry key or value.
+
+    KEY_PATH is the full registry path. Use --value to delete a specific value,
+    or omit to delete the entire key (requires --recursive if subkeys exist).
+    """
+    import json as json_module
+    import sys
+    from naturo.cli.error_helpers import emit_error, emit_exception_error
+
+    try:
+        from naturo.registry import reg_delete as _reg_delete
+        result = _reg_delete(key_path, value_name, recursive)
+    except Exception as exc:
+        emit_exception_error(exc, json_output, fallback_code="REGISTRY_ERROR")
+        return
+
+    if json_output:
+        click.echo(json_module.dumps({"success": True, **result}))
+    else:
+        if result["deleted"] == "value":
+            click.echo(f"Deleted value '{result['value']}' from {result['key']}")
+        else:
+            click.echo(f"Deleted key {result['key']}")
+
+
+@registry.command()
+@click.argument("key_path")
+@click.argument("query")
+@click.option("--depth", type=int, default=5, help="Maximum search depth (default: 5)")
+@click.option("--max-results", type=int, default=50, help="Maximum results (default: 50)")
+@click.option("--keys/--no-keys", default=True, help="Search key names")
+@click.option("--values/--no-values", default=True, help="Search value names")
+@click.option("--data/--no-data", default=False, help="Search value data")
+@click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
+def search(key_path, query, depth, max_results, keys, values, data, json_output):
+    """Search registry keys, value names, or data.
+
+    KEY_PATH is the starting path, QUERY is the search string (case-insensitive).
+    """
+    import json as json_module
+    import sys
+    from naturo.cli.error_helpers import emit_error, emit_exception_error
+
+    if depth < 1 or depth > 20:
+        emit_error("INVALID_INPUT", f"--depth must be between 1 and 20, got {depth}", json_output)
+        return
+    if max_results < 1:
+        emit_error("INVALID_INPUT", f"--max-results must be >= 1, got {max_results}", json_output)
+        return
+    if not query.strip():
+        emit_error("INVALID_INPUT", "Search query cannot be empty", json_output)
+        return
+
+    try:
+        from naturo.registry import reg_search as _reg_search
+        result = _reg_search(
+            key_path, query,
+            max_depth=depth, max_results=max_results,
+            search_keys=keys, search_values=values, search_data=data,
+        )
+    except Exception as exc:
+        emit_exception_error(exc, json_output, fallback_code="REGISTRY_ERROR")
+        return
+
+    if json_output:
+        click.echo(json_module.dumps({"success": True, **result}))
+    else:
+        if not result["results"]:
+            click.echo(f"No results for '{query}' in {key_path}")
+        else:
+            for r in result["results"]:
+                if r["type"] == "key":
+                    click.echo(f"[KEY] {r['key']}")
+                else:
+                    click.echo(f"[VAL] {r['key']}\\{r['name']} = {r['data']} ({r['value_type']})")
+            if result["truncated"]:
+                click.echo(f"(truncated at {max_results} results)")
 
 
 # ── service ─────────────────────────────────────

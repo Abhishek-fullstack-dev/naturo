@@ -49,6 +49,11 @@ class ErrorCode:
     AI_PROVIDER_UNAVAILABLE = "AI_PROVIDER_UNAVAILABLE"
     AI_ANALYSIS_FAILED = "AI_ANALYSIS_FAILED"
 
+    # Registry errors
+    REGISTRY_NOT_FOUND = "REGISTRY_NOT_FOUND"
+    REGISTRY_ERROR = "REGISTRY_ERROR"
+    REGISTRY_HAS_SUBKEYS = "REGISTRY_HAS_SUBKEYS"
+
 
 class ErrorCategory:
     """Error category strings for grouping related errors."""

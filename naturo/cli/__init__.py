@@ -37,6 +37,8 @@ from naturo.cli.window_cmd import window
 from naturo.cli.diff_cmd import diff
 from naturo.cli.ai import mcp, describe, agent
 from naturo.cli.record_cmd import record
+from naturo.cli.chrome_cmd import chrome_group
+from naturo.cli.extensions import registry
 
 
 @click.group()
@@ -105,6 +107,12 @@ main.add_command(agent)
 main.add_command(describe)
 main.add_command(mcp)
 main.add_command(record)
+
+# ── Phase 5B: Chrome CDP ────────────────────────
+main.add_command(chrome_group, "chrome")
+
+# ── Phase 5C: Enterprise Features ──────────────
+main.add_command(registry)
 
 # Replace stub app subcommands with working implementations
 app.add_command(app_launch, "launch")
