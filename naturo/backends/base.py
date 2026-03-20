@@ -368,6 +368,66 @@ class Backend(ABC):
         """
         raise NotImplementedError(f"tray_click not supported on {self.platform_name}")
 
+    # === Virtual Desktop ===
+    def virtual_desktop_list(self) -> list[dict]:
+        """List all virtual desktops.
+
+        Returns:
+            List of dicts with keys: index, name, is_current, id.
+        """
+        raise NotImplementedError(f"virtual_desktop_list not supported on {self.platform_name}")
+
+    def virtual_desktop_switch(self, index: int) -> dict:
+        """Switch to a virtual desktop by index.
+
+        Args:
+            index: Zero-based desktop index.
+
+        Returns:
+            Dict with switched desktop info.
+        """
+        raise NotImplementedError(f"virtual_desktop_switch not supported on {self.platform_name}")
+
+    def virtual_desktop_create(self, name: Optional[str] = None) -> dict:
+        """Create a new virtual desktop.
+
+        Args:
+            name: Optional name for the new desktop.
+
+        Returns:
+            Dict with new desktop info.
+        """
+        raise NotImplementedError(f"virtual_desktop_create not supported on {self.platform_name}")
+
+    def virtual_desktop_close(self, index: Optional[int] = None) -> dict:
+        """Close a virtual desktop.
+
+        Args:
+            index: Zero-based desktop index. Closes current if None.
+
+        Returns:
+            Dict with closed desktop info.
+        """
+        raise NotImplementedError(f"virtual_desktop_close not supported on {self.platform_name}")
+
+    def virtual_desktop_move_window(
+        self,
+        desktop_index: int,
+        app: Optional[str] = None,
+        hwnd: Optional[int] = None,
+    ) -> dict:
+        """Move a window to a different virtual desktop.
+
+        Args:
+            desktop_index: Target desktop index.
+            app: Application name (partial match).
+            hwnd: Window handle.
+
+        Returns:
+            Dict with result info.
+        """
+        raise NotImplementedError(f"virtual_desktop_move_window not supported on {self.platform_name}")
+
 
 def get_backend() -> Backend:
     """Auto-detect platform and return the appropriate backend."""

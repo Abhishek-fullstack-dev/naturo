@@ -398,6 +398,94 @@ class TestMCPListMonitors:
 
 # ── CLI consistency ─────────────────────────────
 
+# ── DPI coordinate conversion ────────────────────
+
+@pytest.mark.skipif(platform.system() != "Windows", reason="Windows-only")
+class TestDPIConversion:
+    """Test DPI coordinate conversion utilities."""
+
+    def test_physical_to_logical_100pct(self):
+        from naturo.backends.windows import WindowsBackend
+        backend = WindowsBackend()
+        # At 100% (scale=1.0), coordinates are unchanged
+        lx, ly = backend.physical_to_logical(100, 200, screen_index=0)
+        # Just verify it returns reasonable values (scale depends on actual system)
+        assert isinstance(lx, int)
+        assert isinstance(ly, int)
+
+    def test_logical_to_physical_100pct(self):
+        from naturo.backends.windows import WindowsBackend
+        backend = WindowsBackend()
+        px, py = backend.logical_to_physical(100, 200, screen_index=0)
+        assert isinstance(px, int)
+        assert isinstance(py, int)
+
+    def test_dpi_scale_returns_positive(self):
+        from naturo.backends.windows import WindowsBackend
+        backend = WindowsBackend()
+        scale = backend.get_dpi_scale(0)
+        assert scale > 0
+
+
+class TestDPIConversionMocked:
+    """Test DPI conversion with mocked scale factors."""
+
+    def test_150pct_physical_to_logical(self):
+        """At 150% scale (DPI=144), 300px → 200 logical pixels."""
+        from naturo.backends.windows import WindowsBackend
+        backend = WindowsBackend.__new__(WindowsBackend)
+        backend._core = None
+        backend._initialized = False
+        backend._dpi_aware = True
+
+        with patch.object(backend, "get_dpi_scale", return_value=1.5):
+            lx, ly = backend.physical_to_logical(300, 600)
+            assert lx == 200
+            assert ly == 400
+
+    def test_200pct_logical_to_physical(self):
+        """At 200% scale (DPI=192), 100 logical → 200 physical pixels."""
+        from naturo.backends.windows import WindowsBackend
+        backend = WindowsBackend.__new__(WindowsBackend)
+        backend._core = None
+        backend._initialized = False
+        backend._dpi_aware = True
+
+        with patch.object(backend, "get_dpi_scale", return_value=2.0):
+            px, py = backend.logical_to_physical(100, 200)
+            assert px == 200
+            assert py == 400
+
+    def test_100pct_no_change(self):
+        """At 100% scale, coordinates unchanged."""
+        from naturo.backends.windows import WindowsBackend
+        backend = WindowsBackend.__new__(WindowsBackend)
+        backend._core = None
+        backend._initialized = False
+        backend._dpi_aware = True
+
+        with patch.object(backend, "get_dpi_scale", return_value=1.0):
+            lx, ly = backend.physical_to_logical(500, 300)
+            assert lx == 500
+            assert ly == 300
+
+    def test_roundtrip(self):
+        """physical → logical → physical should be consistent."""
+        from naturo.backends.windows import WindowsBackend
+        backend = WindowsBackend.__new__(WindowsBackend)
+        backend._core = None
+        backend._initialized = False
+        backend._dpi_aware = True
+
+        with patch.object(backend, "get_dpi_scale", return_value=1.5):
+            lx, ly = backend.physical_to_logical(300, 450)
+            px, py = backend.logical_to_physical(lx, ly)
+            assert px == 300
+            assert py == 450
+
+
+# ── CLI consistency ─────────────────────────────
+
 class TestScreensVisibility:
     """Ensure `list screens` is no longer hidden."""
 
