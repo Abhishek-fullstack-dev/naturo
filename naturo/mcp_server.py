@@ -1431,6 +1431,81 @@ def create_server(host: str = "localhost", port: int = 3100) -> FastMCP:
 
         return response
 
+    # ── Taskbar (Phase 4.5.4) ─────────────────────────
+
+    @server.tool()
+    @_safe_tool
+    def taskbar_list() -> dict:
+        """List items on the Windows taskbar.
+
+        Returns running applications and pinned shortcuts visible on the
+        taskbar. Use this to discover what apps are available before clicking.
+
+        Returns:
+            Dict with success, items list (name, hwnd, is_active, is_pinned),
+            and count.
+        """
+        items = backend.taskbar_list()
+        return {"success": True, "items": items, "count": len(items)}
+
+    @server.tool()
+    @_safe_tool
+    def taskbar_click(name: str) -> dict:
+        """Click a taskbar item to activate its window.
+
+        Finds a taskbar button matching the name (case-insensitive partial
+        match) and clicks it to bring the application to the foreground.
+
+        Args:
+            name: Application name or window title (partial match).
+
+        Returns:
+            Dict with success, name of clicked item, and click coordinates.
+        """
+        result = backend.taskbar_click(name=name)
+        return {"success": True, **result}
+
+    # ── System Tray (Phase 4.5.5) ─────────────────────
+
+    @server.tool()
+    @_safe_tool
+    def tray_list() -> dict:
+        """List system tray (notification area) icons.
+
+        Returns icons in the Windows notification area including both visible
+        icons and those in the overflow panel. Use this to discover available
+        tray icons before interacting with them.
+
+        Returns:
+            Dict with success, icons list (name, tooltip, is_visible), and count.
+        """
+        icons = backend.tray_list()
+        return {"success": True, "icons": icons, "count": len(icons)}
+
+    @server.tool()
+    @_safe_tool
+    def tray_click(
+        name: str,
+        button: str = "left",
+        double_click: bool = False,
+    ) -> dict:
+        """Click a system tray icon.
+
+        Finds a tray icon matching the name (case-insensitive partial match)
+        and clicks it. Use button='right' for context menus, double_click=True
+        to open the application.
+
+        Args:
+            name: Tray icon tooltip or name (partial match).
+            button: Mouse button — 'left' or 'right'.
+            double_click: Whether to double-click the icon.
+
+        Returns:
+            Dict with success, icon name, tooltip, button used, and coordinates.
+        """
+        result = backend.tray_click(name=name, button=button, double=double_click)
+        return {"success": True, **result}
+
     return server
 
 

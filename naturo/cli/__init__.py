@@ -26,6 +26,9 @@ from naturo.cli.interaction import (
     click_cmd, type_cmd, press, hotkey, scroll, drag, move, paste,
 )
 from naturo.cli.system import app, clipboard
+from naturo.cli.dialog_cmd import dialog
+from naturo.cli.taskbar_cmd import taskbar
+from naturo.cli.tray_cmd import tray
 from naturo.cli.snapshot import snapshot
 from naturo.cli.wait_cmd import wait
 from naturo.cli.app_cmd import app_launch, app_quit, app_relaunch, app_list, app_find, app_hide, app_unhide, app_switch
@@ -81,6 +84,9 @@ main.add_command(paste)
 # ── System ──────────────────────────────────────
 main.add_command(app)
 main.add_command(clipboard)
+main.add_command(dialog)
+main.add_command(taskbar)
+main.add_command(tray)
 
 # ── Window Management ───────────────────────────
 main.add_command(window)

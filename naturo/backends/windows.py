@@ -939,3 +939,598 @@ class WindowsBackend(Backend):
         """
         import subprocess
         subprocess.run(["start", uri], shell=True)
+
+    # === Phase 4.5: Dialog Detection & Interaction ===
+
+    def detect_dialogs(
+        self,
+        app: Optional[str] = None,
+        hwnd: Optional[int] = None,
+    ) -> list:
+        """Detect active dialog windows using Win32 API + UIA.
+
+        Identifies standard Win32 dialogs (#32770 class), modal windows,
+        and common dialog types (file pickers, message boxes, etc.).
+
+        Args:
+            app: Filter by owner application name (partial match, case-insensitive).
+            hwnd: Filter by specific dialog window handle.
+
+        Returns:
+            List of DialogInfo objects for detected dialogs.
+        """
+        self._ensure_win32()
+        import ctypes
+        from ctypes import wintypes
+        from naturo.dialog import (
+            DialogInfo, DialogButton, DialogType, classify_dialog,
+            _ACCEPT_BUTTONS, _DISMISS_BUTTONS,
+        )
+
+        user32 = ctypes.windll.user32
+        kernel32 = ctypes.windll.kernel32
+
+        # Get all visible top-level windows
+        all_windows = self.list_windows()
+
+        # If specific hwnd requested, filter
+        if hwnd:
+            all_windows = [w for w in all_windows if w.handle == hwnd]
+
+        # If app filter, narrow down
+        if app:
+            app_lower = app.lower()
+            all_windows = [
+                w for w in all_windows
+                if app_lower in w.title.lower() or app_lower in w.process_name.lower()
+            ]
+
+        dialogs: list[DialogInfo] = []
+
+        for win in all_windows:
+            # Get window class name
+            class_buf = ctypes.create_unicode_buffer(256)
+            user32.GetClassNameW(win.handle, class_buf, 256)
+            class_name = class_buf.value
+
+            # Check if this is a dialog window
+            is_dialog = False
+
+            # Method 1: Standard dialog class name
+            if class_name == "#32770":
+                is_dialog = True
+
+            # Method 2: Check window style for DS_MODALFRAME (dialog style)
+            GWL_STYLE = -16
+            WS_DLGFRAME = 0x00400000
+            GWL_EXSTYLE = -20
+            WS_EX_DLGMODALFRAME = 0x00000001
+
+            style = user32.GetWindowLongW(win.handle, GWL_STYLE)
+            ex_style = user32.GetWindowLongW(win.handle, GWL_EXSTYLE)
+
+            if ex_style & WS_EX_DLGMODALFRAME:
+                is_dialog = True
+
+            # Method 3: Check if window has an owner (modal dialogs typically do)
+            owner_hwnd = user32.GetWindow(win.handle, 4)  # GW_OWNER = 4
+            if owner_hwnd and class_name == "#32770":
+                is_dialog = True
+
+            if not is_dialog:
+                continue
+
+            # Inspect the dialog's UI tree to find buttons, text, inputs
+            try:
+                tree = self.get_element_tree(hwnd=win.handle, depth=4)
+            except Exception:
+                tree = None
+
+            buttons: list[DialogButton] = []
+            message_parts: list[str] = []
+            has_edit = False
+            edit_value = ""
+            has_file_list = False
+
+            if tree:
+                self._scan_dialog_elements(
+                    tree, buttons, message_parts, has_edit_ref=[False],
+                    edit_value_ref=[""], has_file_list_ref=[False],
+                )
+                has_edit = has_edit_ref = any(
+                    el.role.lower() in ("edit", "combobox", "editable text")
+                    for el in self._flatten_elements(tree)
+                )
+                for el in self._flatten_elements(tree):
+                    if el.role.lower() in ("edit", "editable text"):
+                        edit_value = el.value or ""
+                        has_edit = True
+                    if el.role.lower() in ("list", "listview", "tree"):
+                        # Could be a file list in file dialogs
+                        has_file_list = True
+
+            # Classify dialog type
+            button_names = [b.name for b in buttons]
+            dialog_type = classify_dialog(
+                title=win.title,
+                class_name=class_name,
+                buttons=button_names,
+                has_edit=has_edit,
+                has_file_list=has_file_list,
+            )
+
+            # Find owner app
+            owner_app = ""
+            if owner_hwnd:
+                for ow in self.list_windows():
+                    if ow.handle == owner_hwnd:
+                        owner_app = ow.process_name
+                        break
+
+            message = " ".join(message_parts).strip()
+
+            dialogs.append(DialogInfo(
+                hwnd=win.handle,
+                title=win.title,
+                dialog_type=dialog_type,
+                message=message,
+                buttons=buttons,
+                has_input=has_edit,
+                input_value=edit_value,
+                owner_app=owner_app,
+                owner_hwnd=owner_hwnd or 0,
+            ))
+
+        return dialogs
+
+    def _flatten_elements(self, element) -> list:
+        """Recursively flatten an element tree into a list.
+
+        Args:
+            element: Root ElementInfo node.
+
+        Returns:
+            Flat list of all ElementInfo nodes.
+        """
+        result = [element]
+        for child in (element.children or []):
+            result.extend(self._flatten_elements(child))
+        return result
+
+    def _scan_dialog_elements(
+        self,
+        element,
+        buttons: list,
+        message_parts: list[str],
+        has_edit_ref: list[bool],
+        edit_value_ref: list[str],
+        has_file_list_ref: list[bool],
+    ) -> None:
+        """Recursively scan dialog elements to extract buttons, text, and inputs.
+
+        Args:
+            element: Current ElementInfo node.
+            buttons: Accumulator for DialogButton objects.
+            message_parts: Accumulator for message text.
+            has_edit_ref: Mutable ref — [True] if an edit control was found.
+            edit_value_ref: Mutable ref — [value] of the first edit control.
+            has_file_list_ref: Mutable ref — [True] if a file list was found.
+        """
+        from naturo.dialog import DialogButton, _ACCEPT_BUTTONS, _DISMISS_BUTTONS
+
+        role = (element.role or "").lower()
+        name = element.name or ""
+
+        if role == "button" and name:
+            name_lower = name.lower()
+            is_default = name_lower in _ACCEPT_BUTTONS
+            is_cancel = name_lower in _DISMISS_BUTTONS
+            buttons.append(DialogButton(
+                name=name,
+                element_id=element.id,
+                is_default=is_default,
+                is_cancel=is_cancel,
+                x=element.x + element.width // 2,
+                y=element.y + element.height // 2,
+            ))
+        elif role in ("text", "static text", "label") and name:
+            message_parts.append(name)
+        elif role in ("edit", "editable text"):
+            has_edit_ref[0] = True
+            if element.value:
+                edit_value_ref[0] = element.value
+        elif role in ("list", "listview", "tree", "list view"):
+            has_file_list_ref[0] = True
+
+        for child in (element.children or []):
+            self._scan_dialog_elements(
+                child, buttons, message_parts,
+                has_edit_ref, edit_value_ref, has_file_list_ref,
+            )
+
+    def dialog_click_button(
+        self,
+        button: str,
+        app: Optional[str] = None,
+        hwnd: Optional[int] = None,
+    ) -> dict:
+        """Click a button in a detected dialog.
+
+        Finds the dialog, locates the button by name, and clicks it.
+
+        Args:
+            button: Button text to click (case-insensitive partial match).
+            app: Owner application name filter.
+            hwnd: Specific dialog window handle.
+
+        Returns:
+            Dict with action result: {"dialog_title", "button_clicked", "dialog_hwnd"}.
+
+        Raises:
+            NaturoError: If no dialog or button found.
+        """
+        from naturo.errors import NaturoError, ElementNotFoundError
+
+        dialogs = self.detect_dialogs(app=app, hwnd=hwnd)
+        if not dialogs:
+            raise NaturoError(
+                message="No dialog detected",
+                code="DIALOG_NOT_FOUND",
+                category="automation",
+                suggested_action="No active dialog found. Use 'naturo dialog detect' to check for dialogs, "
+                                 "or 'naturo wait --element \"Button:OK\"' to wait for one to appear.",
+                is_recoverable=True,
+            )
+
+        # Use first dialog if no hwnd specified
+        dialog = dialogs[0]
+        if hwnd:
+            dialog = next((d for d in dialogs if d.hwnd == hwnd), dialogs[0])
+
+        # Find the button
+        button_lower = button.lower()
+        target_btn = None
+        for btn in dialog.buttons:
+            if button_lower == btn.name.lower():
+                target_btn = btn
+                break
+        if not target_btn:
+            # Try partial match
+            for btn in dialog.buttons:
+                if button_lower in btn.name.lower():
+                    target_btn = btn
+                    break
+
+        if not target_btn:
+            available = ", ".join(b.name for b in dialog.buttons)
+            raise ElementNotFoundError(
+                f"Button:{button}",
+                suggested_action=f"Button '{button}' not found in dialog. "
+                                 f"Available buttons: [{available}]. "
+                                 f"Use 'naturo dialog detect --json' to see all buttons.",
+            )
+
+        # Click the button
+        self.click(x=target_btn.x, y=target_btn.y)
+
+        return {
+            "dialog_title": dialog.title,
+            "button_clicked": target_btn.name,
+            "dialog_hwnd": dialog.hwnd,
+        }
+
+    def dialog_set_input(
+        self,
+        text: str,
+        app: Optional[str] = None,
+        hwnd: Optional[int] = None,
+    ) -> dict:
+        """Type text into a dialog's input field.
+
+        Finds the dialog, focuses the first edit control, clears it,
+        and types the provided text.
+
+        Args:
+            text: Text to enter in the dialog's input field.
+            app: Owner application name filter.
+            hwnd: Specific dialog window handle.
+
+        Returns:
+            Dict with action result: {"dialog_title", "text_entered", "dialog_hwnd"}.
+
+        Raises:
+            NaturoError: If no dialog or input field found.
+        """
+        from naturo.errors import NaturoError
+
+        dialogs = self.detect_dialogs(app=app, hwnd=hwnd)
+        if not dialogs:
+            raise NaturoError(
+                message="No dialog detected",
+                code="DIALOG_NOT_FOUND",
+                category="automation",
+                suggested_action="No active dialog found.",
+                is_recoverable=True,
+            )
+
+        dialog = dialogs[0]
+        if hwnd:
+            dialog = next((d for d in dialogs if d.hwnd == hwnd), dialogs[0])
+
+        if not dialog.has_input:
+            raise NaturoError(
+                message="Dialog has no input field",
+                code="ELEMENT_NOT_FOUND",
+                category="automation",
+                suggested_action="This dialog does not have a text input field. "
+                                 "Use 'naturo dialog detect --json' to inspect the dialog.",
+            )
+
+        # Focus the dialog window first
+        self.focus_window(hwnd=dialog.hwnd)
+
+        # Find the edit control and click it
+        tree = self.get_element_tree(hwnd=dialog.hwnd, depth=4)
+        if tree:
+            for el in self._flatten_elements(tree):
+                if (el.role or "").lower() in ("edit", "editable text"):
+                    # Click the edit control to focus it
+                    cx = el.x + el.width // 2
+                    cy = el.y + el.height // 2
+                    self.click(x=cx, y=cy)
+                    # Select all existing text and replace
+                    self.hotkey("ctrl", "a")
+                    self.type_text(text)
+                    return {
+                        "dialog_title": dialog.title,
+                        "text_entered": text,
+                        "dialog_hwnd": dialog.hwnd,
+                    }
+
+        raise NaturoError(
+            message="Could not find input field in dialog",
+            code="ELEMENT_NOT_FOUND",
+            category="automation",
+        )
+
+    # === Taskbar (Phase 4.5.4) ===
+
+    def _find_taskbar(self) -> Optional[BaseElementInfo]:
+        """Find the Windows taskbar UIA element.
+
+        Returns:
+            ElementInfo for the taskbar, or None if not found.
+        """
+        core = self._ensure_core()
+        # The desktop root contains the taskbar as a direct child
+        root = core.get_ui_tree(depth=2)
+        if root is None:
+            return None
+
+        for child in (root.get("children") or []):
+            class_name = (child.get("class_name") or child.get("properties", {}).get("class_name", "")).lower()
+            name = (child.get("name") or "").lower()
+            if "shell_traywnd" in class_name or "taskbar" in name:
+                return child
+
+        return None
+
+    def taskbar_list(self) -> list[dict]:
+        """List items on the Windows taskbar.
+
+        Enumerates taskbar buttons using UIAutomation. Each button
+        represents a running application or pinned shortcut.
+
+        Returns:
+            List of dicts with keys: name, hwnd, is_active, is_pinned, x, y,
+            width, height.
+        """
+        core = self._ensure_core()
+        # Use UIA to find the taskbar running apps area
+        tree = core.get_ui_tree(depth=5)
+        if tree is None:
+            return []
+
+        items = []
+        self._collect_taskbar_buttons(tree, items)
+        return items
+
+    def _collect_taskbar_buttons(self, element: dict, items: list) -> None:
+        """Recursively collect taskbar button elements.
+
+        Args:
+            element: UIA element dict.
+            items: Accumulator list.
+        """
+        class_name = (
+            element.get("class_name")
+            or element.get("properties", {}).get("class_name", "")
+        ).lower()
+        role = (element.get("role") or "").lower()
+        name = element.get("name") or ""
+
+        # MSTaskListWClass or MSTaskSwWClass is the task list
+        is_task_area = "mstasklistwclass" in class_name or "mstaskswwclass" in class_name
+
+        if role == "button" and name:
+            # Check if inside a taskbar area
+            props = element.get("properties", {})
+            parent_class = (props.get("parent_class", "")).lower()
+            bounds = element.get("bounds") or {}
+
+            # Taskbar buttons have specific class patterns
+            if (
+                "mstasklistwclass" in parent_class
+                or "mstaskswwclass" in parent_class
+                or "taskbar" in class_name
+                or is_task_area
+            ):
+                items.append({
+                    "name": name,
+                    "hwnd": element.get("hwnd", 0),
+                    "is_active": bool(props.get("is_focused", False)),
+                    "is_pinned": False,  # Cannot reliably determine from UIA alone
+                    "x": bounds.get("x", 0),
+                    "y": bounds.get("y", 0),
+                    "width": bounds.get("width", 0),
+                    "height": bounds.get("height", 0),
+                })
+
+        for child in (element.get("children") or []):
+            self._collect_taskbar_buttons(child, items)
+
+    def taskbar_click(self, name: str) -> dict:
+        """Click a taskbar item by name.
+
+        Finds a taskbar button matching the name (case-insensitive partial
+        match) and clicks its center point. This activates the corresponding
+        window.
+
+        Args:
+            name: Application name or window title (partial, case-insensitive).
+
+        Returns:
+            Dict with dialog_title and button_clicked.
+
+        Raises:
+            NaturoError: If no matching taskbar item is found.
+        """
+        items = self.taskbar_list()
+        name_lower = name.lower()
+
+        target = None
+        for item in items:
+            if name_lower in item["name"].lower():
+                target = item
+                break
+
+        if target is None:
+            available = ", ".join(i["name"] for i in items[:10])
+            raise NaturoError(
+                message=f"Taskbar item not found: {name}",
+                code="TASKBAR_ITEM_NOT_FOUND",
+                category="automation",
+                suggested_action=f"Available items: [{available}]. "
+                                 "Use 'naturo taskbar list' to see all items.",
+            )
+
+        cx = target["x"] + target["width"] // 2
+        cy = target["y"] + target["height"] // 2
+        self.click(x=cx, y=cy)
+
+        return {
+            "name": target["name"],
+            "clicked_at": {"x": cx, "y": cy},
+        }
+
+    # === System Tray (Phase 4.5.5) ===
+
+    def tray_list(self) -> list[dict]:
+        """List system tray (notification area) icons.
+
+        Enumerates tray icons using UIAutomation on the notification area
+        and overflow panel.
+
+        Returns:
+            List of dicts with keys: name, tooltip, is_visible, x, y, width,
+            height.
+        """
+        core = self._ensure_core()
+        tree = core.get_ui_tree(depth=6)
+        if tree is None:
+            return []
+
+        icons = []
+        self._collect_tray_icons(tree, icons)
+        return icons
+
+    def _collect_tray_icons(self, element: dict, icons: list) -> None:
+        """Recursively collect system tray icon elements.
+
+        Args:
+            element: UIA element dict.
+            icons: Accumulator list.
+        """
+        class_name = (
+            element.get("class_name")
+            or element.get("properties", {}).get("class_name", "")
+        ).lower()
+        role = (element.get("role") or "").lower()
+        name = element.get("name") or ""
+
+        # Notification area class names
+        is_tray_area = (
+            "toolbarwindow32" in class_name
+            or "shelltraywnd" in class_name
+            or "notifyiconoverflowwindow" in class_name
+            or "systray_notifyiconarea" in class_name
+        )
+
+        if role == "button" and name and is_tray_area:
+            props = element.get("properties", {})
+            bounds = element.get("bounds") or {}
+            icons.append({
+                "name": name,
+                "tooltip": props.get("help_text", name),
+                "is_visible": bool(bounds.get("width", 0) > 0),
+                "x": bounds.get("x", 0),
+                "y": bounds.get("y", 0),
+                "width": bounds.get("width", 0),
+                "height": bounds.get("height", 0),
+            })
+
+        for child in (element.get("children") or []):
+            self._collect_tray_icons(child, icons)
+
+    def tray_click(
+        self,
+        name: str,
+        button: str = "left",
+        double: bool = False,
+    ) -> dict:
+        """Click a system tray icon.
+
+        Finds a tray icon matching the name (case-insensitive partial match)
+        and clicks it. Supports left/right click and double-click.
+
+        Args:
+            name: Tray icon tooltip or name (partial, case-insensitive).
+            button: Mouse button ('left' or 'right').
+            double: Whether to double-click.
+
+        Returns:
+            Dict with result info.
+
+        Raises:
+            NaturoError: If no matching tray icon is found.
+        """
+        icons = self.tray_list()
+        name_lower = name.lower()
+
+        target = None
+        for icon in icons:
+            if name_lower in icon["name"].lower() or name_lower in icon.get("tooltip", "").lower():
+                target = icon
+                break
+
+        if target is None:
+            available = ", ".join(i["name"] for i in icons[:10])
+            raise NaturoError(
+                message=f"Tray icon not found: {name}",
+                code="TRAY_ICON_NOT_FOUND",
+                category="automation",
+                suggested_action=f"Available icons: [{available}]. "
+                                 "Use 'naturo tray list' to see all icons.",
+            )
+
+        cx = target["x"] + target["width"] // 2
+        cy = target["y"] + target["height"] // 2
+        self.click(x=cx, y=cy, button=button, double=double)
+
+        return {
+            "name": target["name"],
+            "tooltip": target.get("tooltip", ""),
+            "button": button,
+            "double_click": double,
+            "clicked_at": {"x": cx, "y": cy},
+        }

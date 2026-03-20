@@ -94,8 +94,8 @@
 
 | Step | Deliverable | Status |
 |------|------------|--------|
-| 4.5.1 | **Dialog Detection** — 自动检测文件选择器、消息框、确认框 | 🔜 |
-| 4.5.2 | **Dialog Interaction** — `naturo dialog accept/dismiss/fill` | 🔜 |
+| 4.5.1 | **Dialog Detection** — 自动检测文件选择器、消息框、确认框 | ✅ Done |
+| 4.5.2 | **Dialog Interaction** — `naturo dialog accept/dismiss/fill` | ✅ Done |
 | 4.5.3 | **Clipboard Enhanced** — `naturo clipboard get/set` 命令（已有 backend，需暴露 CLI） | ✅ Done |
 | 4.5.4 | **Taskbar Interaction** — 任务栏 pin/unpin/click | 🔜 |
 | 4.5.5 | **System Tray** — 系统托盘图标交互 | 🔜 |

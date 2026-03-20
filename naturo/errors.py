@@ -34,6 +34,13 @@ class ErrorCode:
     INVALID_INPUT = "INVALID_INPUT"
     INVALID_COORDINATES = "INVALID_COORDINATES"
 
+    # Dialog errors
+    DIALOG_NOT_FOUND = "DIALOG_NOT_FOUND"
+
+    # Taskbar / Tray errors
+    TASKBAR_ITEM_NOT_FOUND = "TASKBAR_ITEM_NOT_FOUND"
+    TRAY_ICON_NOT_FOUND = "TRAY_ICON_NOT_FOUND"
+
     # System errors
     FILE_IO_ERROR = "FILE_IO_ERROR"
     UNKNOWN_ERROR = "UNKNOWN_ERROR"
@@ -314,6 +321,24 @@ class FileIOError(NaturoError):
             category=ErrorCategory.IO,
             context=ctx,
             is_recoverable=True,
+            **kwargs,
+        )
+
+
+class DialogNotFoundError(NaturoError):
+    """No dialog detected."""
+
+    def __init__(self, message: str = "No dialog detected", **kwargs: Any) -> None:
+        kwargs.setdefault(
+            "suggested_action",
+            "No active dialog found. The dialog may have already closed, or none was triggered. "
+            "Use 'naturo dialog detect' to check, or 'naturo wait --element \"Dialog\"' to wait.",
+        )
+        kwargs.setdefault("is_recoverable", True)
+        super().__init__(
+            message=message,
+            code=ErrorCode.DIALOG_NOT_FOUND,
+            category=ErrorCategory.AUTOMATION,
             **kwargs,
         )
 

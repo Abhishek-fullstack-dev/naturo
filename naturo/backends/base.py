@@ -219,6 +219,106 @@ class Backend(ABC):
         """Open a URL or file with default application."""
         ...
 
+    # === Dialog ===
+    def detect_dialogs(
+        self,
+        app: Optional[str] = None,
+        hwnd: Optional[int] = None,
+    ) -> list:
+        """Detect active dialog windows.
+
+        Args:
+            app: Filter by owner application name (partial match).
+            hwnd: Filter by specific dialog window handle.
+
+        Returns:
+            List of DialogInfo objects for detected dialogs.
+        """
+        raise NotImplementedError(f"detect_dialogs not supported on {self.platform_name}")
+
+    def dialog_click_button(
+        self,
+        button: str,
+        app: Optional[str] = None,
+        hwnd: Optional[int] = None,
+    ) -> dict:
+        """Click a button in a dialog.
+
+        Args:
+            button: Button text to click (e.g., "OK", "Cancel", "Yes").
+            app: Owner application name filter.
+            hwnd: Specific dialog window handle.
+
+        Returns:
+            Dict with result info.
+        """
+        raise NotImplementedError(f"dialog_click_button not supported on {self.platform_name}")
+
+    def dialog_set_input(
+        self,
+        text: str,
+        app: Optional[str] = None,
+        hwnd: Optional[int] = None,
+    ) -> dict:
+        """Type text into a dialog's input field.
+
+        Args:
+            text: Text to enter.
+            app: Owner application name filter.
+            hwnd: Specific dialog window handle.
+
+        Returns:
+            Dict with result info.
+        """
+        raise NotImplementedError(f"dialog_set_input not supported on {self.platform_name}")
+
+    # === Taskbar ===
+    def taskbar_list(self) -> list[dict]:
+        """List items on the taskbar.
+
+        Returns:
+            List of dicts with keys: name, hwnd, is_active, is_pinned.
+        """
+        raise NotImplementedError(f"taskbar_list not supported on {self.platform_name}")
+
+    def taskbar_click(self, name: str) -> dict:
+        """Click a taskbar item by name.
+
+        Args:
+            name: Application name or window title (partial, case-insensitive).
+
+        Returns:
+            Dict with result info.
+        """
+        raise NotImplementedError(f"taskbar_click not supported on {self.platform_name}")
+
+    # === System Tray ===
+    def tray_list(self) -> list[dict]:
+        """List system tray (notification area) icons.
+
+        Returns:
+            List of dicts with keys: name, tooltip, is_visible.
+        """
+        raise NotImplementedError(f"tray_list not supported on {self.platform_name}")
+
+    def tray_click(
+        self,
+        name: str,
+        button: str = "left",
+        double: bool = False,
+    ) -> dict:
+        """Click a system tray icon.
+
+        Args:
+            name: Tray icon tooltip or name (partial, case-insensitive).
+            button: Mouse button ('left' or 'right').
+            double: Whether to double-click.
+
+        Returns:
+            Dict with result info.
+        """
+        raise NotImplementedError(f"tray_click not supported on {self.platform_name}")
+
 
 def get_backend() -> Backend:
     """Auto-detect platform and return the appropriate backend."""
