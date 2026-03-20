@@ -41,6 +41,11 @@ _RECOVERY_HINTS: dict[str, tuple[str, bool]] = {
         "or launch the application first.",
         True,
     ),
+    "DIALOG_NOT_FOUND": (
+        "No active dialog detected. The dialog may have already closed, or none was triggered. "
+        "Use 'naturo dialog detect' to check, or trigger the dialog first.",
+        True,
+    ),
     "ELEMENT_NOT_FOUND": (
         "UI element not found in the tree. Try: 1) 'naturo see' to inspect the current "
         "UI, 2) use a different selector format (Role:Name), 3) 'naturo wait --element' "
@@ -117,6 +122,15 @@ _RECOVERY_HINTS: dict[str, tuple[str, bool]] = {
         "Process not found. It may have already exited. Use 'naturo app list' to "
         "check running applications.",
         True,
+    ),
+    "VIRTUAL_DESKTOP_ERROR": (
+        "Virtual desktop operation failed. Ensure running on Windows 10/11 with "
+        "virtual desktop support. Use 'naturo desktop list' to check available desktops.",
+        True,
+    ),
+    "DEPENDENCY_MISSING": (
+        "A required dependency is not installed. Run the suggested install command (e.g. 'pip install pyvda').",
+        False,
     ),
     "PERMISSION_DENIED": (
         "Insufficient permissions. On Windows, try running as Administrator. "

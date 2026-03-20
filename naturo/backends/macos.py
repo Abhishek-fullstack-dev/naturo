@@ -33,6 +33,9 @@ class MacOSBackend(Backend):
         }
 
     # All methods raise NotImplementedError — Phase 6 will implement
+    def list_monitors(self):
+        raise NotImplementedError("macOS backend coming in Phase 6")
+
     def capture_screen(self, screen_index=0, output_path="capture.png") -> CaptureResult:
         raise NotImplementedError("macOS backend coming in Phase 6")
 

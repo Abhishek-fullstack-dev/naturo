@@ -37,6 +37,9 @@ class LinuxBackend(Backend):
         return "headless"
 
     # All methods raise NotImplementedError — Phase 7 will implement
+    def list_monitors(self):
+        raise NotImplementedError("Linux backend coming in Phase 7")
+
     def capture_screen(self, screen_index=0, output_path="capture.png") -> CaptureResult:
         raise NotImplementedError("Linux backend coming in Phase 7")
 

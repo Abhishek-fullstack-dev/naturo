@@ -10,6 +10,7 @@ from naturo.backends.base import (
     Backend,
     WindowInfo as BaseWindowInfo,
     ElementInfo as BaseElementInfo,
+    MonitorInfo,
     CaptureResult,
 )
 from naturo.bridge import NaturoCore, NaturoCoreError, populate_hierarchy
@@ -31,6 +32,99 @@ class WindowsBackend(Backend):
     def __init__(self) -> None:
         self._core: Optional[NaturoCore] = None
         self._initialized: bool = False
+        self._dpi_aware: bool = False
+        self._ensure_dpi_awareness()
+
+    def _ensure_dpi_awareness(self) -> None:
+        """Set per-monitor DPI awareness for accurate coordinates and capture.
+
+        On Windows 10 1607+, uses SetProcessDpiAwarenessContext for
+        per-monitor v2 awareness. Falls back to SetProcessDpiAwareness
+        (Win8.1+) and SetProcessDPIAware (Vista+) on older systems.
+
+        This must be called before any Win32 API calls that involve
+        screen coordinates or window dimensions.
+        """
+        if self._dpi_aware:
+            return
+        try:
+            import ctypes
+            # Try Per-Monitor v2 (Win10 1607+) — best accuracy
+            # DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = -4
+            try:
+                ctypes.windll.user32.SetProcessDpiAwarenessContext(-4)
+                self._dpi_aware = True
+                return
+            except (OSError, AttributeError):
+                pass
+
+            # Try Per-Monitor v1 (Win8.1+)
+            # PROCESS_PER_MONITOR_DPI_AWARE = 2
+            try:
+                ctypes.windll.shcore.SetProcessDpiAwareness(2)
+                self._dpi_aware = True
+                return
+            except (OSError, AttributeError):
+                pass
+
+            # Fallback: System DPI aware (Vista+)
+            try:
+                ctypes.windll.user32.SetProcessDPIAware()
+                self._dpi_aware = True
+            except (OSError, AttributeError):
+                pass
+        except Exception:
+            pass  # Non-Windows or no ctypes — skip silently
+
+    def get_dpi_scale(self, screen_index: int = 0) -> float:
+        """Get the DPI scale factor for a specific monitor.
+
+        Args:
+            screen_index: Zero-based monitor index (0 = primary).
+
+        Returns:
+            Scale factor (1.0 = 100%, 1.5 = 150%, 2.0 = 200%).
+            Returns 1.0 if monitor not found or API unavailable.
+        """
+        try:
+            monitors = self.list_monitors()
+            if 0 <= screen_index < len(monitors):
+                return monitors[screen_index].scale_factor
+        except Exception:
+            pass
+        return 1.0
+
+    def physical_to_logical(self, x: int, y: int, screen_index: int = 0) -> tuple[int, int]:
+        """Convert physical (pixel) coordinates to logical (DPI-scaled) coordinates.
+
+        Args:
+            x: Physical X coordinate.
+            y: Physical Y coordinate.
+            screen_index: Monitor index for scale factor lookup.
+
+        Returns:
+            Tuple of (logical_x, logical_y).
+        """
+        scale = self.get_dpi_scale(screen_index)
+        if scale <= 0 or scale == 1.0:
+            return x, y
+        return int(x / scale), int(y / scale)
+
+    def logical_to_physical(self, x: int, y: int, screen_index: int = 0) -> tuple[int, int]:
+        """Convert logical (DPI-scaled) coordinates to physical (pixel) coordinates.
+
+        Args:
+            x: Logical X coordinate.
+            y: Logical Y coordinate.
+            screen_index: Monitor index for scale factor lookup.
+
+        Returns:
+            Tuple of (physical_x, physical_y).
+        """
+        scale = self.get_dpi_scale(screen_index)
+        if scale <= 0 or scale == 1.0:
+            return x, y
+        return int(x * scale), int(y * scale)
 
     def _ensure_core(self) -> NaturoCore:
         """Lazily load and initialize the native core library.
@@ -94,6 +188,117 @@ class WindowsBackend(Backend):
 
         return width, height, ext
 
+    # ── Monitor Enumeration ────────────────────────
+
+    def list_monitors(self) -> list[MonitorInfo]:
+        """Enumerate connected monitors using Win32 API.
+
+        Uses EnumDisplayMonitors + GetMonitorInfoW for geometry, and
+        GetDpiForMonitor (Win8.1+) for per-monitor DPI. Falls back to
+        system DPI when per-monitor API is unavailable.
+
+        Returns:
+            List of MonitorInfo sorted by index (primary = 0).
+        """
+        import ctypes
+        import ctypes.wintypes as wt
+
+        user32 = ctypes.windll.user32
+        shcore = None
+        try:
+            shcore = ctypes.windll.shcore
+        except OSError:
+            pass
+
+        monitors: list[dict] = []
+
+        # MONITORINFOEXW structure
+        class MONITORINFOEXW(ctypes.Structure):
+            _fields_ = [
+                ("cbSize", wt.DWORD),
+                ("rcMonitor", wt.RECT),
+                ("rcWork", wt.RECT),
+                ("dwFlags", wt.DWORD),
+                ("szDevice", ctypes.c_wchar * 32),
+            ]
+
+        MONITORINFOF_PRIMARY = 0x00000001
+
+        def _enum_callback(hMonitor, hdcMonitor, lprcMonitor, dwData):
+            info = MONITORINFOEXW()
+            info.cbSize = ctypes.sizeof(MONITORINFOEXW)
+            if user32.GetMonitorInfoW(hMonitor, ctypes.byref(info)):
+                rc = info.rcMonitor
+                wk = info.rcWork
+
+                # Per-monitor DPI (available on Win8.1+)
+                dpi_x = ctypes.c_uint(96)
+                dpi_y = ctypes.c_uint(96)
+                if shcore:
+                    try:
+                        # MDT_EFFECTIVE_DPI = 0
+                        shcore.GetDpiForMonitor(
+                            hMonitor, 0,
+                            ctypes.byref(dpi_x), ctypes.byref(dpi_y),
+                        )
+                    except Exception:
+                        pass
+
+                dpi = dpi_x.value
+                scale = round(dpi / 96.0, 2)
+
+                monitors.append({
+                    "hMonitor": hMonitor,
+                    "name": info.szDevice.rstrip("\x00"),
+                    "x": rc.left,
+                    "y": rc.top,
+                    "width": rc.right - rc.left,
+                    "height": rc.bottom - rc.top,
+                    "is_primary": bool(info.dwFlags & MONITORINFOF_PRIMARY),
+                    "scale_factor": scale,
+                    "dpi": dpi,
+                    "work_area": {
+                        "x": wk.left,
+                        "y": wk.top,
+                        "width": wk.right - wk.left,
+                        "height": wk.bottom - wk.top,
+                    },
+                })
+            return 1  # Continue enumeration
+
+        MONITORENUMPROC = ctypes.WINFUNCTYPE(
+            ctypes.c_int,
+            ctypes.c_void_p,   # hMonitor
+            ctypes.c_void_p,   # hdcMonitor
+            ctypes.POINTER(wt.RECT),  # lprcMonitor
+            ctypes.POINTER(wt.LONG),  # dwData
+        )
+
+        callback = MONITORENUMPROC(_enum_callback)
+        user32.EnumDisplayMonitors(None, None, callback, 0)
+
+        # Sort: primary first, then by x coordinate (left to right)
+        monitors.sort(key=lambda m: (not m["is_primary"], m["x"], m["y"]))
+
+        result: list[MonitorInfo] = []
+        for idx, m in enumerate(monitors):
+            result.append(MonitorInfo(
+                index=idx,
+                name=m["name"],
+                x=m["x"],
+                y=m["y"],
+                width=m["width"],
+                height=m["height"],
+                is_primary=m["is_primary"],
+                scale_factor=m["scale_factor"],
+                dpi=m["dpi"],
+                work_area=m["work_area"],
+            ))
+
+        return result
+
+    # ── Screen Capture ────────────────────────────
+
     def capture_screen(self, screen_index: int = 0, output_path: str = "capture.png") -> CaptureResult:
         """Capture a screenshot of the specified monitor.
 
@@ -131,7 +336,22 @@ class WindowsBackend(Backend):
             except OSError:
                 pass
             raise
-        return CaptureResult(path=output_path, width=width, height=height, format=fmt)
+
+        # Attach DPI metadata from the captured monitor
+        scale_factor = 1.0
+        dpi = 96
+        try:
+            monitors = self.list_monitors()
+            if 0 <= screen_index < len(monitors):
+                scale_factor = monitors[screen_index].scale_factor
+                dpi = monitors[screen_index].dpi
+        except Exception:
+            pass
+
+        return CaptureResult(
+            path=output_path, width=width, height=height, format=fmt,
+            scale_factor=scale_factor, dpi=dpi,
+        )
 
     def capture_window(self, window_title: Optional[str] = None, hwnd: Optional[int] = None,
                        output_path: str = "capture.png") -> CaptureResult:
@@ -171,7 +391,28 @@ class WindowsBackend(Backend):
             except OSError:
                 pass
             raise
-        return CaptureResult(path=output_path, width=width, height=height, format=fmt)
+
+        # Determine DPI from the window's monitor position
+        scale_factor = 1.0
+        dpi = 96
+        try:
+            # Get the window's position to find which monitor it's on
+            import ctypes
+            import ctypes.wintypes as wt
+            rect = wt.RECT()
+            actual_handle = handle or ctypes.windll.user32.GetForegroundWindow()
+            if actual_handle and ctypes.windll.user32.GetWindowRect(actual_handle, ctypes.byref(rect)):
+                monitor = self.find_monitor_for_point(rect.left, rect.top)
+                if monitor:
+                    scale_factor = monitor.scale_factor
+                    dpi = monitor.dpi
+        except Exception:
+            pass
+
+        return CaptureResult(
+            path=output_path, width=width, height=height, format=fmt,
+            scale_factor=scale_factor, dpi=dpi,
+        )
 
     # === Window Management (Phase 1: list only) ===
 

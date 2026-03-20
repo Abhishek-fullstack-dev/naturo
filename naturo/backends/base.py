@@ -38,12 +38,29 @@ class ElementInfo:
 
 
 @dataclass
+class MonitorInfo:
+    """Cross-platform monitor/display information."""
+    index: int            # Zero-based monitor index
+    name: str             # Display device name (e.g., "\\\\.\\DISPLAY1")
+    x: int                # Left edge in virtual screen coordinates
+    y: int                # Top edge in virtual screen coordinates
+    width: int            # Width in pixels
+    height: int           # Height in pixels
+    is_primary: bool      # Whether this is the primary monitor
+    scale_factor: float   # DPI scale factor (1.0 = 100%, 1.5 = 150%, 2.0 = 200%)
+    dpi: int              # Effective DPI (96 = 100%)
+    work_area: Optional[dict] = None  # {"x": int, "y": int, "width": int, "height": int}
+
+
+@dataclass
 class CaptureResult:
     """Screenshot result."""
     path: str
     width: int
     height: int
     format: str           # png, jpg
+    scale_factor: float = 1.0   # DPI scale factor of captured monitor
+    dpi: int = 96               # Effective DPI of captured monitor
 
 
 class Backend(ABC):
@@ -68,6 +85,38 @@ class Backend(ABC):
             "accessibility": [],         # Override: uia, msaa, ia2, atspi, ax
             "extensions": [],            # Override: excel, java, sap, etc.
         }
+
+    # === Monitor ===
+    @abstractmethod
+    def list_monitors(self) -> list[MonitorInfo]:
+        """Enumerate connected monitors/displays.
+
+        Returns:
+            List of MonitorInfo, ordered by index (primary first).
+        """
+        ...
+
+    def find_monitor_for_point(self, x: int, y: int) -> Optional[MonitorInfo]:
+        """Find which monitor contains the given screen coordinates.
+
+        Uses the monitor's bounding rectangle from list_monitors().
+        Returns None if the point is outside all monitors.
+
+        Args:
+            x: X coordinate in virtual screen space.
+            y: Y coordinate in virtual screen space.
+
+        Returns:
+            MonitorInfo for the containing monitor, or None.
+        """
+        try:
+            monitors = self.list_monitors()
+        except (NotImplementedError, Exception):
+            return None
+        for m in monitors:
+            if m.x <= x < m.x + m.width and m.y <= y < m.y + m.height:
+                return m
+        return None
 
     # === Capture ===
     @abstractmethod
