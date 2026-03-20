@@ -124,7 +124,7 @@
 | 5B.5 | **硬件级键盘 (Phys32)** — 绕过 SendInput 检测的底层键盘输入，适用于游戏/安全软件 | Naturobot_Client_Engine | ✅ Done |
 | 5B.6 | **MinHook 注入** — 函数钩子，拦截/修改 Windows API 调用 | Naturobot_Client_Engine | 🔜 |
 | 5B.7 | **UIA 缓存优化** — 批量获取属性、减少跨进程 COM 调用、CacheRequest 模式 | Naturobot_Client_Engine | ✅ Done |
-| 5B.8 | **Chrome Native Host** — 通过 Chrome DevTools Protocol 直接操作浏览器 DOM | Naturobot_Client_Engine | 🔜 |
+| 5B.8 | **Chrome CDP** — DevTools Protocol 操作浏览器（navigate/click/type/eval/screenshot） | Naturobot_Client_Engine | ✅ Done |
 
 ### 5C — Enterprise Features
 

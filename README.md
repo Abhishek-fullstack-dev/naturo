@@ -20,6 +20,7 @@
 - 📌 **Taskbar & Tray** — List and click taskbar items and system tray icons
 - 🖥️ **Multi-Monitor** — Enumerate monitors, capture specific screens, DPI-aware coordinates
 - 🗂️ **Virtual Desktops** — List, switch, create, close desktops and move windows between them
+- 🌐 **Chrome DevTools** — Control Chrome via CDP (navigate, click, type, screenshot, eval JS)
 - 🤖 **AI-Ready** — JSON output, agent-friendly CLI, MCP server (38 tools)
 
 ## System Requirements
@@ -102,6 +103,16 @@ naturo desktop switch 1                    # Switch to desktop 1
 naturo desktop create --name "Work"        # Create named desktop
 naturo desktop close                       # Close current desktop
 naturo desktop move-window 1 --app "Notepad"  # Move window to desktop 1
+
+# Chrome browser automation (requires --remote-debugging-port=9222)
+naturo chrome tabs                         # List open tabs
+naturo chrome screenshot --path page.png   # Capture current tab
+naturo chrome navigate "https://example.com"
+naturo chrome eval "document.title"        # Run JavaScript
+naturo chrome click "button#submit"        # Click DOM element
+naturo chrome type "input#search" "hello"  # Type into input
+naturo chrome title                        # Get page title
+naturo chrome html --selector "#main"      # Get element HTML
 ```
 
 ## CLI Commands
@@ -162,6 +173,15 @@ naturo desktop move-window 1 --app "Notepad"  # Move window to desktop 1
 | `desktop create` | Create a new virtual desktop | ✅ 5A |
 | `desktop close` | Close a virtual desktop | ✅ 5A |
 | `desktop move-window` | Move window to another desktop | ✅ 5A |
+| `chrome tabs` | List open Chrome tabs | ✅ 5B |
+| `chrome screenshot` | Capture Chrome tab screenshot | ✅ 5B |
+| `chrome navigate` | Navigate tab to URL | ✅ 5B |
+| `chrome eval` | Evaluate JavaScript in tab | ✅ 5B |
+| `chrome click` | Click DOM element by selector | ✅ 5B |
+| `chrome type` | Type into DOM element | ✅ 5B |
+| `chrome title` | Get page title | ✅ 5B |
+| `chrome html` | Get page/element HTML | ✅ 5B |
+| `chrome version` | Show Chrome version info | ✅ 5B |
 
 ## Snapshot System
 
