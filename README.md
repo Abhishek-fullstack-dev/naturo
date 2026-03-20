@@ -11,6 +11,7 @@
 - 🔍 **Element Finding** — CSS-like selectors + fuzzy search for UI elements
 - 🖱️ **Click & Type** — Hardware-level input simulation
 - ⌨️ **Key Combos** — Send any keystroke or shortcut
+- 🎮 **Hardware Keyboard** — Scan-code input bypasses virtual-key detection (games, anti-cheat)
 - 📸 **Annotated Screenshots** — AI-ready screenshots with numbered bounding boxes
 - 📋 **Menu Traversal** — Extract app menu structures with shortcuts
 - 🪟 **Window Management** — Focus, close, minimize, maximize, move, resize windows
@@ -58,6 +59,9 @@ naturo click "Button:Save"
 
 # Type text
 naturo type "Hello, World!"
+
+# Type with hardware scan codes (bypass anti-cheat detection)
+naturo type "Hello" --input-mode hardware
 
 # Press key combo
 naturo press "ctrl+s"
@@ -207,7 +211,7 @@ Naturo is the Windows counterpart to [Peekaboo](https://github.com/AcePeak/peeka
 |---------|-----------------|-----------------|
 | UI Framework | Accessibility API | UIA + MSAA + IA2 + JAB |
 | Screen Capture | ScreenCaptureKit | DirectX / GDI |
-| Input | CGEvent | SendInput |
+| Input | CGEvent | SendInput + Phys32 scan codes |
 | Language | Swift | C++ |
 | Python Bridge | Swift subprocess | ctypes DLL |
 
