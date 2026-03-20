@@ -52,6 +52,15 @@ def agent(instruction, app, window_title, provider, model, max_steps, dry_run, v
             click.echo(f"Error: {msg}", err=True)
         sys.exit(1)
 
+    # Validate instruction is not empty or whitespace-only
+    if not instruction.strip():
+        msg = "Instruction cannot be empty"
+        if json_output:
+            click.echo(json.dumps({"success": False, "error": {"code": "INVALID_INPUT", "message": msg}}))
+        else:
+            click.echo(f"Error: {msg}", err=True)
+        sys.exit(1)
+
     # Get agent provider
     try:
         agent_provider = _get_agent_provider(provider, model)

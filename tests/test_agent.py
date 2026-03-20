@@ -63,6 +63,27 @@ class TestAgentCLI:
         assert data["success"] is False
         assert data["error"]["code"] == "INVALID_INPUT"
 
+    def test_agent_empty_instruction(self):
+        """Empty instruction should fail with INVALID_INPUT, not AI_PROVIDER_UNAVAILABLE."""
+        result = self.runner.invoke(self.cli, ["agent", ""])
+        assert result.exit_code != 0
+        assert "Instruction cannot be empty" in (result.output + (result.stderr if hasattr(result, 'stderr') else ''))
+
+    def test_agent_whitespace_instruction(self):
+        """Whitespace-only instruction should fail with INVALID_INPUT."""
+        result = self.runner.invoke(self.cli, ["agent", "   "])
+        assert result.exit_code != 0
+        assert "Instruction cannot be empty" in (result.output + (result.stderr if hasattr(result, 'stderr') else ''))
+
+    def test_agent_empty_instruction_json(self):
+        """Empty instruction with --json should output structured INVALID_INPUT error."""
+        result = self.runner.invoke(self.cli, ["agent", "", "--json"])
+        assert result.exit_code != 0
+        data = json.loads(result.output)
+        assert data["success"] is False
+        assert data["error"]["code"] == "INVALID_INPUT"
+        assert "empty" in data["error"]["message"].lower()
+
     def test_agent_no_api_key(self):
         """Agent should fail gracefully when no API key is set."""
         with patch.dict(os.environ, {}, clear=True):
