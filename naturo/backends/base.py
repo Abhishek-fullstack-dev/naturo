@@ -38,6 +38,21 @@ class ElementInfo:
 
 
 @dataclass
+class MonitorInfo:
+    """Cross-platform monitor/display information."""
+    index: int            # Zero-based monitor index
+    name: str             # Display device name (e.g., "\\\\.\\DISPLAY1")
+    x: int                # Left edge in virtual screen coordinates
+    y: int                # Top edge in virtual screen coordinates
+    width: int            # Width in pixels
+    height: int           # Height in pixels
+    is_primary: bool      # Whether this is the primary monitor
+    scale_factor: float   # DPI scale factor (1.0 = 100%, 1.5 = 150%, 2.0 = 200%)
+    dpi: int              # Effective DPI (96 = 100%)
+    work_area: Optional[dict] = None  # {"x": int, "y": int, "width": int, "height": int}
+
+
+@dataclass
 class CaptureResult:
     """Screenshot result."""
     path: str
@@ -68,6 +83,16 @@ class Backend(ABC):
             "accessibility": [],         # Override: uia, msaa, ia2, atspi, ax
             "extensions": [],            # Override: excel, java, sap, etc.
         }
+
+    # === Monitor ===
+    @abstractmethod
+    def list_monitors(self) -> list[MonitorInfo]:
+        """Enumerate connected monitors/displays.
+
+        Returns:
+            List of MonitorInfo, ordered by index (primary first).
+        """
+        ...
 
     # === Capture ===
     @abstractmethod

@@ -123,6 +123,38 @@ def create_server(host: str = "localhost", port: int = 3100) -> FastMCP:
                 response["data_base64"] = base64.b64encode(f.read()).decode("ascii")
         return response
 
+    # ── Monitor Enumeration ──────────────────────
+
+    @server.tool()
+    @_safe_tool
+    def list_monitors() -> dict:
+        """List all connected monitors/displays.
+
+        Returns monitor index, name, resolution, position in virtual screen
+        coordinates, DPI, scale factor, primary flag, and work area.
+
+        Returns:
+            Dict with success flag and list of monitors.
+        """
+        backend = _get_backend()
+        monitors = backend.list_monitors()
+        return {
+            "success": True,
+            "monitors": [
+                {
+                    "index": m.index,
+                    "name": m.name,
+                    "x": m.x, "y": m.y,
+                    "width": m.width, "height": m.height,
+                    "is_primary": m.is_primary,
+                    "scale_factor": m.scale_factor,
+                    "dpi": m.dpi,
+                    "work_area": m.work_area,
+                }
+                for m in monitors
+            ],
+        }
+
     # ── Window Management ───────────────────────
 
     @server.tool()

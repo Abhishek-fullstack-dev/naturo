@@ -10,6 +10,7 @@ from naturo.backends.base import (
     Backend,
     WindowInfo as BaseWindowInfo,
     ElementInfo as BaseElementInfo,
+    MonitorInfo,
     CaptureResult,
 )
 from naturo.bridge import NaturoCore, NaturoCoreError, populate_hierarchy
@@ -93,6 +94,123 @@ class WindowsBackend(Backend):
                     pass
 
         return width, height, ext
+
+    # ── Monitor Enumeration ────────────────────────
+
+    def list_monitors(self) -> list[MonitorInfo]:
+        """Enumerate connected monitors using Win32 API.
+
+        Uses EnumDisplayMonitors + GetMonitorInfoW for geometry, and
+        GetDpiForMonitor (Win8.1+) for per-monitor DPI. Falls back to
+        system DPI when per-monitor API is unavailable.
+
+        Returns:
+            List of MonitorInfo sorted by index (primary = 0).
+        """
+        import ctypes
+        import ctypes.wintypes as wt
+
+        user32 = ctypes.windll.user32
+        shcore = None
+        try:
+            shcore = ctypes.windll.shcore
+        except OSError:
+            pass
+
+        # Declare SetProcessDPIAware to get real coordinates
+        try:
+            user32.SetProcessDPIAware()
+        except Exception:
+            pass
+
+        monitors: list[dict] = []
+
+        # MONITORINFOEXW structure
+        class MONITORINFOEXW(ctypes.Structure):
+            _fields_ = [
+                ("cbSize", wt.DWORD),
+                ("rcMonitor", wt.RECT),
+                ("rcWork", wt.RECT),
+                ("dwFlags", wt.DWORD),
+                ("szDevice", ctypes.c_wchar * 32),
+            ]
+
+        MONITORINFOF_PRIMARY = 0x00000001
+
+        def _enum_callback(hMonitor, hdcMonitor, lprcMonitor, dwData):
+            info = MONITORINFOEXW()
+            info.cbSize = ctypes.sizeof(MONITORINFOEXW)
+            if user32.GetMonitorInfoW(hMonitor, ctypes.byref(info)):
+                rc = info.rcMonitor
+                wk = info.rcWork
+
+                # Per-monitor DPI (available on Win8.1+)
+                dpi_x = ctypes.c_uint(96)
+                dpi_y = ctypes.c_uint(96)
+                if shcore:
+                    try:
+                        # MDT_EFFECTIVE_DPI = 0
+                        shcore.GetDpiForMonitor(
+                            hMonitor, 0,
+                            ctypes.byref(dpi_x), ctypes.byref(dpi_y),
+                        )
+                    except Exception:
+                        pass
+
+                dpi = dpi_x.value
+                scale = round(dpi / 96.0, 2)
+
+                monitors.append({
+                    "hMonitor": hMonitor,
+                    "name": info.szDevice.rstrip("\x00"),
+                    "x": rc.left,
+                    "y": rc.top,
+                    "width": rc.right - rc.left,
+                    "height": rc.bottom - rc.top,
+                    "is_primary": bool(info.dwFlags & MONITORINFOF_PRIMARY),
+                    "scale_factor": scale,
+                    "dpi": dpi,
+                    "work_area": {
+                        "x": wk.left,
+                        "y": wk.top,
+                        "width": wk.right - wk.left,
+                        "height": wk.bottom - wk.top,
+                    },
+                })
+            return 1  # Continue enumeration
+
+        MONITORENUMPROC = ctypes.WINFUNCTYPE(
+            ctypes.c_int,
+            ctypes.c_void_p,   # hMonitor
+            ctypes.c_void_p,   # hdcMonitor
+            ctypes.POINTER(wt.RECT),  # lprcMonitor
+            ctypes.POINTER(wt.LONG),  # dwData
+        )
+
+        callback = MONITORENUMPROC(_enum_callback)
+        user32.EnumDisplayMonitors(None, None, callback, 0)
+
+        # Sort: primary first, then by x coordinate (left to right)
+        monitors.sort(key=lambda m: (not m["is_primary"], m["x"], m["y"]))
+
+        result: list[MonitorInfo] = []
+        for idx, m in enumerate(monitors):
+            result.append(MonitorInfo(
+                index=idx,
+                name=m["name"],
+                x=m["x"],
+                y=m["y"],
+                width=m["width"],
+                height=m["height"],
+                is_primary=m["is_primary"],
+                scale_factor=m["scale_factor"],
+                dpi=m["dpi"],
+                work_area=m["work_area"],
+            ))
+
+        return result
+
+    # ── Screen Capture ────────────────────────────
 
     def capture_screen(self, screen_index: int = 0, output_path: str = "capture.png") -> CaptureResult:
         """Capture a screenshot of the specified monitor.

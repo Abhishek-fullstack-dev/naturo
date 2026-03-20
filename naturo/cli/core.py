@@ -70,6 +70,25 @@ def live(app, window_title, hwnd, screen, path, fmt, store_snapshot, json_output
                 target_hwnd = backend._resolve_hwnd(app=app, window_title=window_title)
             result = backend.capture_window(hwnd=target_hwnd or 0, output_path=path)
         else:
+            # Validate screen index against available monitors
+            if screen < 0:
+                msg = f"--screen must be >= 0, got {screen}"
+                if json_output:
+                    click.echo(_json_error_str("INVALID_INPUT", msg))
+                else:
+                    click.echo(f"Error: {msg}", err=True)
+                raise SystemExit(1)
+            try:
+                monitors = backend.list_monitors()
+                if monitors and screen >= len(monitors):
+                    msg = f"Screen index {screen} out of range (0-{len(monitors) - 1}). Use 'naturo list screens' to see available monitors."
+                    if json_output:
+                        click.echo(_json_error_str("INVALID_INPUT", msg))
+                    else:
+                        click.echo(f"Error: {msg}", err=True)
+                    raise SystemExit(1)
+            except NotImplementedError:
+                pass  # Non-Windows: skip validation, let backend handle it
             result = backend.capture_screen(screen_index=screen, output_path=path)
 
         snapshot_id = None
@@ -250,16 +269,62 @@ def windows(app, process_name, pid, json_output):
         raise SystemExit(1)
 
 
-@list_cmd.command(hidden=True)
+@list_cmd.command()
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 def screens(json_output):
-    """List connected screens/monitors."""
-    msg = "Screen listing is not implemented yet — coming in a future release."
-    if json_output:
-        click.echo(_json_error_str("NOT_IMPLEMENTED", msg))
-    else:
-        click.echo(f"Error: {msg}", err=True)
-    raise SystemExit(1)
+    """List connected screens/monitors.
+
+    Shows monitor index, resolution, position, DPI scale factor, and
+    whether the monitor is the primary display.
+    """
+    try:
+        backend = _get_backend()
+        monitors = backend.list_monitors()
+
+        if json_output:
+            items = []
+            for m in monitors:
+                item = {
+                    "index": m.index,
+                    "name": m.name,
+                    "x": m.x,
+                    "y": m.y,
+                    "width": m.width,
+                    "height": m.height,
+                    "is_primary": m.is_primary,
+                    "scale_factor": m.scale_factor,
+                    "dpi": m.dpi,
+                }
+                if m.work_area:
+                    item["work_area"] = m.work_area
+                items.append(item)
+            click.echo(json_module.dumps({"success": True, "monitors": items}, indent=2))
+        else:
+            if not monitors:
+                click.echo("No monitors detected.")
+                return
+            click.echo(f"{'Index':<8} {'Resolution':<16} {'Position':<16} {'Scale':<8} {'DPI':<6} {'Primary'}")
+            click.echo("-" * 72)
+            for m in monitors:
+                res = f"{m.width}x{m.height}"
+                pos = f"({m.x}, {m.y})"
+                primary = "✓" if m.is_primary else ""
+                scale = f"{m.scale_factor}x"
+                click.echo(f"{m.index:<8} {res:<16} {pos:<16} {scale:<8} {m.dpi:<6} {primary}")
+            click.echo(f"\n{len(monitors)} monitor(s) found.")
+    except NotImplementedError:
+        msg = f"Monitor listing is not supported on {platform.system()} yet."
+        if json_output:
+            click.echo(_json_error_str("NOT_IMPLEMENTED", msg))
+        else:
+            click.echo(f"Error: {msg}", err=True)
+        raise SystemExit(1)
+    except Exception as e:
+        if json_output:
+            click.echo(_json_error_str("UNKNOWN_ERROR", str(e)))
+        else:
+            click.echo(f"Error: {e}", err=True)
+        raise SystemExit(1)
 
 
 @list_cmd.command(hidden=True)
