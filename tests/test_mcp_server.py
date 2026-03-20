@@ -198,7 +198,7 @@ class TestToolFunctionsWithMockedBackend:
             result = self._call_tool(srv, "type_text", {"text": "hello", "wpm": 60})
             data = json.loads(result[0].text)
             assert data["success"] is True
-            mock_backend.type_text.assert_called_once_with(text="hello", wpm=60)
+            mock_backend.type_text.assert_called_once_with(text="hello", wpm=60, input_mode="normal")
 
     def test_type_text_invalid_wpm(self, mock_backend):
         """type_text with wpm=0 returns validation error."""

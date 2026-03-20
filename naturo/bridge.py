@@ -275,6 +275,16 @@ class NaturoCore:
         self._lib.naturo_jab_check_support.restype = ctypes.c_int
         self._lib.naturo_jab_check_support.argtypes = [ctypes.c_size_t]
 
+        # Phase 5B.5 — Hardware-level keyboard (Phys32)
+        self._lib.naturo_phys_key_type.restype = ctypes.c_int
+        self._lib.naturo_phys_key_type.argtypes = [ctypes.c_char_p, ctypes.c_int]
+
+        self._lib.naturo_phys_key_press.restype = ctypes.c_int
+        self._lib.naturo_phys_key_press.argtypes = [ctypes.c_char_p]
+
+        self._lib.naturo_phys_key_hotkey.restype = ctypes.c_int
+        self._lib.naturo_phys_key_hotkey.argtypes = [ctypes.c_int, ctypes.c_char_p]
+
     def _load(self, lib_path: str | None) -> ctypes.CDLL:
         """Load the native library from the given path or search standard locations.
 
@@ -648,6 +658,82 @@ class NaturoCore:
         rc = self._lib.naturo_key_hotkey(modifiers, key_bytes)
         if rc != 0:
             raise NaturoCoreError(rc, f"key_hotkey({keys!r})")
+
+    # ── Phase 5B.5: Hardware-level Keyboard (Phys32) ──
+
+    def phys_key_type(self, text: str, delay_ms: int = 0) -> None:
+        """Type text using hardware scan codes (Phys32 mode).
+
+        Uses KEYEVENTF_SCANCODE to send raw PS/2 scan codes, which
+        are harder for games and anti-cheat software to detect as
+        synthetic input. Characters without keyboard mappings fall
+        back to Unicode input transparently.
+
+        Args:
+            text: UTF-8 string to type.
+            delay_ms: Delay between keystrokes in milliseconds.
+
+        Raises:
+            NaturoCoreError: On invalid argument or system error.
+        """
+        if not text:
+            raise NaturoCoreError(-1, "phys_key_type")
+        rc = self._lib.naturo_phys_key_type(text.encode("utf-8"), delay_ms)
+        if rc != 0:
+            raise NaturoCoreError(rc, "phys_key_type")
+
+    def phys_key_press(self, key_name: str) -> None:
+        """Press and release a key using hardware scan codes (Phys32 mode).
+
+        Uses PS/2 Set 1 scan codes with KEYEVENTF_SCANCODE. Extended keys
+        (arrows, home, end, etc.) include the E0 prefix automatically.
+
+        Args:
+            key_name: Key name (same set as key_press).
+
+        Raises:
+            NaturoCoreError: If key unrecognized or on system error.
+        """
+        if not key_name:
+            raise NaturoCoreError(-1, "phys_key_press")
+        rc = self._lib.naturo_phys_key_press(key_name.encode("utf-8"))
+        if rc != 0:
+            raise NaturoCoreError(rc, f"phys_key_press({key_name!r})")
+
+    def phys_key_hotkey(self, *keys: str) -> None:
+        """Press a hotkey combination using hardware scan codes (Phys32 mode).
+
+        Uses KEYEVENTF_SCANCODE for all modifier and base key events.
+
+        Args:
+            *keys: Key names. Modifiers (ctrl, alt, shift, win) are detected
+                   automatically; one non-modifier key is the base key.
+
+        Example:
+            core.phys_key_hotkey("ctrl", "a")   # Select All (hardware)
+            core.phys_key_hotkey("ctrl", "c")   # Copy (hardware)
+
+        Raises:
+            NaturoCoreError: On invalid argument or system error.
+        """
+        MODIFIER_MAP = {"ctrl": 0, "alt": 1, "shift": 2, "win": 3}
+        modifiers = 0
+        base_key: Optional[str] = None
+
+        for k in keys:
+            k_lower = k.lower()
+            if k_lower in MODIFIER_MAP:
+                modifiers |= (1 << MODIFIER_MAP[k_lower])
+            else:
+                if base_key is not None:
+                    raise NaturoCoreError(
+                        -1, f"phys_key_hotkey: multiple base keys ({base_key!r}, {k!r})")
+                base_key = k_lower
+
+        key_bytes = base_key.encode("utf-8") if base_key else None
+        rc = self._lib.naturo_phys_key_hotkey(modifiers, key_bytes)
+        if rc != 0:
+            raise NaturoCoreError(rc, f"phys_key_hotkey({keys!r})")
 
     # ── Phase 5B: MSAA / IAccessible ─────────────────
 

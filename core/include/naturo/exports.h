@@ -273,6 +273,42 @@ NATURO_API int naturo_ia2_find_element(uintptr_t hwnd, const char* role,
  */
 NATURO_API int naturo_ia2_check_support(uintptr_t hwnd);
 
+/* ── Hardware-level Keyboard (Phys32) ─────────────── */
+
+/**
+ * @brief Type a UTF-8 string using hardware scan codes.
+ *
+ * Similar to naturo_key_type but uses KEYEVENTF_SCANCODE instead of
+ * virtual keys or Unicode events. Characters without a direct keyboard
+ * mapping fall back to Unicode input transparently.
+ *
+ * @param text Null-terminated UTF-8 string to type.
+ * @param delay_ms Delay between keystrokes in milliseconds.
+ * @return 0 on success, -1 on invalid argument, -2 on system error.
+ */
+NATURO_API int naturo_phys_key_type(const char* text, int delay_ms);
+
+/**
+ * @brief Press and release a named key using hardware scan codes.
+ *
+ * Uses PS/2 Set 1 scan codes with KEYEVENTF_SCANCODE. Extended keys
+ * (arrows, home, end, etc.) include the E0 prefix automatically.
+ *
+ * @param key_name Null-terminated key name (same set as naturo_key_press).
+ * @return 0 on success, -1 if key unrecognized, -2 on system error.
+ */
+NATURO_API int naturo_phys_key_press(const char* key_name);
+
+/**
+ * @brief Press a hotkey combination using hardware scan codes.
+ *
+ * @param modifiers Bitmask: bit 0 = Ctrl, bit 1 = Alt, bit 2 = Shift,
+ *                  bit 3 = Win.
+ * @param key_name The base key name. May be NULL for modifier-only combos.
+ * @return 0 on success, -1 on invalid argument, -2 on system error.
+ */
+NATURO_API int naturo_phys_key_hotkey(int modifiers, const char* key_name);
+
 /* ── Java Access Bridge (JAB) ─────────────────────── */
 
 /**

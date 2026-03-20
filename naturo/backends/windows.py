@@ -871,7 +871,7 @@ class WindowsBackend(Backend):
 
     def type_text(self, text: str = "", delay_ms: int = 5, profile: str = "linear",
                   wpm: int = 120, input_mode: str = "normal") -> None:
-        """Type text using Unicode SendInput.
+        """Type text using SendInput.
 
         Args:
             text: UTF-8 string to type.
@@ -880,7 +880,8 @@ class WindowsBackend(Backend):
             profile: "linear" for constant delay, "human" for variable speed.
                      Human profile uses wpm to calculate delay.
             wpm: Words per minute (used only when profile="human").
-            input_mode: Ignored (Phase 3 will add hardware/hook modes).
+            input_mode: Input method — "normal" (virtual key / Unicode) or
+                "hardware" (scan code / Phys32, bypasses game anti-cheat).
 
         Raises:
             NaturoCoreError: On system error.
@@ -893,28 +894,38 @@ class WindowsBackend(Backend):
             ms_per_char = int(60_000 / (wpm * 5))
             actual_delay = max(1, ms_per_char)
 
-        core.key_type(text, actual_delay)
+        if input_mode == "hardware":
+            core.phys_key_type(text, actual_delay)
+        else:
+            core.key_type(text, actual_delay)
 
     def press_key(self, key: str = "", input_mode: str = "normal") -> None:
         """Press and release a named key.
 
         Args:
             key: Key name (enter, tab, escape, f1-f12, a-z, 0-9, etc.).
-            input_mode: Ignored (Phase 3 will add hardware/hook modes).
+            input_mode: Input method — "normal" (virtual key) or
+                "hardware" (scan code / Phys32).
 
         Raises:
             NaturoCoreError: If key name is unrecognized or on system error.
         """
         core = self._ensure_core()
-        core.key_press(key)
+        if input_mode == "hardware":
+            core.phys_key_press(key)
+        else:
+            core.key_press(key)
 
-    def hotkey(self, *keys: str, hold_duration_ms: int = 50) -> None:
+    def hotkey(self, *keys: str, hold_duration_ms: int = 50,
+              input_mode: str = "normal") -> None:
         """Press a hotkey combination.
 
         Args:
             *keys: Key names. Modifiers (ctrl, alt, shift, win) are recognized
                    automatically. One non-modifier key is the base key.
-            hold_duration_ms: Not yet used (Phase 3).
+            hold_duration_ms: Not yet used.
+            input_mode: Input method — "normal" (virtual key) or
+                "hardware" (scan code / Phys32).
 
         Example:
             backend.hotkey("ctrl", "c")   # Copy
@@ -924,7 +935,10 @@ class WindowsBackend(Backend):
             NaturoCoreError: On invalid argument or system error.
         """
         core = self._ensure_core()
-        core.key_hotkey(*keys)
+        if input_mode == "hardware":
+            core.phys_key_hotkey(*keys)
+        else:
+            core.key_hotkey(*keys)
 
     def scroll(self, direction: str = "down", amount: int = 3,
                x: Optional[int] = None, y: Optional[int] = None,

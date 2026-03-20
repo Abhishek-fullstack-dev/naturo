@@ -300,7 +300,8 @@ def hotkey(keys, keys_option, hold_duration, app, window_title, hwnd,
 
     try:
         backend.hotkey(*key_list,
-                       hold_duration_ms=int(hold_duration) if hold_duration else 50)
+                       hold_duration_ms=int(hold_duration) if hold_duration else 50,
+                       input_mode=input_mode)
     except Exception as exc:
         _json_err(str(exc), json_output)
         return

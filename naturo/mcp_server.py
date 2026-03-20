@@ -547,6 +547,7 @@ def create_server(host: str = "localhost", port: int = 3100) -> FastMCP:
         element_id: Optional[str] = None,
         button: str = "left",
         double: bool = False,
+        input_mode: str = "normal",
     ) -> dict:
         """Click at coordinates or on a UI element.
 
@@ -558,12 +559,14 @@ def create_server(host: str = "localhost", port: int = 3100) -> FastMCP:
             element_id: Element ID to click (from find_element).
             button: Mouse button — "left", "right", or "middle".
             double: Double-click if True.
+            input_mode: Input method — "normal" (default) or "hardware" (Phys32, bypasses anti-cheat).
 
         Returns:
             Dict with success flag.
         """
         backend = _get_backend()
-        backend.click(x=x, y=y, element_id=element_id, button=button, double=double)
+        backend.click(x=x, y=y, element_id=element_id, button=button, double=double,
+                      input_mode=input_mode)
         return {"success": True}
 
     @server.tool()
@@ -571,6 +574,7 @@ def create_server(host: str = "localhost", port: int = 3100) -> FastMCP:
     def type_text(
         text: str,
         wpm: int = 120,
+        input_mode: str = "normal",
     ) -> dict:
         """Type text using keyboard input.
 
@@ -579,6 +583,7 @@ def create_server(host: str = "localhost", port: int = 3100) -> FastMCP:
         Args:
             text: Text to type.
             wpm: Words per minute (typing speed).
+            input_mode: Input method — "normal" (default) or "hardware" (Phys32 scan codes, bypasses anti-cheat).
 
         Returns:
             Dict with success flag.
@@ -586,17 +591,18 @@ def create_server(host: str = "localhost", port: int = 3100) -> FastMCP:
         if wpm < 1:
             return {"success": False, "error": {"code": "INVALID_INPUT", "message": f"wpm must be >= 1, got {wpm}"}}
         backend = _get_backend()
-        backend.type_text(text=text, wpm=wpm)
+        backend.type_text(text=text, wpm=wpm, input_mode=input_mode)
         return {"success": True}
 
     @server.tool()
     @_safe_tool
-    def press_key(key: str, count: int = 1) -> dict:
+    def press_key(key: str, count: int = 1, input_mode: str = "normal") -> dict:
         """Press a keyboard key.
 
         Args:
             key: Key name (e.g. "enter", "tab", "escape", "f1", "a").
             count: Number of times to press.
+            input_mode: Input method — "normal" (default) or "hardware" (Phys32 scan codes).
 
         Returns:
             Dict with success flag.
@@ -605,16 +611,17 @@ def create_server(host: str = "localhost", port: int = 3100) -> FastMCP:
             return {"success": False, "error": {"code": "INVALID_INPUT", "message": f"count must be >= 1, got {count}"}}
         backend = _get_backend()
         for _ in range(count):
-            backend.press_key(key=key)
+            backend.press_key(key=key, input_mode=input_mode)
         return {"success": True}
 
     @server.tool()
     @_safe_tool
-    def hotkey(keys: list[str]) -> dict:
+    def hotkey(keys: list[str], input_mode: str = "normal") -> dict:
         """Press a keyboard shortcut (key combination).
 
         Args:
             keys: List of keys to press simultaneously (e.g. ["ctrl", "s"] for Ctrl+S).
+            input_mode: Input method — "normal" (default) or "hardware" (Phys32 scan codes).
 
         Returns:
             Dict with success flag.
@@ -622,7 +629,7 @@ def create_server(host: str = "localhost", port: int = 3100) -> FastMCP:
         if not keys:
             return {"success": False, "error": {"code": "INVALID_INPUT", "message": "keys list must not be empty"}}
         backend = _get_backend()
-        backend.hotkey(*keys)
+        backend.hotkey(*keys, input_mode=input_mode)
         return {"success": True}
 
     @server.tool()
