@@ -25,6 +25,9 @@ ai = [
 mcp = [
     "mcp>=1.0",
 ]
+cdp = [
+    "websocket-client>=1.0",
+]
 annotate = [
     "Pillow>=9.0",
 ]

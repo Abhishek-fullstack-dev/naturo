@@ -157,6 +157,35 @@ _RECOVERY_HINTS: dict[str, tuple[str, bool]] = {
         "with --recursive to delete the key and all its subkeys.",
         False,
     ),
+    "SERVICE_NOT_FOUND": (
+        "Service not found. Use 'naturo service list' to see available services. "
+        "Use the short service name (e.g., 'Spooler'), not the display name.",
+        False,
+    ),
+    "SERVICE_ERROR": (
+        "Service operation failed. Ensure you have the required permissions "
+        "(run as Administrator for start/stop operations).",
+        True,
+    ),
+    "SERVICE_ALREADY_RUNNING": (
+        "The service is already running. Use 'naturo service status <name>' to check.",
+        False,
+    ),
+    "SERVICE_ALREADY_STOPPED": (
+        "The service is already stopped. Use 'naturo service status <name>' to check.",
+        False,
+    ),
+    "SERVICE_START_FAILED": (
+        "Failed to start the service. Ensure you're running as Administrator "
+        "and the service is properly configured. Check dependencies with "
+        "'naturo service status <name>'.",
+        True,
+    ),
+    "SERVICE_STOP_FAILED": (
+        "Failed to stop the service. Try running as Administrator, or check "
+        "for dependent services that must be stopped first.",
+        True,
+    ),
 }
 
 

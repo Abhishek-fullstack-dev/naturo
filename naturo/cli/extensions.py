@@ -332,7 +332,7 @@ def search(key_path, query, depth, max_results, keys, values, data, json_output)
 def service():
     """Windows Service management (Windows-specific).
 
-    Start, stop, and query Windows services.
+    Start, stop, query, and restart Windows services.
     """
     pass
 
@@ -342,37 +342,140 @@ def service():
               default="all", help="Filter by state")
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 def svc_list(state, json_output):
-    """List Windows services."""
-    click.echo("Not implemented yet — coming in Phase 5")
+    """List Windows services.
+
+    Filter by state: running, stopped, or all (default).
+    """
+    import json as json_module
+    from naturo.cli.error_helpers import emit_exception_error
+
+    try:
+        from naturo.service import service_list as _service_list
+        result = _service_list(state)
+    except Exception as exc:
+        emit_exception_error(exc, json_output, fallback_code="SERVICE_ERROR")
+        return
+
+    if json_output:
+        click.echo(json_module.dumps({"success": True, **result}))
+    else:
+        services = result["services"]
+        if not services:
+            click.echo(f"No {state} services found.")
+        else:
+            for svc in services:
+                state_str = svc.get("state", "unknown")
+                pid = svc.get("pid", "")
+                pid_str = f" (PID {pid})" if pid else ""
+                click.echo(f"  {svc['name']:<40} {state_str:<12}{pid_str}")
+            click.echo(f"\n{result['count']} service(s)")
 
 
 @service.command(name="start")
 @click.argument("name")
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 def svc_start(name, json_output):
-    """Start a Windows service."""
-    click.echo("Not implemented yet — coming in Phase 5")
+    """Start a Windows service.
+
+    NAME is the service short name (e.g., 'Spooler', 'wuauserv').
+    """
+    import json as json_module
+    from naturo.cli.error_helpers import emit_exception_error
+
+    try:
+        from naturo.service import service_start as _service_start
+        result = _service_start(name)
+    except Exception as exc:
+        emit_exception_error(exc, json_output, fallback_code="SERVICE_ERROR")
+        return
+
+    if json_output:
+        click.echo(json_module.dumps({"success": True, **result}))
+    else:
+        click.echo(f"Service '{result['name']}' started.")
 
 
 @service.command(name="stop")
 @click.argument("name")
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 def svc_stop(name, json_output):
-    """Stop a Windows service."""
-    click.echo("Not implemented yet — coming in Phase 5")
+    """Stop a Windows service.
+
+    NAME is the service short name (e.g., 'Spooler', 'wuauserv').
+    """
+    import json as json_module
+    from naturo.cli.error_helpers import emit_exception_error
+
+    try:
+        from naturo.service import service_stop as _service_stop
+        result = _service_stop(name)
+    except Exception as exc:
+        emit_exception_error(exc, json_output, fallback_code="SERVICE_ERROR")
+        return
+
+    if json_output:
+        click.echo(json_module.dumps({"success": True, **result}))
+    else:
+        click.echo(f"Service '{result['name']}' stopped.")
 
 
 @service.command()
 @click.argument("name")
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 def restart(name, json_output):
-    """Restart a Windows service."""
-    click.echo("Not implemented yet — coming in Phase 5")
+    """Restart a Windows service (stop then start).
+
+    NAME is the service short name (e.g., 'Spooler', 'wuauserv').
+    """
+    import json as json_module
+    from naturo.cli.error_helpers import emit_exception_error
+
+    try:
+        from naturo.service import service_restart as _service_restart
+        result = _service_restart(name)
+    except Exception as exc:
+        emit_exception_error(exc, json_output, fallback_code="SERVICE_ERROR")
+        return
+
+    if json_output:
+        click.echo(json_module.dumps({"success": True, **result}))
+    else:
+        click.echo(f"Service '{result['name']}' restarted.")
 
 
 @service.command()
 @click.argument("name")
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 def status(name, json_output):
-    """Get status of a Windows service."""
-    click.echo("Not implemented yet — coming in Phase 5")
+    """Get detailed status of a Windows service.
+
+    NAME is the service short name (e.g., 'Spooler', 'wuauserv').
+    Shows state, PID, start type, binary path, and dependencies.
+    """
+    import json as json_module
+    from naturo.cli.error_helpers import emit_exception_error
+
+    try:
+        from naturo.service import service_status as _service_status
+        result = _service_status(name)
+    except Exception as exc:
+        emit_exception_error(exc, json_output, fallback_code="SERVICE_ERROR")
+        return
+
+    if json_output:
+        click.echo(json_module.dumps({"success": True, **result}))
+    else:
+        click.echo(f"Service: {result.get('name', name)}")
+        if "display_name" in result:
+            click.echo(f"  Display Name: {result['display_name']}")
+        click.echo(f"  State: {result.get('state', 'unknown')}")
+        if "pid" in result:
+            click.echo(f"  PID: {result['pid']}")
+        if "start_type" in result:
+            click.echo(f"  Start Type: {result['start_type']}")
+        if "binary_path" in result:
+            click.echo(f"  Binary Path: {result['binary_path']}")
+        if "run_as" in result:
+            click.echo(f"  Run As: {result['run_as']}")
+        if result.get("dependencies"):
+            click.echo(f"  Dependencies: {', '.join(result['dependencies'])}")
