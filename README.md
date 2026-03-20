@@ -23,7 +23,8 @@
 - 🌐 **Chrome DevTools** — Control Chrome via CDP (navigate, click, type, screenshot, eval JS)
 - 🗃️ **Windows Registry** — Read, write, list, delete, and search registry keys/values
 - 🔧 **Windows Services** — List, start, stop, restart, and query service status
-- 🤖 **AI-Ready** — JSON output, agent-friendly CLI, MCP server (38 tools)
+- ⚡ **Electron/CEF Apps** — Detect, list, launch, and connect to Electron apps (VS Code, Slack, Discord, etc.)
+- 🤖 **AI-Ready** — JSON output, agent-friendly CLI, MCP server (42 tools)
 
 ## System Requirements
 
@@ -115,6 +116,12 @@ naturo chrome click "button#submit"        # Click DOM element
 naturo chrome type "input#search" "hello"  # Type into input
 naturo chrome title                        # Get page title
 naturo chrome html --selector "#main"      # Get element HTML
+
+# Electron/CEF application automation
+naturo electron list                       # List running Electron apps
+naturo electron detect "Code"              # Check if app is Electron-based
+naturo electron launch "C:\Apps\Code.exe"  # Launch with remote debugging
+naturo electron connect "Code"             # Connect to debuggable Electron app
 ```
 
 ## CLI Commands
@@ -194,6 +201,10 @@ naturo chrome html --selector "#main"      # Get element HTML
 | `service stop` | Stop a service | ✅ 5C |
 | `service restart` | Restart a service | ✅ 5C |
 | `service status` | Query service status | ✅ 5C |
+| `electron detect` | Detect if app is Electron-based | ✅ 5C |
+| `electron list` | List running Electron apps | ✅ 5C |
+| `electron connect` | Connect to Electron app via CDP | ✅ 5C |
+| `electron launch` | Launch Electron app with debugging | ✅ 5C |
 
 ## Snapshot System
 

@@ -1878,6 +1878,96 @@ def create_server(host: str = "localhost", port: int = 3100) -> FastMCP:
                 html = client.get_page_html()
             return {"success": True, "html": html}
 
+    # ── Electron/CEF Tools ─────────────────────────
+
+    @server.tool()
+    @_safe_tool
+    def electron_detect(
+        app_name: str,
+    ) -> dict:
+        """Detect if a running application is Electron/CEF-based.
+
+        Checks for Electron characteristics like app.asar, renderer
+        processes, and DevTools ports.
+
+        Args:
+            app_name: Application name (e.g., 'Slack', 'Discord', 'Code').
+
+        Returns:
+            Dict with is_electron, app_name, debug_port, main_pid, processes.
+        """
+        from naturo.electron import detect_electron_app
+        result = detect_electron_app(app_name)
+        return {"success": True, **result}
+
+    @server.tool()
+    @_safe_tool
+    def electron_list() -> dict:
+        """List all running Electron/CEF applications.
+
+        Scans known Electron apps (VS Code, Slack, Discord, etc.) and
+        reports which are currently running with their debug port status.
+
+        Returns:
+            Dict with apps list and count.
+        """
+        from naturo.electron import list_electron_apps
+        result = list_electron_apps()
+        return {"success": True, **result}
+
+    @server.tool()
+    @_safe_tool
+    def electron_connect(
+        app_name: str,
+        port: Optional[int] = None,
+    ) -> dict:
+        """Connect to a running Electron app via Chrome DevTools Protocol.
+
+        The app must be running with --remote-debugging-port enabled.
+        If port is omitted, auto-detects from the running process.
+
+        Args:
+            app_name: Application name.
+            port: CDP port (auto-detect if omitted).
+
+        Returns:
+            Dict with port, tabs list, and count.
+        """
+        from naturo.electron import connect_to_electron
+        result = connect_to_electron(app_name, port=port)
+        return {"success": True, **result}
+
+    @server.tool()
+    @_safe_tool
+    def electron_launch(
+        app_path: str,
+        port: int = 9229,
+    ) -> dict:
+        """Launch an Electron app with remote debugging enabled.
+
+        Starts the application with --remote-debugging-port so it can
+        be controlled via CDP. Use port 9229 (default) to avoid
+        conflicting with Chrome's default 9222.
+
+        Args:
+            app_path: Full path to the Electron app executable.
+            port: DevTools port (default 9229).
+
+        Returns:
+            Dict with pid, port, app_path.
+        """
+        if port < 1 or port > 65535:
+            return {
+                "success": False,
+                "error": {
+                    "code": "INVALID_INPUT",
+                    "message": f"port must be between 1 and 65535, got {port}",
+                },
+            }
+        from naturo.electron import launch_with_debug
+        result = launch_with_debug(app_path, port=port)
+        return {"success": True, **result}
+
     return server
 
 

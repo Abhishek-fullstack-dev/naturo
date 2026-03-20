@@ -61,6 +61,8 @@ class TestServerCreation:
             "list_apps", "launch_app", "quit_app",
             "menu_inspect", "open_uri",
             "wait_for_element", "wait_for_window", "wait_until_gone",
+            "electron_detect", "electron_list",
+            "electron_connect", "electron_launch",
         ]
         for name in expected:
             assert name in tools, f"Tool '{name}' not registered"
