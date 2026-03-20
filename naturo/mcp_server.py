@@ -1652,6 +1652,232 @@ def create_server(host: str = "localhost", port: int = 3100) -> FastMCP:
         )
         return {"success": True, **result}
 
+    # ── Chrome CDP Tools ──────────────────────────────────────
+
+    @server.tool()
+    @_safe_tool
+    def chrome_list_tabs(
+        host: str = "localhost",
+        port: int = 9222,
+    ) -> dict:
+        """List open Chrome browser tabs via DevTools Protocol.
+
+        Chrome must be started with --remote-debugging-port=9222.
+
+        Args:
+            host: DevTools host (default localhost).
+            port: DevTools port (default 9222).
+
+        Returns:
+            Dict with success, tabs list, and count.
+        """
+        from naturo.cdp import CDPClient
+        client = CDPClient(host=host, port=port)
+        tabs = client.list_tabs()
+        return {"success": True, "tabs": tabs, "count": len(tabs)}
+
+    @server.tool()
+    @_safe_tool
+    def chrome_evaluate(
+        expression: str,
+        tab_id: Optional[str] = None,
+        host: str = "localhost",
+        port: int = 9222,
+    ) -> dict:
+        """Execute JavaScript in a Chrome tab.
+
+        Chrome must be started with --remote-debugging-port=9222.
+
+        Args:
+            expression: JavaScript expression to evaluate.
+            tab_id: Target tab ID (from chrome_list_tabs). If None, uses first tab.
+            host: DevTools host (default localhost).
+            port: DevTools port (default 9222).
+
+        Returns:
+            Dict with success and evaluation result.
+        """
+        from naturo.cdp import CDPClient
+        with CDPClient(host=host, port=port) as client:
+            client.connect(tab_id=tab_id)
+            result = client.evaluate(expression)
+            return {"success": True, "result": result}
+
+    @server.tool()
+    @_safe_tool
+    def chrome_screenshot(
+        tab_id: Optional[str] = None,
+        format: str = "png",
+        quality: int = 80,
+        host: str = "localhost",
+        port: int = 9222,
+    ) -> dict:
+        """Capture a screenshot of a Chrome tab.
+
+        Uses Chrome's own rendering engine for pixel-perfect screenshots.
+        Chrome must be started with --remote-debugging-port=9222.
+
+        Args:
+            tab_id: Target tab ID. If None, uses first tab.
+            format: Image format — png or jpeg.
+            quality: JPEG quality (1-100, ignored for PNG).
+            host: DevTools host.
+            port: DevTools port.
+
+        Returns:
+            Dict with success and base64-encoded screenshot data.
+        """
+        from naturo.cdp import CDPClient
+        with CDPClient(host=host, port=port) as client:
+            client.connect(tab_id=tab_id)
+            data = client.screenshot(format=format, quality=quality)
+            return {
+                "success": True,
+                "format": format,
+                "data": base64.b64encode(data).decode("ascii"),
+                "size": len(data),
+            }
+
+    @server.tool()
+    @_safe_tool
+    def chrome_navigate(
+        url: str,
+        tab_id: Optional[str] = None,
+        host: str = "localhost",
+        port: int = 9222,
+    ) -> dict:
+        """Navigate a Chrome tab to a URL.
+
+        Chrome must be started with --remote-debugging-port=9222.
+
+        Args:
+            url: Target URL.
+            tab_id: Target tab ID. If None, uses first tab.
+            host: DevTools host.
+            port: DevTools port.
+
+        Returns:
+            Dict with success, url, and frameId.
+        """
+        from naturo.cdp import CDPClient
+        with CDPClient(host=host, port=port) as client:
+            client.connect(tab_id=tab_id)
+            result = client.navigate(url)
+            return {"success": True, "url": url, "frameId": result.get("frameId", "")}
+
+    @server.tool()
+    @_safe_tool
+    def chrome_click(
+        selector: str,
+        tab_id: Optional[str] = None,
+        host: str = "localhost",
+        port: int = 9222,
+    ) -> dict:
+        """Click a DOM element in Chrome by CSS selector.
+
+        Scrolls the element into view and dispatches a click event.
+        Chrome must be started with --remote-debugging-port=9222.
+
+        Args:
+            selector: CSS selector for the target element.
+            tab_id: Target tab ID. If None, uses first tab.
+            host: DevTools host.
+            port: DevTools port.
+
+        Returns:
+            Dict with success and selector.
+        """
+        from naturo.cdp import CDPClient
+        with CDPClient(host=host, port=port) as client:
+            client.connect(tab_id=tab_id)
+            client.click_element(selector)
+            return {"success": True, "selector": selector}
+
+    @server.tool()
+    @_safe_tool
+    def chrome_type(
+        selector: str,
+        text: str,
+        tab_id: Optional[str] = None,
+        host: str = "localhost",
+        port: int = 9222,
+    ) -> dict:
+        """Type text into a form field in Chrome.
+
+        Focuses the element, clears it, then types character by character.
+        Chrome must be started with --remote-debugging-port=9222.
+
+        Args:
+            selector: CSS selector for the input element.
+            text: Text to type.
+            tab_id: Target tab ID. If None, uses first tab.
+            host: DevTools host.
+            port: DevTools port.
+
+        Returns:
+            Dict with success, selector, and typed text.
+        """
+        from naturo.cdp import CDPClient
+        with CDPClient(host=host, port=port) as client:
+            client.connect(tab_id=tab_id)
+            client.type_text(selector, text)
+            return {"success": True, "selector": selector, "text": text}
+
+    @server.tool()
+    @_safe_tool
+    def chrome_get_text(
+        selector: str,
+        tab_id: Optional[str] = None,
+        host: str = "localhost",
+        port: int = 9222,
+    ) -> dict:
+        """Get the text content of a DOM element in Chrome.
+
+        Args:
+            selector: CSS selector.
+            tab_id: Target tab ID. If None, uses first tab.
+            host: DevTools host.
+            port: DevTools port.
+
+        Returns:
+            Dict with success, selector, and text content.
+        """
+        from naturo.cdp import CDPClient
+        with CDPClient(host=host, port=port) as client:
+            client.connect(tab_id=tab_id)
+            text = client.get_element_text(selector)
+            return {"success": True, "selector": selector, "text": text}
+
+    @server.tool()
+    @_safe_tool
+    def chrome_get_html(
+        selector: Optional[str] = None,
+        tab_id: Optional[str] = None,
+        host: str = "localhost",
+        port: int = 9222,
+    ) -> dict:
+        """Get HTML of a page or specific element in Chrome.
+
+        Args:
+            selector: CSS selector (omit for full page HTML).
+            tab_id: Target tab ID. If None, uses first tab.
+            host: DevTools host.
+            port: DevTools port.
+
+        Returns:
+            Dict with success and html content.
+        """
+        from naturo.cdp import CDPClient
+        with CDPClient(host=host, port=port) as client:
+            client.connect(tab_id=tab_id)
+            if selector:
+                html = client.evaluate(
+                    f"document.querySelector({json.dumps(selector)})?.outerHTML ?? ''"
+                )
+            else:
+                html = client.get_page_html()
+            return {"success": True, "html": html}
+
     return server
 
 
