@@ -1,35 +1,35 @@
 # Dev Status
 
 ## 最近工作
-- **Phase 5B.7 UIA 缓存优化** — CacheRequest 批量属性获取，~4x 减少 IPC (commit 47b4e1a)
-- **Phase 5B.3 JAB 集成** — C++ jab.cpp + Python bridge/backend/CLI/MCP (commit 6adeb91)
-- **测试修复** — test_jab.py 2处 bug (commit 7067c4e)
-- **README 更新** — 补充 IA2 + JAB 到能力列表 (commit 92f6b38)
+- **Phase 5B.8 补提交** — Chrome CDP backend (naturo/cdp.py) + 8 MCP tools 漏提交修复
+- **Phase 5C.3** — Windows Service 管理 (list/start/stop/restart/status)
+- **README + ROADMAP** — 补充 Registry + Service 命令文档
 
 ## 技术评估
 - 代码健康度：良好
-- 测试：1233 passed, 257 skipped, 0 failed ✅
+- 测试：1400 passed, 263 skipped, 0 failed ✅
 - MCP server: 38 tools
 - 零 🔴 Open bug，BUG-055 待 QA 验证
+- 无 bare except、无 TODO/FIXME
+- ctx.exit(1) 全部已替换为 sys.exit(1)
 
 ## Phase 进度
-- Phase 4: ✅ Complete
-- Phase 4.5: ✅ Complete
-- Phase 5A: ✅ Complete
-- Phase 5B.1: ✅ Complete (MSAA/IAccessible)
-- Phase 5B.2: ✅ Complete (IAccessible2)
-- Phase 5B.3: ✅ Complete (JAB — C++/bridge/backend/CLI/MCP/tests)
-- Phase 5B.7: ✅ Complete (UIA CacheRequest optimization)
-- **下一步: 编译机验证 MSAA + IA2 + JAB + UIA缓存（编译 DLL + 实际应用测试）**
+- Phase 4 ~ 5A: ✅ Complete
+- Phase 5B.1-5B.3: ✅ Complete (MSAA/IA2/JAB)
+- Phase 5B.5: ✅ Complete (Hardware Keyboard)
+- Phase 5B.7: ✅ Complete (UIA CacheRequest)
+- Phase 5B.8: ✅ Complete (Chrome CDP — backend + CLI + MCP)
+- Phase 5C.1: 🔜 Excel COM Automation
+- Phase 5C.2: ✅ Complete (Windows Registry)
+- Phase 5C.3: ✅ Complete (Windows Service)
+- Phase 5C.4: 🔜 Electron/CEF App Support
+- **下一步**: Phase 5C.1 Excel COM 或 5C.4 Electron — 取决于编译机可达性
 
 ## 风险预警
-- 编译机 192.168.31.52 凌晨不可达（SSH refused），四个 C++ 改动均未编译验证
+- 编译机 192.168.31.52 凌晨可能不可达，C++ 改动未编译验证
 - IA2 vtable 布局需 Firefox 测试验证
 - JAB 需要有 Java 应用运行才能测试
-- UIA CacheRequest 在某些控件（如虚拟化列表）上可能行为不同，需实测
 
-## 下一步
-1. 编译机上线后编译 + 测试全部 C++ 改动（最重要）
-2. Phase 5B.4 — SAP GUI Scripting（需要 SAP 测试环境）
-3. Phase 5B.5 — 硬件级键盘 (Phys32)
-4. Phase 5B.8 — Chrome Native Host / CDP
+## 阻塞
+- Phase 5B.4 SAP GUI Scripting — 需要 SAP 测试环境
+- Phase 5B.6 MinHook — 需要编译机编译 C++
