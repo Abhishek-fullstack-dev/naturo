@@ -87,6 +87,8 @@ def create_server(host: str = "localhost", port: int = 3100) -> FastMCP:
             "width": result.width,
             "height": result.height,
             "format": result.format,
+            "scale_factor": result.scale_factor,
+            "dpi": result.dpi,
         }
         # Include base64 data for AI vision
         if os.path.exists(result.path):
@@ -107,7 +109,7 @@ def create_server(host: str = "localhost", port: int = 3100) -> FastMCP:
             output_path: Path to save the screenshot.
 
         Returns:
-            Dict with path, width, height, format.
+            Dict with path, width, height, format, scale_factor, dpi.
         """
         backend = _get_backend()
         result = backend.capture_window(window_title=window_title, output_path=output_path)
@@ -117,6 +119,8 @@ def create_server(host: str = "localhost", port: int = 3100) -> FastMCP:
             "width": result.width,
             "height": result.height,
             "format": result.format,
+            "scale_factor": result.scale_factor,
+            "dpi": result.dpi,
         }
         if os.path.exists(result.path):
             with open(result.path, "rb") as f:

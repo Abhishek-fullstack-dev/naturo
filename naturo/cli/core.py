@@ -110,6 +110,8 @@ def live(app, window_title, hwnd, screen, path, fmt, store_snapshot, json_output
                 "width": result.width,
                 "height": result.height,
                 "format": result.format,
+                "scale_factor": result.scale_factor,
+                "dpi": result.dpi,
             }
             if snapshot_id:
                 out["snapshot_id"] = snapshot_id
@@ -464,6 +466,20 @@ def see(app, window_title, hwnd, pid, mode, depth, path, annotate, store_snapsho
             out = to_dict(tree)
             if snapshot_id:
                 out["snapshot_id"] = snapshot_id
+
+            # Add DPI context so AI agents know coordinate scaling
+            try:
+                dpi_scale = backend.get_dpi_scale(0) if hasattr(backend, "get_dpi_scale") else 1.0
+                monitors = backend.list_monitors()
+                primary = monitors[0] if monitors else None
+                out["dpi_context"] = {
+                    "scale_factor": primary.scale_factor if primary else dpi_scale,
+                    "dpi": primary.dpi if primary else 96,
+                    "note": "Element coordinates are in physical (pixel) space.",
+                }
+            except Exception:
+                out["dpi_context"] = {"scale_factor": 1.0, "dpi": 96, "note": "Element coordinates are in physical (pixel) space."}
+
             click.echo(json_module.dumps(out, indent=2))
         else:
             def print_tree(el, indent=0):
