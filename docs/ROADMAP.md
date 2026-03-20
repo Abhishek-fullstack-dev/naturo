@@ -117,8 +117,8 @@
 
 | Step | Deliverable | 来源 | Status |
 |------|------------|------|--------|
-| 5B.1 | **MSAA / IAccessible** — 传统可访问性 API，覆盖 UIA 不支持的老应用 | Naturobot_Client_Engine | 🔜 |
-| 5B.2 | **IAccessible2** — Firefox/Thunderbird 等 IA2 应用支持 | Naturobot_Client_Engine | 🔜 |
+| 5B.1 | **MSAA / IAccessible** — 传统可访问性 API，覆盖 UIA 不支持的老应用 | Naturobot_Client_Engine | ✅ Done |
+| 5B.2 | **IAccessible2** — Firefox/Thunderbird/LibreOffice 等 IA2 应用支持 | Naturobot_Client_Engine | ✅ Done |
 | 5B.3 | **Java Access Bridge** — Java/Swing/AWT 应用自动化 | Naturobot_Client_Engine | 🔜 |
 | 5B.4 | **SAP GUI Scripting** — SAP ERP 应用自动化 | Naturobot_Client_Engine | 🔜 |
 | 5B.5 | **硬件级键盘 (Phys32)** — 绕过 SendInput 检测的底层键盘输入，适用于游戏/安全软件 | Naturobot_Client_Engine | 🔜 |
