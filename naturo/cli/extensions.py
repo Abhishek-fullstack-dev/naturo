@@ -1,5 +1,28 @@
-"""Windows-specific extensions: excel, java, sap, registry, service."""
+"""Windows-specific extensions: excel, java, sap, registry, service, electron."""
+import json as json_module
+import sys
+
 import click
+
+
+def _not_implemented(name: str, phase: str, json_output: bool) -> None:
+    """Emit a NOT_IMPLEMENTED error with correct exit code.
+
+    Args:
+        name: Command name for the error message.
+        phase: Phase identifier (e.g., '5C.1').
+        json_output: Whether to emit JSON output.
+    """
+    msg = f"{name} is not implemented yet — coming in Phase {phase}"
+    if json_output:
+        click.echo(json_module.dumps({
+            "success": False,
+            "error": {"code": "NOT_IMPLEMENTED", "message": msg},
+        }))
+    else:
+        click.echo(f"Error: {msg}", err=True)
+    sys.exit(1)
+
 
 # ── excel ───────────────────────────────────────
 
@@ -19,7 +42,7 @@ def excel():
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 def open_workbook(path, visible, json_output):
     """Open an Excel workbook."""
-    click.echo("Not implemented yet — coming in Phase 5")
+    _not_implemented("excel open-workbook", "5C.1", json_output)
 
 
 @excel.command()
@@ -28,7 +51,7 @@ def open_workbook(path, visible, json_output):
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 def read(cell, sheet, json_output):
     """Read a cell or range value."""
-    click.echo("Not implemented yet — coming in Phase 5")
+    _not_implemented("excel read", "5C.1", json_output)
 
 
 @excel.command()
@@ -38,7 +61,7 @@ def read(cell, sheet, json_output):
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 def write(cell, value, sheet, json_output):
     """Write a value to a cell or range."""
-    click.echo("Not implemented yet — coming in Phase 5")
+    _not_implemented("excel write", "5C.1", json_output)
 
 
 @excel.command()
@@ -47,7 +70,7 @@ def write(cell, value, sheet, json_output):
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 def run_macro(macro_name, args, json_output):
     """Run a VBA macro."""
-    click.echo("Not implemented yet — coming in Phase 5")
+    _not_implemented("excel run-macro", "5C.1", json_output)
 
 
 # ── java ────────────────────────────────────────
@@ -66,7 +89,7 @@ def java():
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 def java_list(json_output):
     """List Java applications with Access Bridge enabled."""
-    click.echo("Not implemented yet — coming in Phase 5")
+    _not_implemented("java list", "5B.3", json_output)
 
 
 @java.command()
@@ -76,7 +99,7 @@ def java_list(json_output):
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 def tree(pid, title, depth, json_output):
     """Inspect Java UI element tree."""
-    click.echo("Not implemented yet — coming in Phase 5")
+    _not_implemented("java tree", "5B.3", json_output)
 
 
 @java.command(name="click")
@@ -86,7 +109,7 @@ def tree(pid, title, depth, json_output):
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 def java_click(query, pid, title, json_output):
     """Click a Java UI element."""
-    click.echo("Not implemented yet — coming in Phase 5")
+    _not_implemented("java click", "5B.3", json_output)
 
 
 # ── sap ─────────────────────────────────────────
@@ -105,7 +128,7 @@ def sap():
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 def sap_list(json_output):
     """List SAP GUI sessions."""
-    click.echo("Not implemented yet — coming in Phase 5")
+    _not_implemented("sap list", "5B.4", json_output)
 
 
 @sap.command()
@@ -114,7 +137,7 @@ def sap_list(json_output):
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 def run(transaction, session, json_output):
     """Run a SAP transaction code."""
-    click.echo("Not implemented yet — coming in Phase 5")
+    _not_implemented("sap run", "5B.4", json_output)
 
 
 @sap.command(name="get")
@@ -123,7 +146,7 @@ def run(transaction, session, json_output):
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 def sap_get(field_id, session, json_output):
     """Get a SAP GUI field value."""
-    click.echo("Not implemented yet — coming in Phase 5")
+    _not_implemented("sap get", "5B.4", json_output)
 
 
 @sap.command(name="set")
@@ -133,7 +156,7 @@ def sap_get(field_id, session, json_output):
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 def sap_set(field_id, value, session, json_output):
     """Set a SAP GUI field value."""
-    click.echo("Not implemented yet — coming in Phase 5")
+    _not_implemented("sap set", "5B.4", json_output)
 
 
 # ── registry ────────────────────────────────────
@@ -479,3 +502,156 @@ def status(name, json_output):
             click.echo(f"  Run As: {result['run_as']}")
         if result.get("dependencies"):
             click.echo(f"  Dependencies: {', '.join(result['dependencies'])}")
+
+
+# ── electron ────────────────────────────────────
+
+
+@click.group()
+def electron():
+    """Electron/CEF application support (Windows-specific).
+
+    Detect and automate Electron-based apps (VS Code, Slack, Discord, etc.)
+    via Chrome DevTools Protocol.
+    """
+    pass
+
+
+@electron.command(name="detect")
+@click.argument("app_name")
+@click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
+def electron_detect(app_name, json_output):
+    """Detect if an application is Electron-based.
+
+    APP_NAME is the application name (e.g., 'Slack', 'Discord', 'Code').
+    """
+    import json as json_module
+    from naturo.cli.error_helpers import emit_exception_error
+
+    try:
+        from naturo.electron import detect_electron_app
+        result = detect_electron_app(app_name)
+    except Exception as exc:
+        emit_exception_error(exc, json_output, fallback_code="ELECTRON_ERROR")
+        return
+
+    if json_output:
+        click.echo(json_module.dumps({"success": True, **result}))
+    else:
+        if result["is_electron"]:
+            click.echo(f"  {result['app_name']}: Electron app ✓")
+            if result["debug_port"]:
+                click.echo(f"  Debug port: {result['debug_port']}")
+            else:
+                click.echo("  Not running with remote debugging.")
+            click.echo(f"  Main PID: {result.get('main_pid', 'N/A')}")
+            click.echo(f"  Processes: {len(result['processes'])}")
+        else:
+            click.echo(
+                f"  '{app_name}' is not detected as an Electron application"
+                " (not running or not Electron-based)."
+            )
+
+
+@electron.command(name="list")
+@click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
+def electron_list(json_output):
+    """List all running Electron applications."""
+    import json as json_module
+    from naturo.cli.error_helpers import emit_exception_error
+
+    try:
+        from naturo.electron import list_electron_apps
+        result = list_electron_apps()
+    except Exception as exc:
+        emit_exception_error(exc, json_output, fallback_code="ELECTRON_ERROR")
+        return
+
+    if json_output:
+        click.echo(json_module.dumps({"success": True, **result}))
+    else:
+        apps = result["apps"]
+        if not apps:
+            click.echo("No Electron applications detected.")
+        else:
+            for app in apps:
+                debug = f" (CDP port {app['debug_port']})" if app.get("debug_port") else ""
+                click.echo(f"  {app['app_name']:<30} PID {app['pid']}{debug}")
+            click.echo(f"\n{result['count']} Electron app(s)")
+
+
+@electron.command(name="connect")
+@click.argument("app_name")
+@click.option("--port", "-p", type=int, default=None,
+              help="CDP port (auto-detect if omitted)")
+@click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
+def electron_connect(app_name, port, json_output):
+    """Connect to an Electron app via DevTools Protocol.
+
+    Requires the app to be running with --remote-debugging-port.
+    """
+    import json as json_module
+    from naturo.cli.error_helpers import emit_exception_error
+
+    try:
+        from naturo.electron import connect_to_electron
+        result = connect_to_electron(app_name, port=port)
+    except Exception as exc:
+        emit_exception_error(exc, json_output, fallback_code="ELECTRON_ERROR")
+        return
+
+    if json_output:
+        click.echo(json_module.dumps({"success": True, **result}))
+    else:
+        click.echo(f"  Connected to {app_name} on port {result['port']}")
+        click.echo(f"  {result['count']} tab(s) available:")
+        for tab in result.get("tabs", []):
+            title = tab.get("title", "Untitled")
+            url = tab.get("url", "")
+            click.echo(f"    - {title} ({url})")
+
+
+@electron.command(name="launch")
+@click.argument("app_path")
+@click.option("--port", "-p", type=int, default=9229,
+              help="CDP debug port (default 9229)")
+@click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
+def electron_launch(app_path, port, json_output):
+    """Launch an Electron app with remote debugging enabled.
+
+    APP_PATH is the full path to the Electron application executable.
+    """
+    import json as json_module
+    from naturo.cli.error_helpers import emit_exception_error
+
+    if port < 1 or port > 65535:
+        import sys
+        if json_output:
+            click.echo(json_module.dumps({
+                "success": False,
+                "error": {
+                    "code": "INVALID_INPUT",
+                    "message": f"--port must be between 1 and 65535, got {port}",
+                },
+            }))
+        else:
+            click.echo(
+                f"Error: --port must be between 1 and 65535, got {port}",
+                err=True,
+            )
+        sys.exit(1)
+
+    try:
+        from naturo.electron import launch_with_debug
+        result = launch_with_debug(app_path, port=port)
+    except Exception as exc:
+        emit_exception_error(exc, json_output, fallback_code="ELECTRON_ERROR")
+        return
+
+    if json_output:
+        click.echo(json_module.dumps({"success": True, **result}))
+    else:
+        click.echo(f"  Launched {app_path}")
+        click.echo(f"  PID: {result['pid']}")
+        click.echo(f"  Debug port: {result['port']}")
+        click.echo(f"  Connect with: naturo chrome tabs --port {result['port']}")
