@@ -157,10 +157,15 @@ class ToolExecutor:
                 success=True,
             )
         except NaturoError as e:
+            error_info: dict = {"error": str(e), "code": e.code}
+            if e.suggested_action:
+                error_info["suggested_action"] = e.suggested_action
+            if e.is_recoverable:
+                error_info["recoverable"] = True
             return ToolResult(
                 call_id=tool_call.call_id,
                 name=tool_call.name,
-                result={"error": str(e)},
+                result=error_info,
                 success=False,
                 error=str(e),
             )

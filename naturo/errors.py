@@ -115,6 +115,12 @@ class AppNotFoundError(NaturoError):
     """Application not found."""
 
     def __init__(self, name: str, **kwargs: Any) -> None:
+        kwargs.setdefault(
+            "suggested_action",
+            f"Check the application name. Try 'naturo app list' to see running apps, "
+            f"or 'naturo app launch {name}' to start it first.",
+        )
+        kwargs.setdefault("is_recoverable", True)
         super().__init__(
             message=f"Application not found: {name}",
             code=ErrorCode.APP_NOT_FOUND,
@@ -128,6 +134,12 @@ class WindowNotFoundError(NaturoError):
     """Window not found."""
 
     def __init__(self, title: str, **kwargs: Any) -> None:
+        kwargs.setdefault(
+            "suggested_action",
+            f"No window matching '{title}'. Try 'naturo list windows' to see available windows, "
+            f"or launch the app first with 'naturo app launch'.",
+        )
+        kwargs.setdefault("is_recoverable", True)
         super().__init__(
             message=f"Window not found: {title}",
             code=ErrorCode.WINDOW_NOT_FOUND,
@@ -141,6 +153,14 @@ class ElementNotFoundError(NaturoError):
     """UI element not found."""
 
     def __init__(self, selector: str, **kwargs: Any) -> None:
+        kwargs.setdefault(
+            "suggested_action",
+            f"Element '{selector}' not found in the UI tree. Try: "
+            f"1) 'naturo see' to inspect the current UI tree, "
+            f"2) use a different selector (Role:Name format), "
+            f"3) 'naturo wait --element \"{selector}\"' to wait for it to appear.",
+        )
+        kwargs.setdefault("is_recoverable", True)
         super().__init__(
             message=f"Element not found: {selector}",
             code=ErrorCode.ELEMENT_NOT_FOUND,
@@ -183,6 +203,13 @@ class TimeoutError(NaturoError):
         ctx = kwargs.pop("context", {})
         if timeout is not None:
             ctx["timeout"] = timeout
+        kwargs.setdefault(
+            "suggested_action",
+            "The element or condition did not appear within the timeout. Try: "
+            "1) increase --timeout, "
+            "2) check if the target window is in the foreground, "
+            "3) take a screenshot to verify the current UI state.",
+        )
         super().__init__(
             message=message,
             code=ErrorCode.TIMEOUT,
@@ -197,6 +224,11 @@ class CaptureFailedError(NaturoError):
     """Screenshot/capture failed."""
 
     def __init__(self, message: str = "Capture failed", **kwargs: Any) -> None:
+        kwargs.setdefault(
+            "suggested_action",
+            "Screenshot capture failed. Ensure the target window exists and is not minimized. "
+            "Try 'naturo list windows' to verify.",
+        )
         super().__init__(
             message=message,
             code=ErrorCode.CAPTURE_FAILED,
@@ -210,6 +242,13 @@ class InteractionFailedError(NaturoError):
     """Click/type/etc. interaction failed."""
 
     def __init__(self, message: str = "Interaction failed", **kwargs: Any) -> None:
+        kwargs.setdefault(
+            "suggested_action",
+            "The interaction could not be completed. Try: "
+            "1) verify the target element still exists with 'naturo see', "
+            "2) use coordinate-based interaction instead, "
+            "3) ensure the window is focused with 'naturo window focus'.",
+        )
         super().__init__(
             message=message,
             code=ErrorCode.INTERACTION_FAILED,

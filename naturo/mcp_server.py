@@ -51,7 +51,12 @@ def create_server(host: str = "localhost", port: int = 3100) -> FastMCP:
             try:
                 return fn(*args, **kwargs)
             except NaturoError as e:
-                return {"success": False, "error": {"code": "NATURO_ERROR", "message": str(e)}}
+                error_info: dict = {"code": e.code, "message": str(e)}
+                if e.suggested_action:
+                    error_info["suggested_action"] = e.suggested_action
+                if e.is_recoverable:
+                    error_info["recoverable"] = True
+                return {"success": False, "error": error_info}
             except Exception as e:
                 logger.exception("Unhandled error in tool %s", fn.__name__)
                 return {"success": False, "error": {"code": "INTERNAL_ERROR", "message": f"{type(e).__name__}: {e}"}}

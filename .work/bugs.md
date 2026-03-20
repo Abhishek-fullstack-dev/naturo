@@ -206,6 +206,73 @@
 
 ---
 
+## 🆕 Round 20 自发现
+
+### BUG-049: `see --app nonexistent` 返回 UNKNOWN_ERROR 而非 WINDOW_NOT_FOUND
+- **状态**: ✅ Verified (Round 21) — `--json` 返回 `WINDOW_NOT_FOUND` 错误码，exit code 非零
+- **严重度**: 🟡 中等（错误码不准确 — 影响 AI agent 错误恢复逻辑）
+- **现象**: `naturo see --app nonexistent_app --json` 返回 `{"success": false, "error": {"code": "UNKNOWN_ERROR", "message": "Window not found: nonexistent_app"}}`。消息正确但错误码是 `UNKNOWN_ERROR`，应为 `WINDOW_NOT_FOUND`
+- **根因**: `see` 命令的 generic `except Exception as e` 不区分 `WindowNotFoundError`，统一报 `UNKNOWN_ERROR`。而 `diff --window` 正确使用了 `WINDOW_NOT_FOUND`
+- **命令**: `naturo see --app nonexistent_app --json`
+- **预期**: `{"success": false, "error": {"code": "WINDOW_NOT_FOUND", "message": "Window not found: nonexistent_app"}}`
+- **修复建议**: 在 except 块中 catch `WindowNotFoundError` 先于 `Exception`，使用 `e.code` 或直接 `WINDOW_NOT_FOUND`
+- **文件**: naturo/cli/core.py（see 函数的 except 块，约第 435 行）
+
+### BUG-050: `capture live --app nonexistent` 返回 CAPTURE_ERROR 而非 WINDOW_NOT_FOUND
+- **状态**: ✅ Verified (Round 21) — `--json` 返回 `WINDOW_NOT_FOUND` 错误码，exit code 非零
+- **严重度**: 🟡 中等（同 BUG-049 — 错误码不准确）
+- **现象**: `naturo capture live --app nonexistent_app --json` 返回 `{"success": false, "error": {"code": "CAPTURE_ERROR", "message": "Window not found: nonexistent_app"}}`。消息正确但错误码是 `CAPTURE_ERROR`，应为 `WINDOW_NOT_FOUND`
+- **根因**: `capture live` 的 generic except 统一用 `CAPTURE_ERROR`，不区分 `WindowNotFoundError`
+- **命令**: `naturo capture live --app nonexistent_app --json`
+- **预期**: `{"success": false, "error": {"code": "WINDOW_NOT_FOUND", "message": "Window not found: nonexistent_app"}}`
+- **修复建议**: 同 BUG-049，在 except 块中优先 catch `WindowNotFoundError`
+- **文件**: naturo/cli/core.py（capture live 函数的 except 块，约第 100 行）
+
+### BUG-051: `describe --max-tokens 0` 和 `--max-tokens -1` 无边界校验
+- **状态**: ✅ Verified (Round 21) — `--max-tokens 0` 报 INVALID_INPUT "must be >= 1, got 0"，`--max-tokens -1` 同理，exit code 非零
+- **严重度**: 🟡 中等（同 BUG-019/025/032/033 类型 — 边界值无校验）
+- **现象**: `--max-tokens 0` 和 `--max-tokens -1` 不报错，直接传给 AI provider。当前测试机因无 API key 先报 `AI_PROVIDER_UNAVAILABLE` 掩盖了问题，但有 key 时会导致 API 层错误泄漏
+- **命令**: `naturo describe --max-tokens 0 --json`, `naturo describe --max-tokens -1 --json`
+- **预期**: 校验 `--max-tokens >= 1`，报 "Error: --max-tokens must be >= 1, got X"
+- **文件**: naturo/cli/ai.py（describe 函数，`max_tokens` 参数声明后无校验）
+
+---
+
+## 🆕 Round 15 自发现
+
+### BUG-046: 隐藏 stub 命令仍可执行，输出纯文本且 exit code 为 0
+- **状态**: ✅ Verified (Round 16) — 5 个 stub 命令均 exit code 1，JSON 模式输出 NOT_IMPLEMENTED 结构化错误，纯文本模式输出到 stderr
+- **严重度**: 🟡 中等（违反设计原则 #1 + #6 — 未实现功能不暴露、--json 必须合法 JSON）
+- **现象**: 多个 hidden=True 的 stub 子命令虽不在 `--help` 显示，但仍可通过直接输入命令名调用。调用后输出 "Not implemented yet — coming in Phase N"（纯文本），exit code 为 0，`--json` 模式也不输出 JSON
+- **影响范围**:
+  - `naturo list screens` → "Not implemented yet — coming in Phase 2"，exit 0
+  - `naturo list apps` → "Not implemented yet — coming in Phase 2"，exit 0
+  - `naturo list permissions` → "Not implemented yet — coming in Phase 2"，exit 0
+  - `naturo capture video` → "Not implemented yet — coming in Phase 3"，exit 0
+  - `naturo capture watch` → "Not implemented yet — coming in Phase 3"，exit 0
+- **预期**: 方案 A（推荐）— 完全移除 stub 注册，未实现命令返回 "Error: No such command 'screens'"；方案 B — stub 函数输出结构化错误 `{"success": false, "error": {"code": "NOT_IMPLEMENTED", ...}}`，exit code 非零
+- **文件**: naturo/cli/core.py（list 组的 screens/apps/permissions）, naturo/cli/capture.py 或类似（video/watch）
+
+---
+
+## 🆕 Round 12 自发现（clipboard/window/paste 新命令测试）
+
+### BUG-044: Click 参数验证绕过 `--json` 输出（系统性问题）
+- **状态**: ✅ Verified (Round 13)
+- **严重度**: 🟡 中等（违反设计原则 #6 — --json 模式下任何输出必须是合法 JSON）
+- **现象**: 当 Click 框架自身的参数验证失败时（`required=True` 缺失、`click.Path(exists=True)` 文件不存在），错误输出是 Click 的纯文本 Usage 信息，即使传了 `--json` 也无法拦截
+- **影响范围**:
+  - `clipboard set --file nonexistent.txt --json` → 纯文本 "Error: Invalid value for '--file'"
+  - `paste --file nonexistent.txt --json` → 纯文本 "Error: Invalid value for '--file'"
+  - `window move --app x --json`（缺少 --x/--y）→ 纯文本 "Error: Missing option '--x'"
+  - `window resize --app x --json`（缺少 --width/--height）→ 纯文本 "Error: Missing option"
+  - `window set-bounds --app x --x 0 --y 0 --json`（缺少 --width/--height）→ 纯文本
+- **根因**: Click 在调用命令函数之前就验证 required 参数和 Path 类型，此时还没进入 try/except JSON 错误处理逻辑
+- **修复建议**: 方案 A — 自定义 Click Group/Command 的 `invoke()` 方法，检测 `--json` 参数后用 try/except 包裹 Click 的参数解析；方案 B — 把 `required=True` 改成函数内手动校验 + 改 `click.Path(exists=True)` 为 `click.Path()`（不自动校验）然后函数内检查
+- **文件**: naturo/cli/system.py, naturo/cli/interaction.py, naturo/cli/window_cmd.py
+
+---
+
 ## 🆕 Phase 4 (MCP Server) — Round 10 续
 
 ### BUG-038: `hotkey` MCP tool 使用 `*keys` 导致完全无法调用
@@ -235,7 +302,7 @@
 ## 🆕 Round 11 自发现（MCP Server 深度测试）
 
 ### BUG-041: `mcp start --port/--host` 参数被忽略，始终绑定 127.0.0.1:8000
-- **状态**: 🟢 Fixed
+- **状态**: ✅ Verified (Round 12) — `--port 3200` 实际绑定到 `localhost:3200`，参数正确传递
 - **严重度**: 🔴 严重（MCP server 端口不可配置，多实例/代理场景完全不可用）
 - **现象**: `naturo mcp start --transport sse --port 3100` 实际绑定到 `127.0.0.1:8000`。`--port 9999 --host 0.0.0.0` 同样无效。help 文档声称默认端口 3100，实际是 uvicorn 默认 8000
 - **根因**: `run_server()` 接收了 host/port 参数但 `server.run(transport=transport)` 没传递
@@ -245,7 +312,7 @@
 - **文件**: naturo/mcp_server.py (run_server 函数，第 881 行)
 
 ### BUG-042: `mcp install --json` 在 JSON 前混入纯文本 "Installing MCP dependencies..."
-- **状态**: 🟢 Fixed
+- **状态**: ✅ Verified (Round 12) — stdout 只输出 `{"success": true, "message": "MCP dependencies installed successfully"}`，无前缀文本
 - **严重度**: 🟡 中等（违反设计原则 #6 — --json 模式下任何输出必须是合法 JSON）
 - **现象**: stdout 输出 `Installing MCP dependencies...\n{"success": true, ...}`，前缀文本导致 JSON 解析失败
 - **命令**: `naturo mcp install --json`
@@ -253,10 +320,58 @@
 - **文件**: naturo/cli/ai.py (install 函数，约第 110 行 `click.echo("Installing MCP dependencies...")`)
 
 ### BUG-043: `mcp start` 失败时 `--json` 不输出 JSON（uvicorn 日志泄漏）
-- **状态**: 🟢 Fixed
+- **状态**: ✅ Verified (Round 12) — JSON 模式下 uvicorn 日志被抑制至 CRITICAL，OSError 时输出结构化 JSON 错误
 - **严重度**: 🟡 中等（违反设计原则 #6 + 错误信息不友好）
 - **现象**: `naturo mcp start --transport sse --json` 端口被占用时，输出 uvicorn 的 INFO/ERROR 日志文本而非 JSON。异常被 uvicorn 内部处理，没到 CLI 的 except 分支
 - **命令**: `naturo mcp start --transport sse --json`（端口被占用时）
 - **预期**: `{"success": false, "error": {"code": "SERVER_ERROR", "message": "Port 8000 already in use"}}`
 - **实际**: `INFO: Started server process...` + `ERROR: [Errno 10048]...`
 - **文件**: naturo/cli/ai.py (start 函数) + naturo/mcp_server.py (run_server)
+
+---
+
+## 🆕 Round 14 自发现
+
+### BUG-045: `diff --interval` 无边界校验（负值/零值）
+- **状态**: ✅ Verified (Round 15) — `--interval -1` 报 "Error: --interval must be > 0, got -1.0"，`--interval 0` 同理，JSON 模式输出 INVALID_INPUT 结构化错误，均 exit code 非零。
+- **严重度**: 🟡 中等（同 BUG-034 类型 — 负值导致 Python 内部错误泄漏）
+- **现象**: `diff --interval -1 --window <存在的窗口>` 时，`time.sleep(-1)` 会抛出 `ValueError: sleep length must be non-negative`，泄漏 Python 内部错误。`--interval 0` 虽不崩溃但无意义（两次捕获间零间隔）
+- **命令**: `naturo diff --interval -1 --window "Notepad"`, `naturo diff --interval 0 --window "Notepad"`
+- **预期**: 校验 `--interval > 0`，报 "Error: --interval must be > 0, got X"
+- **文件**: naturo/cli/diff_cmd.py (diff 函数，time.sleep(interval) 前无校验)
+
+---
+
+## 🆕 Round 16 自发现
+
+### BUG-047: `describe --screenshot nonexistent.png` 报错 "AI provider unavailable" 而非 "file not found"
+- **状态**: ✅ Verified (Round 17) — 文件不存在时返回 `FILE_NOT_FOUND` 错误码，纯文本模式输出 "Error: Screenshot file not found: nonexistent.png"，exit code 1
+- **严重度**: 🟡 中等（误导性错误信息 — 违反设计原则 #5）
+- **现象**: `naturo describe --screenshot nonexistent.png --json` 返回 `{"success": false, "error": {"code": "AI_PROVIDER_UNAVAILABLE", "message": "AI provider unavailable: auto"}}`。文件存在性检查在 provider 初始化之后，当无 API key 时先报 provider 错误，掩盖了真正的问题
+- **命令**: `naturo describe --screenshot nonexistent.png --json`
+- **预期**: 先检查 `--screenshot` 文件是否存在，报 `FILE_NOT_FOUND` 错误
+- **修复建议**: 将 screenshot 文件存在性检查移到 provider 初始化之前
+- **文件**: naturo/cli/ai.py (describe 函数，第 147 行附近)
+
+---
+
+## 🆕 Round 18 自发现
+
+### BUG-048: `ctx.exit(1)` 在 Windows 上不设置 exit code — 系统性问题（39 处）
+- **状态**: ✅ Verified (Round 19) — window resize/focus/close、diff、wait、app find 等错误路径全部 exit code 非零，JSON 输出 success=false 与 exit code 一致
+- **严重度**: 🔴 严重（影响所有 AI agent 集成 — agent 无法判断命令是否成功）
+- **现象**: 所有使用 `ctx.exit(1)` 的错误路径，实际 exit code 都为 0。`success=false` 但 exit code=0，AI agent 和脚本无法通过退出码判断命令执行结果
+- **影响范围**: 
+  - `window_cmd.py` — 19 处（focus/close/minimize/maximize/restore/move/resize/set-bounds 全部命令）
+  - `app_cmd.py` — 9 处（quit/launch/relaunch/list/find）
+  - `diff_cmd.py` — 6 处
+  - `wait_cmd.py` — 5 处
+  - **共 39 处**
+- **验证**: 
+  - `naturo window resize --app notepad --width 0 --height 100 --json` → `{"success": false, ...}` 但 exit code 0
+  - `naturo window focus --json` → `{"success": false, ...}` 但 exit code 0
+  - `naturo diff --json` → `{"success": false, ...}` 但 exit code 0
+  - `naturo wait --element test --timeout 1 --json` → `{"success": false, ...}` 但 exit code 0
+- **根因**: Click 的 `ctx.exit(1)` 在某些场景下（特别是 Windows Python 3.12）不能可靠地设置进程 exit code。BUG-016 已发现此问题并在 wait_cmd.py 部分位置改用了 `sys.exit(1)`，但修复不彻底
+- **修复建议**: 全局替换所有 `ctx.exit(1)` 为 `sys.exit(1)`（39 处），或封装统一的 exit 函数
+- **文件**: naturo/cli/window_cmd.py, naturo/cli/app_cmd.py, naturo/cli/diff_cmd.py, naturo/cli/wait_cmd.py
