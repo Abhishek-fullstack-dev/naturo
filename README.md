@@ -7,7 +7,7 @@
 ## What You Get
 
 - 🖥️ **Screen Capture** — Screenshot any window or monitor
-- 🌳 **UI Tree Inspection** — Walk the accessibility tree (MSAA / UIA)
+- 🌳 **UI Tree Inspection** — Walk the accessibility tree (UIA / MSAA / IAccessible2 / Java Access Bridge)
 - 🔍 **Element Finding** — CSS-like selectors + fuzzy search for UI elements
 - 🖱️ **Click & Type** — Hardware-level input simulation
 - ⌨️ **Key Combos** — Send any keystroke or shortcut
@@ -193,7 +193,7 @@ mirroring Peekaboo's validity window.
 ├─────────────┤
 │  C API       │  exports.h
 ├─────────────┤
-│  C++ Core    │  MSAA, UIA, Win32, DirectX
+│  C++ Core    │  UIA, MSAA, IA2, JAB, Win32, DirectX
 └─────────────┘
 ```
 
@@ -205,7 +205,7 @@ Naturo is the Windows counterpart to [Peekaboo](https://github.com/AcePeak/peeka
 
 | Feature | Peekaboo (macOS) | Naturo (Windows) |
 |---------|-----------------|-----------------|
-| UI Framework | Accessibility API | MSAA + UIA |
+| UI Framework | Accessibility API | UIA + MSAA + IA2 + JAB |
 | Screen Capture | ScreenCaptureKit | DirectX / GDI |
 | Input | CGEvent | SendInput |
 | Language | Swift | C++ |
