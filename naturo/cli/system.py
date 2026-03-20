@@ -1,4 +1,7 @@
-"""System commands: app, window, menu, clipboard, dialog, open, taskbar, tray, desktop."""
+"""System commands: app, window, menu, clipboard, open, taskbar, tray, desktop.
+
+Note: dialog commands moved to naturo/cli/dialog_cmd.py (Phase 4.5).
+"""
 import click
 
 # ── app ─────────────────────────────────────────
@@ -227,21 +230,7 @@ def clipboard_set(content, file_path, json_output):
 
 
 # ── dialog ──────────────────────────────────────
-
-
-@click.command()
-@click.option("--action", type=click.Choice(["accept", "dismiss", "type"]),
-              help="Action to perform on dialog")
-@click.option("--text", help="Text to type in dialog input")
-@click.option("--button", help="Button to click")
-@click.option("--app", help="Application name")
-@click.option("--window-title", help="Window title pattern")
-@click.option("--hwnd", type=int, help="Window handle")
-@click.option("--wait", type=float, help="Wait for dialog (seconds)")
-@click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
-def dialog(action, text, button, app, window_title, hwnd, wait, json_output):
-    """Interact with system dialogs (file picker, message box, etc.)."""
-    click.echo("Not implemented yet — coming in Phase 3")
+# Moved to naturo/cli/dialog_cmd.py (Phase 4.5)
 
 
 # ── open ────────────────────────────────────────
@@ -352,44 +341,4 @@ def tray_click(name, double, right, json_output):
     click.echo("Not implemented yet — coming in Phase 3")
 
 
-# ── desktop (Windows-specific, maps to Peekaboo space) ──
-
-
-@click.group()
-def desktop():
-    """Virtual desktop management.
-
-    Windows equivalent of Peekaboo's space commands.
-    """
-    pass
-
-
-@desktop.command(name="list")
-@click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
-def desktop_list(json_output):
-    """List virtual desktops."""
-    click.echo("Not implemented yet — coming in Phase 3")
-
-
-@desktop.command()
-@click.option("--name", help="Name for the new desktop")
-@click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
-def create(name, json_output):
-    """Create a new virtual desktop."""
-    click.echo("Not implemented yet — coming in Phase 3")
-
-
-@desktop.command(name="switch")
-@click.argument("target")
-@click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
-def desktop_switch(target, json_output):
-    """Switch to a virtual desktop by index or name."""
-    click.echo("Not implemented yet — coming in Phase 3")
-
-
-@desktop.command(name="close")
-@click.argument("target", required=False)
-@click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
-def desktop_close(target, json_output):
-    """Close a virtual desktop."""
-    click.echo("Not implemented yet — coming in Phase 3")
+# ── desktop — moved to naturo/cli/desktop_cmd.py (Phase 5A.3) ──

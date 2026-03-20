@@ -98,7 +98,7 @@ def test_hidden_commands_not_in_help():
     result = runner.invoke(main, ["--help"])
     # Known hidden top-level groups that were removed entirely
     for name in ["menu", "open",
-                 "desktop", "excel", "java", "sap",
+                 "excel", "java", "sap",
                  "registry", "service", "tools"]:
         # These should not appear as commands in help
         # (they may appear in description text, so check the Commands section)

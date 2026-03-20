@@ -1542,6 +1542,102 @@ def create_server(host: str = "localhost", port: int = 3100) -> FastMCP:
         result = backend.tray_click(name=name, button=button, double=double_click)
         return {"success": True, **result}
 
+    # ── Virtual Desktop (Phase 5A.3) ─────────────────
+
+    @server.tool()
+    @_safe_tool
+    def virtual_desktop_list() -> dict:
+        """List all virtual desktops (Windows 10/11).
+
+        Returns each desktop's index, name, whether it is current, and ID.
+        Use this to discover available desktops before switching or moving
+        windows.
+
+        Returns:
+            Dict with success, desktops list, and count.
+        """
+        desktops = backend.virtual_desktop_list()
+        return {"success": True, "desktops": desktops, "count": len(desktops)}
+
+    @server.tool()
+    @_safe_tool
+    def virtual_desktop_switch(index: int) -> dict:
+        """Switch to a virtual desktop by index.
+
+        Changes the active desktop. Use virtual_desktop_list to find
+        valid indices.
+
+        Args:
+            index: Zero-based desktop index.
+
+        Returns:
+            Dict with success, switched desktop index and name.
+        """
+        result = backend.virtual_desktop_switch(index)
+        return {"success": True, **result}
+
+    @server.tool()
+    @_safe_tool
+    def virtual_desktop_create(name: Optional[str] = None) -> dict:
+        """Create a new virtual desktop.
+
+        Creates a new desktop and optionally assigns it a name.
+        The new desktop is added at the end of the desktop list.
+
+        Args:
+            name: Optional name for the new desktop.
+
+        Returns:
+            Dict with success, new desktop index, name, and id.
+        """
+        result = backend.virtual_desktop_create(name=name)
+        return {"success": True, **result}
+
+    @server.tool()
+    @_safe_tool
+    def virtual_desktop_close(index: Optional[int] = None) -> dict:
+        """Close a virtual desktop.
+
+        Without index, closes the current desktop. Cannot close the
+        last remaining desktop. Windows on the closed desktop are moved
+        to an adjacent desktop.
+
+        Args:
+            index: Zero-based desktop index. None = current desktop.
+
+        Returns:
+            Dict with success, closed desktop index and name.
+        """
+        result = backend.virtual_desktop_close(index=index)
+        return {"success": True, **result}
+
+    @server.tool()
+    @_safe_tool
+    def virtual_desktop_move_window(
+        desktop_index: int,
+        app: Optional[str] = None,
+        hwnd: Optional[int] = None,
+    ) -> dict:
+        """Move a window to a different virtual desktop.
+
+        Identifies the target window by app name or handle. If neither
+        is provided, moves the foreground window.
+
+        Args:
+            desktop_index: Target desktop index (zero-based).
+            app: Application name (partial match).
+            hwnd: Window handle (integer).
+
+        Returns:
+            Dict with success, window handle, target desktop index and name.
+        """
+        result = backend.virtual_desktop_move_window(
+            desktop_index=desktop_index,
+            app=app,
+            hwnd=hwnd,
+        )
+        return {"success": True, **result}
+
     return server
 
 
