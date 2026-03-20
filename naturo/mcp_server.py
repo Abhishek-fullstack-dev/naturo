@@ -1968,6 +1968,237 @@ def create_server(host: str = "localhost", port: int = 3100) -> FastMCP:
         result = launch_with_debug(app_path, port=port)
         return {"success": True, **result}
 
+    # ── Registry tools ───────────────────────────────────────
+
+    @server.tool()
+    @_safe_tool
+    def registry_get(
+        key_path: str,
+        value_name: Optional[str] = None,
+    ) -> dict:
+        """Read a Windows Registry value.
+
+        Args:
+            key_path: Full registry path (e.g. HKCU\\Software\\MyApp).
+            value_name: Value name (default: (Default) value).
+
+        Returns:
+            Dict with name, data, type_name.
+        """
+        from naturo.registry import reg_get
+        result = reg_get(key_path, value_name)
+        return {"success": True, **result}
+
+    @server.tool()
+    @_safe_tool
+    def registry_set(
+        key_path: str,
+        value_name: str,
+        data: str,
+        reg_type: str = "REG_SZ",
+    ) -> dict:
+        """Write a Windows Registry value. Creates the key if needed.
+
+        Args:
+            key_path: Full registry path (e.g. HKCU\\Software\\MyApp).
+            value_name: Value name to set.
+            data: Value data.
+            reg_type: Registry type (REG_SZ, REG_DWORD, REG_QWORD, REG_BINARY,
+                      REG_EXPAND_SZ, REG_MULTI_SZ).
+
+        Returns:
+            Dict with key, name, data, type_name.
+        """
+        valid_types = {"REG_SZ", "REG_DWORD", "REG_QWORD", "REG_BINARY",
+                       "REG_EXPAND_SZ", "REG_MULTI_SZ"}
+        if reg_type not in valid_types:
+            return {
+                "success": False,
+                "error": {
+                    "code": "INVALID_INPUT",
+                    "message": f"Invalid reg_type '{reg_type}'. Must be one of: {', '.join(sorted(valid_types))}",
+                },
+            }
+        from naturo.registry import reg_set
+        result = reg_set(key_path, value_name, data, reg_type)
+        return {"success": True, **result}
+
+    @server.tool()
+    @_safe_tool
+    def registry_list(key_path: str) -> dict:
+        """List registry subkeys and values under a key.
+
+        Args:
+            key_path: Full registry path (e.g. HKCU\\Software).
+
+        Returns:
+            Dict with subkeys list and values list.
+        """
+        from naturo.registry import reg_list
+        result = reg_list(key_path)
+        return {"success": True, **result}
+
+    @server.tool()
+    @_safe_tool
+    def registry_delete(
+        key_path: str,
+        value_name: Optional[str] = None,
+        recursive: bool = False,
+    ) -> dict:
+        """Delete a registry key or value.
+
+        Args:
+            key_path: Full registry path.
+            value_name: Delete specific value (omit to delete the key itself).
+            recursive: Delete key recursively if it has subkeys.
+
+        Returns:
+            Dict with deleted type and details.
+        """
+        from naturo.registry import reg_delete
+        result = reg_delete(key_path, value_name, recursive)
+        return {"success": True, **result}
+
+    @server.tool()
+    @_safe_tool
+    def registry_search(
+        key_path: str,
+        query: str,
+        max_depth: int = 5,
+        max_results: int = 50,
+        search_keys: bool = True,
+        search_values: bool = True,
+        search_data: bool = False,
+    ) -> dict:
+        """Search registry keys, value names, or data.
+
+        Args:
+            key_path: Starting registry path.
+            query: Search string (case-insensitive).
+            max_depth: Maximum search depth (1-20, default 5).
+            max_results: Maximum results to return (default 50).
+            search_keys: Search key names.
+            search_values: Search value names.
+            search_data: Search value data.
+
+        Returns:
+            Dict with results list and truncated flag.
+        """
+        if not query.strip():
+            return {
+                "success": False,
+                "error": {"code": "INVALID_INPUT", "message": "Search query cannot be empty"},
+            }
+        if max_depth < 1 or max_depth > 20:
+            return {
+                "success": False,
+                "error": {
+                    "code": "INVALID_INPUT",
+                    "message": f"max_depth must be between 1 and 20, got {max_depth}",
+                },
+            }
+        if max_results < 1:
+            return {
+                "success": False,
+                "error": {
+                    "code": "INVALID_INPUT",
+                    "message": f"max_results must be >= 1, got {max_results}",
+                },
+            }
+        from naturo.registry import reg_search
+        result = reg_search(
+            key_path, query,
+            max_depth=max_depth, max_results=max_results,
+            search_keys=search_keys, search_values=search_values, search_data=search_data,
+        )
+        return {"success": True, **result}
+
+    # ── Service tools ────────────────────────────────────────
+
+    @server.tool()
+    @_safe_tool
+    def service_list(state: str = "all") -> dict:
+        """List Windows services.
+
+        Args:
+            state: Filter by state — 'running', 'stopped', or 'all' (default).
+
+        Returns:
+            Dict with services list and count.
+        """
+        valid_states = {"running", "stopped", "all"}
+        if state not in valid_states:
+            return {
+                "success": False,
+                "error": {
+                    "code": "INVALID_INPUT",
+                    "message": f"Invalid state '{state}'. Must be one of: {', '.join(sorted(valid_states))}",
+                },
+            }
+        from naturo.service import service_list as _service_list
+        result = _service_list(state)
+        return {"success": True, **result}
+
+    @server.tool()
+    @_safe_tool
+    def service_start(name: str) -> dict:
+        """Start a Windows service.
+
+        Args:
+            name: Service short name (e.g. 'Spooler', 'wuauserv').
+
+        Returns:
+            Dict with service name and new state.
+        """
+        from naturo.service import service_start as _service_start
+        result = _service_start(name)
+        return {"success": True, **result}
+
+    @server.tool()
+    @_safe_tool
+    def service_stop(name: str) -> dict:
+        """Stop a Windows service.
+
+        Args:
+            name: Service short name (e.g. 'Spooler', 'wuauserv').
+
+        Returns:
+            Dict with service name and new state.
+        """
+        from naturo.service import service_stop as _service_stop
+        result = _service_stop(name)
+        return {"success": True, **result}
+
+    @server.tool()
+    @_safe_tool
+    def service_restart(name: str) -> dict:
+        """Restart a Windows service (stop then start).
+
+        Args:
+            name: Service short name (e.g. 'Spooler', 'wuauserv').
+
+        Returns:
+            Dict with service name and new state.
+        """
+        from naturo.service import service_restart as _service_restart
+        result = _service_restart(name)
+        return {"success": True, **result}
+
+    @server.tool()
+    @_safe_tool
+    def service_status(name: str) -> dict:
+        """Get detailed status of a Windows service.
+
+        Args:
+            name: Service short name (e.g. 'Spooler', 'wuauserv').
+
+        Returns:
+            Dict with state, PID, start type, binary path, dependencies.
+        """
+        from naturo.service import service_status as _service_status
+        result = _service_status(name)
+        return {"success": True, **result}
+
     return server
 
 
