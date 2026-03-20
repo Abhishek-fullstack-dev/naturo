@@ -750,7 +750,8 @@ class WindowsBackend(Backend):
     def get_element_tree(self, window_title: Optional[str] = None,
                          depth: int = 3,
                          app: Optional[str] = None,
-                         hwnd: Optional[int] = None) -> Optional[BaseElementInfo]:
+                         hwnd: Optional[int] = None,
+                         backend: str = "uia") -> Optional[BaseElementInfo]:
         """Get the UI element tree for a window.
 
         Fills parent_id, children IDs, and keyboard_shortcut for all elements
@@ -761,13 +762,27 @@ class WindowsBackend(Backend):
             depth: Maximum depth to traverse (1-10).
             app: Application name to search for (partial match, case-insensitive).
             hwnd: Direct window handle. Overrides app/window_title.
+            backend: Accessibility backend — "uia" (default), "msaa", or "auto".
+                     "auto" tries UIA first, falls back to MSAA if UIA returns
+                     no meaningful elements.
 
         Returns:
             Root ElementInfo with nested children, or None.
         """
         core = self._ensure_core()
         handle = self._resolve_hwnd(app=app, window_title=window_title, hwnd=hwnd)
-        result = core.get_element_tree(hwnd=handle, depth=depth)
+
+        if backend == "msaa":
+            result = core.msaa_get_element_tree(hwnd=handle, depth=depth)
+        elif backend == "auto":
+            result = core.get_element_tree(hwnd=handle, depth=depth)
+            if result is None or (not result.children and not result.name):
+                msaa_result = core.msaa_get_element_tree(hwnd=handle, depth=depth)
+                if msaa_result is not None:
+                    result = msaa_result
+        else:
+            result = core.get_element_tree(hwnd=handle, depth=depth)
+
         if result is None:
             return None
 

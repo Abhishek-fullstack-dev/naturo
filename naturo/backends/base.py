@@ -187,7 +187,8 @@ class Backend(ABC):
         ...
 
     @abstractmethod
-    def get_element_tree(self, window_title: str = None, depth: int = 3) -> Optional[ElementInfo]:
+    def get_element_tree(self, window_title: str = None, depth: int = 3,
+                         backend: str = "uia") -> Optional[ElementInfo]:
         ...
 
     # === Input ===

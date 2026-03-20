@@ -206,6 +206,60 @@
 
 ---
 
+## 🆕 Round 29 自发现（Phase 5A 代码审查 + JSON 一致性扫描）
+
+### BUG-055: `find --json` 和 `menu-inspect --json` 成功时返回裸数组
+- **状态**: 🟢 Fixed (commit 05b4b7d)
+- **严重度**: 🟡 中等（同 BUG-029 类型 — JSON schema 不一致，影响 AI agent 集成）
+- **现象**: BUG-029 修复了 `list windows --json` 和 `snapshot list --json` 的裸数组问题，但 `find --json` 和 `menu-inspect --json` 存在相同问题：
+  - `find --json` 返回 `[{"id":..., "role":...}, ...]`（裸数组，第 646 行）
+  - `menu-inspect --json` 返回 `[{"label":...}, ...]`（裸数组，第 823/825 行）
+  - 其他成功响应都是 `{"success": true, ...}` 对象格式
+- **预期**: 
+  - `find --json` → `{"success": true, "elements": [...], "count": N}`
+  - `menu-inspect --json` → `{"success": true, "menu_items": [...]}`
+- **文件**: naturo/cli/core.py（find_cmd 函数第 646 行，menu_inspect 函数第 823/825 行）
+
+---
+
+## 🆕 Round 27 自发现（MCP Server 代码审查）
+
+### BUG-054: Dialog MCP 工具缺少 `@server.tool()` 装饰器，AI Agent 完全无法访问
+- **状态**: ✅ Verified (Round 28) — 代码审查确认 5 个 dialog 函数（dialog_detect/accept/dismiss/click_button/type）全部已添加 `@server.tool()` + `@_safe_tool` 双装饰器，与其他工具格式一致
+- **严重度**: 🔴 严重（Phase 4.5 的 5 个 dialog 工具全部未注册到 MCP server）
+- **现象**: `dialog_detect`, `dialog_accept`, `dialog_dismiss`, `dialog_click_button`, `dialog_type` 五个函数只有 `@_safe_tool` 装饰器，缺少 `@server.tool()` 装饰器。导致这些函数不会被 FastMCP 注册为工具，AI agent 通过 MCP 协议无法发现和调用任何 dialog 功能
+- **对比**: 同文件中的 `describe_screen`, `identify_element`, `ai_find_element` 等函数都正确使用了 `@server.tool()` + `@_safe_tool` 双装饰器
+- **影响**: AI agent 在自动化流程中遇到对话框时完全无法处理（无法检测、接受、拒绝、点击按钮或输入文本）
+- **修复**: 在每个 dialog 函数的 `@_safe_tool` 上方添加 `@server.tool()`
+- **文件**: naturo/mcp_server.py（第 1249-1430 行，5 个 dialog 函数）
+
+---
+
+## 🆕 Round 25 自发现（record 命令系统性测试）
+
+### BUG-053: `record start/stop` 录制状态不跨进程持久化，整个录制流程无法工作
+- **状态**: ✅ Verified (Round 26) — start→stop 跨进程正常，重复 start 被拒绝(RECORDING_ACTIVE)，无活跃录制 stop 返回 NO_RECORDING，record list 正确列出历史录制，JSON 格式和 exit code 均正确
+- **严重度**: 🔴 严重（核心功能完全不可用）
+- **现象**: `record start` 将录制状态存储在进程内存变量 `_active_recording` 中（`record_cmd.py` 第 21 行）。由于每次 naturo CLI 调用都是独立进程，`record start` 结束后状态丢失。后续的 `record stop` 永远报 "No recording in progress"
+- **复现**:
+  ```
+  naturo record start --name "test" --json  → success
+  naturo record stop --json                 → {"success": false, "error": {"code": "NO_RECORDING", ...}}
+  ```
+- **连锁问题**: 
+  1. 连续多次 `record start` 都能成功（因为每次进程都是新的，`_active_recording` 始终为 None），不报 "A recording is already in progress"
+  2. `record start` 不生成录制文件（只在 stop 时 save），所以 start 后 list 仍为空
+  3. 其他命令中的 `record_action()` 调用也永远不会记录任何步骤（`_active_recording` 在新进程中是 None）
+- **根因**: 录制状态必须持久化到文件系统（如 `~/.naturo/recordings/.active_recording.json`），而非内存变量
+- **修复建议**: 
+  - `record start` → 创建 `~/.naturo/recordings/.active` 文件，写入 recording_id、name、created_at
+  - 其他命令的 `record_action()` → 检查 `.active` 文件存在则追加 step 到录制文件
+  - `record stop` → 读取 `.active` 文件，保存完整录制，删除 `.active`
+  - `record start` 再次调用时 → 检查 `.active` 文件存在则拒绝
+- **文件**: naturo/cli/record_cmd.py（`_active_recording` 全局变量 + `_get/_set_active_recording` 函数）, naturo/recording.py
+
+---
+
 ## 🆕 Round 20 自发现
 
 ### BUG-049: `see --app nonexistent` 返回 UNKNOWN_ERROR 而非 WINDOW_NOT_FOUND
@@ -375,3 +429,17 @@
 - **根因**: Click 的 `ctx.exit(1)` 在某些场景下（特别是 Windows Python 3.12）不能可靠地设置进程 exit code。BUG-016 已发现此问题并在 wait_cmd.py 部分位置改用了 `sys.exit(1)`，但修复不彻底
 - **修复建议**: 全局替换所有 `ctx.exit(1)` 为 `sys.exit(1)`（39 处），或封装统一的 exit 函数
 - **文件**: naturo/cli/window_cmd.py, naturo/cli/app_cmd.py, naturo/cli/diff_cmd.py, naturo/cli/wait_cmd.py
+
+---
+
+## 🆕 Round 23 自发现（Phase 4.7/4.8 新代码验证）
+
+### BUG-052: `agent ""` 和 `agent "   "` 空指令不校验，报 AI_PROVIDER_UNAVAILABLE
+- **状态**: ✅ Verified (Round 24) — 空字符串和纯空白均返回 INVALID_INPUT "Instruction cannot be empty"，exit code 非零，纯文本模式输出到 stderr
+- **严重度**: 🟡 中等（同 BUG-047 类型 — 验证顺序问题，误导性错误信息）
+- **现象**: `naturo agent "" --json` 返回 `{"success": false, "error": {"code": "AI_PROVIDER_UNAVAILABLE", "message": "AI provider unavailable: anthropic"}}`。空指令应该在 provider 初始化之前被拦截
+- **命令**: `naturo agent "" --json`, `naturo agent "   " --json`
+- **预期**: `{"success": false, "error": {"code": "INVALID_INPUT", "message": "Instruction cannot be empty"}}`
+- **根因**: agent 函数在 max_steps 校验后直接调用 `_get_agent_provider()`，没有先校验 instruction 是否为空或纯空白
+- **修复建议**: 在 max_steps 校验之后、provider 初始化之前，加入 `if not instruction.strip():` 校验
+- **文件**: naturo/cli/ai.py（agent 函数，约第 55 行）

@@ -360,13 +360,23 @@ def permissions(json_output):
 @click.option("--annotate", is_flag=True, help="Annotate screenshot with element labels")
 @click.option("--snapshot/--no-snapshot", "store_snapshot", default=True, help="Store result in snapshot (default: on)")
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
-def see(app, window_title, hwnd, pid, mode, depth, path, annotate, store_snapshot, json_output):
+@click.option(
+    "--backend", "-b",
+    type=click.Choice(["uia", "msaa", "auto"]),
+    default="uia",
+    help="Accessibility backend: uia (default), msaa (legacy apps), auto (try UIA then MSAA)",
+)
+def see(app, window_title, hwnd, pid, mode, depth, path, annotate, store_snapshot, json_output, backend):
     """Capture screenshot and analyze UI elements.
 
     Inspects the UI element tree of the foreground window (or a specific
     window identified by --hwnd). Shows the element hierarchy with roles,
     names, and bounding rectangles.  Results are stored in a snapshot so
     subsequent commands can reference elements by ID.
+
+    Use --backend msaa for legacy applications (MFC, VB6, Delphi) that
+    don't expose UIAutomation elements. Use --backend auto to try UIA
+    first and fall back to MSAA automatically.
     """
     # BUG-028: Validate --depth range (before platform check — input validation first)
     if depth < 1 or depth > 10:
@@ -386,9 +396,10 @@ def see(app, window_title, hwnd, pid, mode, depth, path, annotate, store_snapsho
         raise SystemExit(1)
 
     try:
-        backend = _get_backend()
-        tree = backend.get_element_tree(
+        be = _get_backend()
+        tree = be.get_element_tree(
             app=app, window_title=window_title, hwnd=hwnd, depth=depth,
+            backend=backend,
         )
 
         if tree is None:
@@ -550,11 +561,18 @@ def see(app, window_title, hwnd, pid, mode, depth, path, annotate, store_snapsho
               help="Use existing screenshot (for --ai mode)")
 @click.option("--app", "ai_app", default=None, help="Target app window (for --ai mode)")
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
-def find_cmd(query, role, actionable, depth, limit, ai, provider, screenshot, ai_app, json_output):
+@click.option(
+    "--backend", "-b",
+    type=click.Choice(["uia", "msaa", "auto"]),
+    default="uia",
+    help="Accessibility backend: uia (default), msaa (legacy apps), auto",
+)
+def find_cmd(query, role, actionable, depth, limit, ai, provider, screenshot, ai_app, json_output, backend):
     """Search for UI elements matching a query.
 
     Supports fuzzy name matching, role filtering, and combined queries.
     Use --ai for natural language element finding powered by AI vision.
+    Use --backend msaa for legacy applications that lack UIA support.
 
     \b
     Examples:
@@ -564,6 +582,7 @@ def find_cmd(query, role, actionable, depth, limit, ai, provider, screenshot, ai
         naturo find "*" --actionable             # all actionable elements
         naturo find "the save button" --ai       # AI vision search
         naturo find "search field" --ai --app "Chrome"  # AI + specific app
+        naturo find "OK" --backend msaa          # MSAA for legacy apps
     """
     # AI vision mode — natural language element finding
     if ai:
@@ -588,8 +607,8 @@ def find_cmd(query, role, actionable, depth, limit, ai, provider, screenshot, ai
         raise SystemExit(1)
 
     try:
-        backend = _get_backend()
-        tree = backend.get_element_tree(depth=depth)
+        be = _get_backend()
+        tree = be.get_element_tree(depth=depth, backend=backend)
         if tree is None:
             msg = "No window found or UI tree is empty."
             if json_output:

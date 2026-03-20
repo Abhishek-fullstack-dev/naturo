@@ -233,6 +233,18 @@ class NaturoCore:
         self._lib.naturo_key_hotkey.restype = ctypes.c_int
         self._lib.naturo_key_hotkey.argtypes = [ctypes.c_int, ctypes.c_char_p]
 
+        # Phase 5B — MSAA / IAccessible
+        self._lib.naturo_msaa_get_element_tree.restype = ctypes.c_int
+        self._lib.naturo_msaa_get_element_tree.argtypes = [
+            ctypes.c_size_t, ctypes.c_int, ctypes.c_char_p, ctypes.c_int
+        ]
+
+        self._lib.naturo_msaa_find_element.restype = ctypes.c_int
+        self._lib.naturo_msaa_find_element.argtypes = [
+            ctypes.c_size_t, ctypes.c_char_p, ctypes.c_char_p,
+            ctypes.c_char_p, ctypes.c_int
+        ]
+
     def _load(self, lib_path: str | None) -> ctypes.CDLL:
         """Load the native library from the given path or search standard locations.
 
@@ -606,3 +618,75 @@ class NaturoCore:
         rc = self._lib.naturo_key_hotkey(modifiers, key_bytes)
         if rc != 0:
             raise NaturoCoreError(rc, f"key_hotkey({keys!r})")
+
+    # ── Phase 5B: MSAA / IAccessible ─────────────────
+
+    def msaa_get_element_tree(self, hwnd: int = 0, depth: int = 3) -> Optional[ElementInfo]:
+        """Inspect the MSAA (IAccessible) element tree of a window.
+
+        Provides element inspection for legacy applications that lack
+        UIAutomation support (MFC, VB6, Delphi, native Win32, etc.).
+
+        Args:
+            hwnd: Window handle. 0 for the foreground window.
+            depth: Maximum tree depth (1-10).
+
+        Returns:
+            Root ElementInfo with children, or None if no window found.
+
+        Raises:
+            NaturoCoreError: On MSAA/COM or buffer error.
+        """
+        buf_size = 1 << 20  # 1 MB
+        buf = ctypes.create_string_buffer(buf_size)
+        count = self._lib.naturo_msaa_get_element_tree(hwnd, depth, buf, buf_size)
+
+        if count == -4:
+            buf_size = 8 << 20  # 8 MB retry
+            buf = ctypes.create_string_buffer(buf_size)
+            count = self._lib.naturo_msaa_get_element_tree(hwnd, depth, buf, buf_size)
+
+        if count == -2:
+            return None
+        if count < 0:
+            raise NaturoCoreError(count, "msaa_get_element_tree")
+
+        data = json.loads(_decode_native(buf.value))
+        return _parse_element(data)
+
+    def msaa_find_element(
+        self, hwnd: int = 0, role: Optional[str] = None, name: Optional[str] = None
+    ) -> Optional[ElementInfo]:
+        """Find an MSAA element by role and/or name within a window.
+
+        Uses BFS traversal of the IAccessible tree. Role matching uses
+        human-readable names (e.g., "Button", "Edit", "MenuItem").
+
+        Args:
+            hwnd: Window handle. 0 for the foreground window.
+            role: Element role filter (case-insensitive). None for any.
+            name: Element name filter (case-insensitive). None for any.
+
+        Returns:
+            ElementInfo if found, None if not found.
+
+        Raises:
+            NaturoCoreError: On error (invalid args, COM failure, etc.).
+        """
+        buf_size = 4096
+        buf = ctypes.create_string_buffer(buf_size)
+
+        role_bytes = role.encode("utf-8") if role else None
+        name_bytes = name.encode("utf-8") if name else None
+
+        rc = self._lib.naturo_msaa_find_element(hwnd, role_bytes, name_bytes, buf, buf_size)
+
+        if rc == 1:
+            return None
+        if rc == -2:
+            return None
+        if rc < 0:
+            raise NaturoCoreError(rc, "msaa_find_element")
+
+        data = json.loads(_decode_native(buf.value))
+        return _parse_element(data)

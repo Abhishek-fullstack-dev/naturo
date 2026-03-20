@@ -461,6 +461,7 @@ def create_server(host: str = "localhost", port: int = 3100) -> FastMCP:
     def see_ui_tree(
         window_title: Optional[str] = None,
         depth: int = 3,
+        accessibility_backend: str = "uia",
     ) -> dict:
         """Inspect the UI accessibility tree of a window.
 
@@ -470,14 +471,19 @@ def create_server(host: str = "localhost", port: int = 3100) -> FastMCP:
         Args:
             window_title: Target window (partial match). None = foreground window.
             depth: How deep to traverse the tree (1-10).
+            accessibility_backend: "uia" (default), "msaa" (for legacy apps like
+                MFC, VB6, Delphi), or "auto" (try UIA first, fall back to MSAA).
 
         Returns:
             Dict with the element tree structure.
         """
         if depth < 1 or depth > 10:
             return {"success": False, "error": {"code": "INVALID_INPUT", "message": f"depth must be between 1 and 10, got {depth}"}}
+        if accessibility_backend not in ("uia", "msaa", "auto"):
+            return {"success": False, "error": {"code": "INVALID_INPUT", "message": f"accessibility_backend must be uia, msaa, or auto, got {accessibility_backend}"}}
         backend = _get_backend()
-        tree = backend.get_element_tree(window_title=window_title, depth=depth)
+        tree = backend.get_element_tree(window_title=window_title, depth=depth,
+                                        backend=accessibility_backend)
         if tree is None:
             return {"success": False, "error": {"code": "NO_WINDOW", "message": "No matching window found"}}
 

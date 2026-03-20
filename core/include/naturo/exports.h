@@ -182,6 +182,46 @@ NATURO_API int naturo_key_press(const char* key_name);
  */
 NATURO_API int naturo_key_hotkey(int modifiers, const char* key_name);
 
+/* ── MSAA / IAccessible ───────────────────────────── */
+
+/**
+ * @brief Inspect the MSAA (IAccessible) element tree of a window.
+ *
+ * Provides element inspection for legacy applications that lack
+ * UIAutomation support (MFC, VB6, Delphi, native Win32, etc.).
+ *
+ * @param hwnd Window handle. Pass 0 for the foreground window.
+ * @param depth Maximum tree depth to traverse (clamped to 1-10).
+ * @param result_json Buffer to receive a JSON tree of MSAA elements.
+ *        Each element: {"id":"mN","role":"...","role_id":N,"name":"...",
+ *        "value":"...","x":N,"y":N,"width":N,"height":N,"state":N,
+ *        "keyboard_shortcut":"...","backend":"msaa","children":[...]}
+ * @param buf_size Size of the buffer in bytes.
+ * @return Number of elements found (>= 0), or negative error code.
+ *         Returns -2 on MSAA/COM error, -4 if buffer too small.
+ */
+NATURO_API int naturo_msaa_get_element_tree(uintptr_t hwnd, int depth,
+                                             char* result_json, int buf_size);
+
+/**
+ * @brief Find an MSAA element by role and/or name within a window.
+ *
+ * Uses BFS traversal of the IAccessible tree. Role matching uses
+ * the same human-readable names as the tree output (e.g., "Button",
+ * "Edit", "MenuItem").
+ *
+ * @param hwnd Window handle. Pass 0 for the foreground window.
+ * @param role Element role filter (case-insensitive). NULL for any role.
+ * @param name Element name filter (case-insensitive). NULL for any name.
+ * @param result_json Buffer to receive a JSON object of the found element.
+ * @param buf_size Size of the buffer in bytes.
+ * @return 0 if found, 1 if not found, -1 on invalid argument,
+ *         -2 on MSAA/COM error, -4 if buffer too small.
+ */
+NATURO_API int naturo_msaa_find_element(uintptr_t hwnd, const char* role,
+                                         const char* name,
+                                         char* result_json, int buf_size);
+
 #ifdef __cplusplus
 }
 #endif
