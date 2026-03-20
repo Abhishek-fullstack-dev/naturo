@@ -1,16 +1,16 @@
 # Dev Status
 
 ## 最近工作
-- **Phase 5C.4 完成** — Electron/CEF MCP tools (4 个) + README/ROADMAP 更新
-- **Stub 命令修复** — excel/java/sap stub 统一 NOT_IMPLEMENTED 错误处理 (exit code 1 + JSON)
-- **Phase 5C.3** — Windows Service 管理 (list/start/stop/restart/status)
+- **代码质量清理** — 移除 TODO 注释，清理未提交代码（electron backend + error_helpers）
+- **Bug 状态更新** — BUG-056/057/058 确认已修复（代码审查），snapshot ID 碰撞修复
+- **Snapshot 并发修复** — ID 后缀从4位扩展到8位，消除高并发碰撞
 
 ## 技术评估
 - 代码健康度：良好
-- 测试：1400 passed, 295 skipped, 0 failed ✅
-- MCP server: 42 tools
-- 零 🔴 Open bug，BUG-055 待 QA 验证
-- 无 bare except、无 TODO/FIXME
+- 测试：1407 passed, 295 skipped, 0 failed ✅
+- MCP server: 42+ tools（含 registry/service）
+- **零 🔴 Open bug** — 全部 bugs 已 Fixed 或 Verified
+- 无 TODO/FIXME/HACK
 - 所有 stub 命令统一错误处理
 - ctx.exit(1) 全部已替换为 sys.exit(1)
 
@@ -27,8 +27,8 @@
 - **下一步**: Phase 5C.1 Excel COM (需要编译机) 或 Phase 5D Packaging
 
 ## 风险预警
-- 编译机 192.168.31.52 不可达（周六凌晨），C++ 改动和 Windows 功能无法验证
-- feat/phase5b-engine 分支积累较多代码，建议尽快 merge 到 main
+- 编译机 192.168.31.52 不可达（周六早上），C++ 改动和 Windows 功能无法验证
+- feat/phase5b-engine 分支已有 28 commits ahead of main，建议尽快 merge
 
 ## 阻塞
 - Phase 5B.4 SAP GUI Scripting — 需要 SAP 测试环境
