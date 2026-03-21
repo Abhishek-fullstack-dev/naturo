@@ -206,6 +206,128 @@
 
 ---
 
+## 🆕 Round 37 自发现（open 命令审查）
+
+### BUG-065: `open ""` 和 `open "   "` 空目标不校验，报 success
+- **状态**: 🟢 Fixed
+- **严重度**: 🟡 中等（违反用户体验原则 — 无意义操作报成功）
+- **现象**: `naturo open "" --json` 返回 `{"success": true, "target": ""}`，`naturo open "   " --json` 返回 `{"success": true, "target": "   "}`。空字符串和纯空白应被拦截
+- **命令**: `naturo open "" --json`, `naturo open "   " --json`
+- **预期**: `{"success": false, "error": {"code": "INVALID_INPUT", "message": "Target cannot be empty"}}`，exit code 1
+- **修复建议**: 在 `open_cmd` 函数入口处添加 `if not target.strip():` 校验
+- **文件**: naturo/cli/system.py（open_cmd 函数，第 257 行附近）
+
+### BUG-066: `open --app` 参数声明但未实现，静默忽略
+- **状态**: 🟢 Fixed
+- **严重度**: 🟡 中等（违反设计原则 #4 — 帮助和实际行为一致；同 BUG-035/036 类型）
+- **现象**: `naturo open https://example.com --app notepad --json` 返回 `{"success": true, ...}`，但 URL 仍然用默认浏览器打开，`--app notepad` 被完全忽略。代码注释写 `# Future: --app option for opening with specific application`
+- **命令**: `naturo open https://example.com --app notepad --json`
+- **预期**: 方案 A（推荐）— 隐藏 `--app` 参数（hidden=True），等实现后再暴露；方案 B — 实现 `--app`（Windows 上用 `start /D "" appname target`）
+- **文件**: naturo/cli/system.py（open_cmd 函数，第 260 行 `# Future` 注释）
+
+### BUG-067: `open nonexistent_file.xyz` 挂起（Windows `start` 弹对话框阻塞）
+- **状态**: 🟢 Fixed
+- **严重度**: 🔴 严重（命令永远不返回，AI agent 会卡死）
+- **现象**: `naturo open nonexistent_file.xyz --json` 在 SSH 下永远不返回。`subprocess.run(["start", uri], shell=True)` 调用 Windows `start` 命令，打开不存在的文件时弹出错误对话框，阻塞进程
+- **命令**: `naturo open nonexistent_file.xyz --json`
+- **预期**: 先检查文件是否存在（非 URL 时），不存在则返回 `FILE_NOT_FOUND` 错误。或者 `subprocess.run` 添加 timeout 参数防挂起
+- **修复建议**: 
+  1. 判断 target 是 URL（http/https）还是文件路径
+  2. 文件路径时先检查 `os.path.exists(target)`，不存在则报错
+  3. 无论如何给 `subprocess.run` 加 `timeout=10` 防止无限阻塞
+- **文件**: naturo/backends/windows.py（open_uri 方法，第 1239 行）
+
+---
+
+## 🆕 Round 35 自发现
+
+### BUG-063: `clipboard set/get` ctypes fallback 在 64 位 Windows 上完全失效
+- **状态**: ✅ Verified (Round 36) — clipboard set→get 数据一致（英文+中文均正确），ctypes fallback 正常工作
+- **严重度**: 🔴 严重（clipboard 核心功能在无 pyperclip 环境下完全不可用）
+- **现象**: `naturo clipboard set "hello" --json` 报 `success: true`，但 `naturo clipboard get --json` 返回空字符串。数据丢失，set 操作静默失败
+- **根因**: `clipboard_set` 和 `clipboard_get` 的 ctypes fallback（无 pyperclip 时使用）没有设置 `restype` 和 `argtypes`。在 64 位 Windows 上，`GlobalAlloc` 返回 64 位指针但 ctypes 默认截断为 32 位 `c_int`，导致 `GlobalLock` 返回 0（NULL），`memmove` 写入地址 0 触发 access violation（被 except 静默吞掉）
+- **复现**:
+  ```
+  naturo clipboard set "hello" --json  → {"success": true, "length": 5}
+  naturo clipboard get --json          → {"success": true, "text": ""}
+  ```
+- **影响范围**: `clipboard set`、`clipboard get`、`paste`（内部调用 clipboard_set）— 所有剪贴板操作在无 pyperclip 环境下失效
+- **修复建议**: 在 ctypes fallback 中添加：
+  ```python
+  kernel32.GlobalAlloc.restype = ctypes.c_void_p
+  kernel32.GlobalLock.restype = ctypes.c_void_p
+  kernel32.GlobalLock.argtypes = [ctypes.c_void_p]
+  kernel32.GlobalUnlock.argtypes = [ctypes.c_void_p]
+  user32.SetClipboardData.argtypes = [ctypes.c_uint, ctypes.c_void_p]
+  user32.GetClipboardData.restype = ctypes.c_void_p
+  ```
+  或者将 pyperclip 加入 install_requires 确保始终可用
+- **额外问题**: `clipboard_set` 返回 `success: true` 即使写入失败（GlobalLock 返回 0 时只 `return`，不 raise 错误）。应该在 fallback 失败时 raise NaturoError
+- **文件**: naturo/backends/windows.py（clipboard_get 第 1023 行，clipboard_set 第 1060 行）
+
+### BUG-064: `electron connect --port` 无边界校验
+- **状态**: ✅ Verified (Round 36) — port -1/0/99999 均报 INVALID_INPUT "must be between 1 and 65535"，exit code 1
+- **严重度**: 🟢 低（同 BUG-057 类型 — 一致性缺失）
+- **现象**: `electron connect --port -1` 和 `--port 0` 不校验，直接传给 backend，错误信息泄漏中文 Windows WinError 内部错误。而同组的 `electron launch --port` 正确校验 1-65535
+- **命令**: `naturo electron connect nonexistent --port -1 --json` → `CDP_CONNECTION_ERROR` + 中文 WinError
+- **预期**: 校验 `--port` 在 1-65535 范围，报 `INVALID_INPUT` 错误（同 `electron launch`）
+- **文件**: naturo/cli/extensions.py（electron_connect 函数，约第 769 行）
+
+---
+
+## 🆕 Round 34 自发现
+
+### BUG-062: `window` 所有子命令只 catch NaturoError，非预期异常泄漏完整 traceback
+- **状态**: ✅ Verified (Round 35) — window list/focus/close/minimize 等命令在非 NaturoError 异常时返回结构化 JSON `{"success": false, "error": {"code": "UNKNOWN_ERROR", "message": "..."}}`，纯文本模式输出 "Error: ..."，均无 traceback 泄漏，exit code 非零。
+- **严重度**: 🟡 中等（违反设计原则 #5 — 错误信息面向用户，不暴露 traceback；违反 #6 — --json 必须合法 JSON）
+- **现象**: `window_cmd.py` 中 9 个命令函数全部只有 `except NaturoError as exc:` 块，没有 `except Exception as exc:` 兜底。当出现非 NaturoError 异常（如 DLL 函数缺失的 `AttributeError`、COM 错误等）时，`--json` 模式直接输出 Python traceback 而非结构化 JSON
+- **复现**: `naturo window list --json`（在 DLL 缺少 naturo_msaa_get_element_tree 的环境下）→ 输出完整 Python traceback
+- **影响范围**: `window list/focus/close/minimize/maximize/restore/move/resize/set-bounds` — 全部 9 个命令
+- **对比**: `core.py`（see/find 等）、`interaction.py`（click/type 等）、`desktop_cmd.py`、`dialog_cmd.py` 都有 `except Exception` 兜底块
+- **修复建议**: 在每个函数的 `except NaturoError` 之后添加 `except Exception as exc:` 块，JSON 模式返回 `{"success": false, "error": {"code": "UNKNOWN_ERROR", "message": str(exc)}}`，纯文本模式输出 `Error: {exc}`
+- **文件**: naturo/cli/window_cmd.py（9 个命令函数）
+- **同类问题**: `chrome_cmd.py` 9 个命令也只 catch `CDPConnectionError`/`CDPError`，无 `except Exception` 兜底。`app_cmd.py` 6 处只有 `NaturoError`、2 处有 `Exception`（部分覆盖）
+
+---
+
+## 🆕 Round 33 自发现（backend NaturoError 缺 import 审查）
+
+### BUG-061: `desktop`/`taskbar`/`tray` 后端方法缺少 NaturoError import，所有错误路径崩溃
+- **状态**: ✅ Verified (Round 34) — `desktop list/switch/create/close --json` 均返回结构化 `DEPENDENCY_MISSING` 错误，`taskbar click --json` 返回结构化错误（DLL 函数问题），不再 NameError 崩溃。exit code 非零。
+- **严重度**: 🔴 严重（7 个后端方法全部 NameError 崩溃，3 个 CLI 命令组完全不可用）
+- **现象**: `naturo desktop list --json` 返回 `{"success":false,"error":{"code":"VIRTUAL_DESKTOP_ERROR","message":"name 'NaturoError' is not defined"}}`。`virtual_desktop_list()` 等方法内 `raise NaturoError(...)` 时触发 `NameError`，因为没有 import
+- **影响范围** (AST 扫描确认 7 个方法):
+  - `taskbar_click` (line 1666)
+  - `tray_click` (line 1769)
+  - `virtual_desktop_list` (line 1824)
+  - `virtual_desktop_switch` (line 1861)
+  - `virtual_desktop_create` (line 1903)
+  - `virtual_desktop_close` (line 1938)
+  - `virtual_desktop_move_window` (line 1996)
+- **根因**: `naturo/backends/windows.py` 顶部没有 `from naturo.errors import NaturoError`。其他方法（如 `dialog_detect`, `dialog_type`）通过函数内 lazy import 解决了，但这 7 个方法直接使用 `NaturoError` 而没有局部 import
+- **验证**: `naturo desktop list --json` → `"name 'NaturoError' is not defined"`
+- **修复建议**: 在 `windows.py` 顶部添加 `from naturo.errors import NaturoError`（最干净），或在每个方法内添加 lazy import（与现有风格一致）
+- **文件**: naturo/backends/windows.py（line 1666, 1769, 1824, 1861, 1903, 1938, 1996）
+
+---
+
+## 🆕 Round 32 自发现（diff 命令错误码审查）
+
+### BUG-060: `diff --snapshot` 不存在的 snapshot 返回 UNKNOWN_ERROR 而非 SNAPSHOT_NOT_FOUND
+- **状态**: ✅ Verified (Round 33) — 返回 `SNAPSHOT_NOT_FOUND` 错误码，exit code 非零
+- **严重度**: 🟡 中等（同 BUG-049/050 类型 — 错误码不准确，影响 AI agent 错误恢复）
+- **现象**: `naturo diff --snapshot nonexistent1 --snapshot nonexistent2 --json` 返回 `{"success": false, "error": {"code": "UNKNOWN_ERROR", "message": "Snapshot not found or expired: nonexistent1"}}`。消息正确但错误码是 `UNKNOWN_ERROR`，应为 `SNAPSHOT_NOT_FOUND`
+- **根因**: 存在两个 `SnapshotNotFoundError` 类：
+  1. `naturo/errors.py` → 继承 `NaturoError`，有 `code=ErrorCode.SNAPSHOT_NOT_FOUND`
+  2. `naturo/models/snapshot.py` → 继承 `SnapshotError(Exception)`，无错误码
+  `diff_cmd.py` 导入 `naturo.snapshot.SnapshotManager`，其 `get_snapshot()` 抛出的是 models 版本的错误（不是 NaturoError），落入 `except Exception` 被包装为 `UNKNOWN_ERROR`
+- **命令**: `naturo diff --snapshot nonexistent1 --snapshot nonexistent2 --json`
+- **预期**: `{"success": false, "error": {"code": "SNAPSHOT_NOT_FOUND", "message": "Snapshot not found or expired: nonexistent1"}}`
+- **修复建议**: 统一使用 `naturo/errors.py` 中的 `SnapshotNotFoundError`，或在 `diff_cmd.py` 中明确 catch `models.snapshot.SnapshotNotFoundError` 并转换为正确错误码
+- **文件**: naturo/cli/diff_cmd.py（第 107 行 except Exception 块），naturo/models/snapshot.py（第 218 行重复定义），naturo/snapshot.py（第 217 行 raise）
+
+---
+
 ## 🆕 Round 31 自发现（文档准确性 + 代码审查）
 
 ### BUG-059: README.md MCP 工具数量过时（写 42，实际 76）
@@ -460,7 +582,7 @@
 ## 🆕 Round 30 自发现（Phase 5B/5C 新代码审查）
 
 ### BUG-056: `chrome screenshot --quality` 无边界校验
-- **状态**: 🟢 Fixed (代码审查确认已实现校验 — chrome_cmd.py _validate_port + quality 1-100 校验)
+- **状态**: ✅ Verified (Round 33) — `--quality 0` 和 `--quality -1` 均报 INVALID_INPUT "must be between 1 and 100"，exit code 非零
 - **严重度**: 🟢 低（同 BUG-019/025/032 类型 — 边界值无校验）
 - **现象**: `--quality 0`、`--quality -1`、`--quality 999` 不报错，直接传给 CDP backend。帮助文档写 "1-100" 但无校验
 - **命令**: `naturo chrome screenshot --quality 0`, `naturo chrome screenshot --quality -1`
@@ -468,7 +590,7 @@
 - **文件**: naturo/cli/chrome_cmd.py（chrome_screenshot 函数，第 173 行）
 
 ### BUG-057: `chrome` 所有子命令 `--port` 无边界校验
-- **状态**: 🟢 Fixed (代码审查确认已实现 _validate_port 函数，所有9个子命令均调用)
+- **状态**: ✅ Verified (Round 33) — `--port 0` 和 `--port 99999` 均报 INVALID_INPUT "must be between 1 and 65535"，exit code 非零
 - **严重度**: 🟢 低（同 BUG-056 — electron launch 有校验但 chrome 没有）
 - **现象**: `--port 0`、`--port -1`、`--port 99999` 不报错，直接传给 `_get_client()`。`electron launch` 已有 1-65535 校验，chrome 一致性缺失
 - **影响范围**: chrome tabs/version/eval/screenshot/navigate/click/type/title/html — 全部 9 个子命令
@@ -476,7 +598,7 @@
 - **文件**: naturo/cli/chrome_cmd.py（所有子命令的 port 参数）
 
 ### BUG-058: Registry/Service MCP 工具缺失
-- **状态**: 🟢 Fixed (代码审查确认 registry_get/set/list/delete/search + service_list/start/stop/restart/status 共10个工具均已注册 @server.tool() + @_safe_tool)
+- **状态**: ✅ Verified (Round 33) — 代码审查+编译机运行时确认，registry/service CLI 命令工作正常，MCP 工具均注册 @server.tool() + @_safe_tool
 - **严重度**: 🟡 中等（AI agent 通过 MCP 无法使用 Phase 5C.2/5C.3 功能）
 - **现象**: `naturo registry` 和 `naturo service` 有完整的 CLI 实现，但 MCP server 中无对应的 `@server.tool()` 注册。AI agent 通过 MCP 协议无法发现或调用这些功能
 - **影响**: registry get/set/list/delete/search 和 service list/start/stop/restart/status 共 10 个命令无 MCP 入口
