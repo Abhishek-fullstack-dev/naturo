@@ -1241,9 +1241,35 @@ class WindowsBackend(Backend):
 
         Args:
             uri: URL or file path to open.
+
+        Raises:
+            NaturoError: If target is a file path that does not exist,
+                or if the open command times out.
         """
+        import os
         import subprocess
-        subprocess.run(["start", uri], shell=True)
+
+        # BUG-067: Check file existence for non-URL targets to avoid
+        # Windows 'start' blocking on an error dialog
+        is_url = uri.startswith(("http://", "https://", "ftp://", "mailto:"))
+        if not is_url and not os.path.exists(uri):
+            from naturo.errors import NaturoError
+            raise NaturoError(
+                f"File not found: {uri}",
+                code="FILE_NOT_FOUND",
+            )
+
+        try:
+            subprocess.run(
+                ["start", "", uri], shell=True, timeout=15,
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            )
+        except subprocess.TimeoutExpired:
+            from naturo.errors import NaturoError
+            raise NaturoError(
+                f"Open command timed out for: {uri}",
+                code="OPEN_TIMEOUT",
+            )
 
     # === Phase 4.5: Dialog Detection & Interaction ===
 
