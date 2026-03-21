@@ -282,32 +282,45 @@ class MacOSBackend(Backend):
         """
         # Peekaboo requires --app for window list; iterate apps
         apps_data = self._run(["app", "list"])
-        apps = apps_data.get("data", {}).get("applications", apps_data.get("applications", []))
+        data_section = apps_data.get("data", {})
+        apps = (
+            data_section.get("apps")
+            or data_section.get("applications")
+            or apps_data.get("apps")
+            or apps_data.get("applications", [])
+        )
 
         windows = []
         for app in apps:
             app_name = app.get("name", "")
+            if not app_name:
+                continue
             pid = app.get("processIdentifier", app.get("pid", 0))
-            window_count = app.get("windowCount", 0)
-            if window_count == 0:
+            # Skip hidden apps — they typically have no visible windows
+            if app.get("isHidden", app.get("is_hidden", False)):
+                continue
+            # If windowCount is known and zero, skip (avoids unnecessary calls)
+            wc = app.get("windowCount", app.get("window_count"))
+            if wc is not None and wc == 0:
                 continue
 
             try:
                 win_data = self._run(["window", "list", "--app", app_name], check=False)
                 raw_windows = win_data.get("data", {}).get("windows", win_data.get("windows", []))
                 for w in raw_windows:
-                    frame = w.get("frame", {})
+                    # Peekaboo uses 'bounds' (snake_case) or 'frame' (camelCase)
+                    frame = w.get("bounds", w.get("frame", {}))
                     windows.append(WindowInfo(
-                        handle=w.get("windowId", w.get("window_id", 0)),
-                        title=w.get("title", w.get("name", "")),
+                        handle=w.get("window_id", w.get("windowId", 0)),
+                        title=w.get("window_title", w.get("title", w.get("name", ""))),
                         process_name=app_name,
                         pid=w.get("pid", pid),
                         x=int(frame.get("x", w.get("x", 0))),
                         y=int(frame.get("y", w.get("y", 0))),
                         width=int(frame.get("width", w.get("width", 0))),
                         height=int(frame.get("height", w.get("height", 0))),
-                        is_visible=not w.get("isMinimized", False),
-                        is_minimized=w.get("isMinimized", False),
+                        is_visible=w.get("is_on_screen", not w.get("isMinimized", w.get("is_minimized", False))),
+                        is_minimized=w.get("isMinimized", w.get("is_minimized", False)),
                     ))
             except PeekabooError:
                 # Skip apps that can't list windows
@@ -858,17 +871,23 @@ class MacOSBackend(Backend):
             List of dicts with app info (name, pid, bundleIdentifier, etc.).
         """
         data = self._run(["app", "list"])
-        apps = data.get("data", {}).get("applications", data.get("applications", []))
+        data_section = data.get("data", {})
+        apps = (
+            data_section.get("apps")
+            or data_section.get("applications")
+            or data.get("apps")
+            or data.get("applications", [])
+        )
         result = []
         for app in apps:
             result.append({
                 "name": app.get("name", ""),
                 "pid": app.get("processIdentifier", app.get("pid", 0)),
-                "bundle_id": app.get("bundleIdentifier", ""),
-                "bundle_path": app.get("bundlePath", ""),
-                "is_active": app.get("isActive", False),
-                "is_hidden": app.get("isHidden", False),
-                "window_count": app.get("windowCount", 0),
+                "bundle_id": app.get("bundleIdentifier", app.get("bundle_id", "")),
+                "bundle_path": app.get("bundlePath", app.get("bundle_path", "")),
+                "is_active": app.get("isActive", app.get("is_active", False)),
+                "is_hidden": app.get("isHidden", app.get("is_hidden", False)),
+                "window_count": app.get("windowCount", app.get("window_count", 0)),
             })
         return result
 
