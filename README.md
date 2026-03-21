@@ -46,6 +46,12 @@
 pip install naturo
 ```
 
+Or via npm (MCP server shortcut):
+
+```bash
+npx naturo mcp start
+```
+
 ## Quick Start
 
 ```bash
