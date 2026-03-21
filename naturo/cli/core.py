@@ -852,6 +852,7 @@ def menu_inspect(app, flat, json_output):
                         click.echo(f"  {entry['path']}{shortcut}")
             else:
                 def print_menu(item, indent=0):
+                    """Recursively print a menu item and its submenus with indentation."""
                     prefix = "  " * indent
                     shortcut = f" [{item.shortcut}]" if item.shortcut else ""
                     state = ""
