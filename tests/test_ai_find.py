@@ -444,6 +444,7 @@ class TestAiFindMCPTool:
 
     def test_mcp_tool_registered(self):
         """ai_find_element is registered as an MCP tool."""
+        pytest.importorskip("mcp")
         from naturo.mcp_server import create_server
         server = create_server()
         tool_names = [t.name for t in server._tool_manager.list_tools()]
@@ -451,6 +452,7 @@ class TestAiFindMCPTool:
 
     def test_mcp_tool_description(self):
         """Tool has a meaningful description."""
+        pytest.importorskip("mcp")
         from naturo.mcp_server import create_server
         server = create_server()
         for t in server._tool_manager.list_tools():
