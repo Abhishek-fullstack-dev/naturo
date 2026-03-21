@@ -772,7 +772,21 @@ def electron_connect(app_name, port, json_output):
     Requires the app to be running with --remote-debugging-port.
     """
     import json as json_module
+    import sys
     from naturo.cli.error_helpers import emit_exception_error
+
+    if port is not None and (port < 1 or port > 65535):
+        if json_output:
+            click.echo(json_module.dumps({
+                "success": False,
+                "error": {
+                    "code": "INVALID_INPUT",
+                    "message": f"--port must be between 1 and 65535, got {port}",
+                },
+            }))
+        else:
+            click.echo(f"Error: --port must be between 1 and 65535, got {port}", err=True)
+        sys.exit(1)
 
     try:
         from naturo.electron import connect_to_electron
