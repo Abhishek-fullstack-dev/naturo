@@ -1,28 +1,31 @@
 # QA Status
 
-## 最新一轮: Round 30（2026-03-21 07:30）
+## 最新一轮: Round 31（2026-03-21 07:54）
 
 ### 本轮工作
-1. **BUG-055 验证**: 代码审查确认 `find --json` 和 `menu-inspect --json` 已正确包装为 `{"success": true, ...}` 对象格式。编译机（192.168.31.52）SSH Connection refused，周六早晨可能关机，运行时验证待补。
-2. **Phase 5B/5C 新代码审查**: 审查 chrome_cmd.py、extensions.py、error_helpers.py
-3. **新发现 3 个 bug**: BUG-056/057/058
-4. **本地测试**: 1400 passed, 295 skipped，全绿
+1. **编译机状态**: 192.168.31.52 仍然 SSH Connection refused（周六早晨关机）
+2. **本地测试**: 1407 passed, 295 skipped，全绿
+3. **代码审查**: 审查最近 5 个 commit（electron.py、error_helpers.py、chrome_cmd.py、extensions.py、mcp_server.py、snapshot.py）
+4. **ctx.exit(1) 残留扫描**: 0 处残留，BUG-048 修复彻底
+5. **MCP 工具数量核对**: 实际 76 个工具（README 写 42 → BUG-059）
+6. **新发现 1 个 bug**: BUG-059（文档准确性）
 
 ### 新发现
-- **BUG-056** 🟢低: chrome screenshot --quality 无边界校验
-- **BUG-057** 🟢低: chrome 所有子命令 --port 无边界校验
-- **BUG-058** 🟡中: Registry/Service MCP 工具缺失（CLI 有实现但 MCP server 未注册）
+- **BUG-059** 🟢低: README.md MCP 工具数量过时（42 → 实际 76）
 
-### 编译机状态
-- **192.168.31.52**: SSH Connection refused（周六 07:27 AM 测试）
-- 需要 Ace 确认是否需要开机
+### 代码质量观察
+- electron.py 结构清晰，_require_windows() 正确保护平台相关代码
+- chrome_cmd.py 的 _validate_port + quality 校验完整
+- extensions.py 的 registry/service/electron 命令统一使用 emit_error/emit_exception_error
+- snapshot.py ID collision fix（4→8 位随机数）合理
+- 所有 ctx.exit(1) 已替换为 sys.exit(1)，无残留
 
-### 积压
-- BUG-055: 运行时验证待编译机恢复后补
-- BUG-056/057: 低优先级边界值校验
-- BUG-058: 中优先级，影响 AI agent MCP 集成
+### 编译机待验证积压
+- BUG-055: find/menu-inspect --json 格式运行时验证
+- BUG-056/057: chrome port/quality 边界值运行时验证
+- BUG-058: registry/service MCP 工具运行时验证
 
 ### 质量评估
-- **整体质量**: 良好。error_helpers.py 的统一错误处理模式提升了代码一致性
-- **新代码质量**: Phase 5C 的 extensions.py 代码结构清晰，错误处理使用 emit_error/emit_exception_error 统一模式
-- **风险**: BUG-058 会影响 MCP 场景下的 AI agent 使用 registry/service 功能
+- **整体质量**: 优秀。代码一致性好，错误处理模式统一，无已知严重 bug
+- **测试覆盖**: 1407 测试，electron/cdp 新模块 47+32 测试（47 passed, 32 skipped on non-Windows）
+- **风险**: 编译机离线导致 5 个 bug 无法完成运行时验证。建议 Ace 开机后触发 QA 轮次补验

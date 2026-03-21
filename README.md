@@ -24,7 +24,7 @@
 - 🗃️ **Windows Registry** — Read, write, list, delete, and search registry keys/values
 - 🔧 **Windows Services** — List, start, stop, restart, and query service status
 - ⚡ **Electron/CEF Apps** — Detect, list, launch, and connect to Electron apps (VS Code, Slack, Discord, etc.)
-- 🤖 **AI-Ready** — JSON output, agent-friendly CLI, MCP server (42 tools)
+- 🤖 **AI-Ready** — JSON output, agent-friendly CLI, MCP server (76 tools)
 
 ## System Requirements
 

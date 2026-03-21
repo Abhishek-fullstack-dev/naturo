@@ -206,6 +206,17 @@
 
 ---
 
+## 🆕 Round 31 自发现（文档准确性 + 代码审查）
+
+### BUG-059: README.md MCP 工具数量过时（写 42，实际 76）
+- **状态**: ✅ Verified (Round 31 代码审查) — README.md 第 27 行已写 "MCP server (76 tools)"，与 mcp_server.py 中 76 个 @server.tool() 一致
+- **严重度**: 🟢 低（文档不准确，违反设计原则 #4 — 帮助和实际行为始终一致）
+- **现象**: README.md 第 20 行写 "🤖 **AI-Ready** — JSON output, agent-friendly CLI, MCP server (42 tools)"，但实际 `mcp_server.py` 中 `@server.tool()` 共 76 个
+- **修复**: 更新 README.md 中 MCP 工具数量为 76
+- **文件**: README.md
+
+---
+
 ## 🆕 Round 29 自发现（Phase 5A 代码审查 + JSON 一致性扫描）
 
 ### BUG-055: `find --json` 和 `menu-inspect --json` 成功时返回裸数组
