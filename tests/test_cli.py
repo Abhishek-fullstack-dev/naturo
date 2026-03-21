@@ -340,10 +340,24 @@ def test_service_help(runner):
 # ── Placeholder execution ──────────────────────
 
 
+def _has_gui_backend() -> bool:
+    """True when a GUI automation backend is available (Windows always, macOS with peekaboo)."""
+    system = platform.system()
+    if system == "Windows":
+        return True
+    if system == "Darwin":
+        import shutil
+        return shutil.which("peekaboo") is not None
+    return False
+
+
+_GUI = _has_gui_backend()
+
+
 @pytest.mark.parametrize("cmd,expected_exit", [
     (["see"], 1 if platform.system() != "Windows" else 0),
     (["learn"], 0),
-    (["capture", "live"], 0),  # capture live succeeds on all platforms (may produce 0x0 on non-Windows)
+    (["capture", "live"], 0 if _GUI else 1),  # requires GUI backend (peekaboo on macOS)
 ])
 def test_placeholder_commands_run(runner, cmd, expected_exit):
     """Commands with no required args should run and show placeholder message."""
