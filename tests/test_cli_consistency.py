@@ -66,7 +66,7 @@ def test_hidden_stubs_return_error_exit_code():
     """BUG-046: Hidden stub commands must return exit code 1, not 0."""
     import json
     hidden_stubs = [
-        ["list", "screens"],
+        # ["list", "screens"],  # Implemented in Phase 5A
         ["list", "apps"],
         ["list", "permissions"],
         ["capture", "video"],

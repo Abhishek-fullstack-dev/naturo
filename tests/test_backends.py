@@ -64,8 +64,16 @@ def test_backend_phase2_methods_available():
             pytest.fail("press_key should not raise NotImplementedError in Phase 2")
         except Exception:
             pass  # Other errors (system/DLL) are acceptable
+    elif platform.system() == "Darwin":
+        # macOS backend (Phase 6) wraps Peekaboo — methods are implemented.
+        # click() with no args raises NaturoError (need coords or element_id), not NotImplementedError.
+        with pytest.raises(Exception) as exc_info:
+            backend.click()
+        assert not isinstance(exc_info.value, NotImplementedError), (
+            "click() should be implemented in Phase 6, not raise NotImplementedError"
+        )
     else:
-        # Non-Windows backends are Phase 6/7 — methods correctly raise NotImplementedError.
+        # Linux backend is Phase 7 — methods correctly raise NotImplementedError.
         with pytest.raises(NotImplementedError):
             backend.click()
         with pytest.raises(NotImplementedError):
