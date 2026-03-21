@@ -38,7 +38,7 @@ from naturo.cli.diff_cmd import diff
 from naturo.cli.ai import mcp, describe, agent
 from naturo.cli.record_cmd import record
 from naturo.cli.chrome_cmd import chrome_group
-from naturo.cli.extensions import registry, service, electron
+from naturo.cli.extensions import excel, registry, service, electron
 
 
 @click.group()
@@ -113,6 +113,7 @@ main.add_command(record)
 main.add_command(chrome_group, "chrome")
 
 # ── Phase 5C: Enterprise Features ──────────────
+main.add_command(excel)
 main.add_command(registry)
 main.add_command(service)
 main.add_command(electron)

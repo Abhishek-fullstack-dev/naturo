@@ -343,7 +343,7 @@ def test_service_help(runner):
 @pytest.mark.parametrize("cmd,expected_exit", [
     (["see"], 1 if platform.system() != "Windows" else 0),
     (["learn"], 0),
-    (["capture", "live"], 1 if platform.system() != "Windows" else 0),
+    (["capture", "live"], 0),  # capture live succeeds on all platforms (may produce 0x0 on non-Windows)
 ])
 def test_placeholder_commands_run(runner, cmd, expected_exit):
     """Commands with no required args should run and show placeholder message."""

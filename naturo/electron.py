@@ -49,6 +49,11 @@ _KNOWN_ELECTRON_APPS: Dict[str, Dict[str, Any]] = {
     "bitwarden": {"exe": "Bitwarden.exe", "display": "Bitwarden"},
     "cursor": {"exe": "Cursor.exe", "display": "Cursor"},
     "windsurf": {"exe": "Windsurf.exe", "display": "Windsurf"},
+    "feishu": {"exe": "Feishu.exe", "display": "Feishu"},
+    "lark": {"exe": "Lark.exe", "display": "Lark"},
+    "dingtalk": {"exe": "DingTalk.exe", "display": "DingTalk"},
+    "wechat-devtools": {"exe": "wechatdevtools.exe", "display": "WeChat DevTools"},
+    "typora": {"exe": "Typora.exe", "display": "Typora"},
 }
 
 
