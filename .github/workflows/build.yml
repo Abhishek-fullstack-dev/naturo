@@ -63,7 +63,7 @@ jobs:
           ls -la naturo/bin/
 
       - name: Install package
-        run: pip install -e ".[dev]"
+        run: pip install -e ".[dev,mcp,annotate]" pywin32
 
       - name: Run all tests
         run: pytest -v

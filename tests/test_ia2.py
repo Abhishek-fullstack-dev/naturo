@@ -154,6 +154,7 @@ class TestBackendIA2Mocked:
         )
         be._core.get_element_tree.return_value = empty_el
         be._core.ia2_get_element_tree.return_value = None  # IA2 not supported
+        be._core.jab_get_element_tree.return_value = None  # JAB not supported
         be._core.msaa_get_element_tree.return_value = msaa_el
         be._core.list_windows.return_value = []
 

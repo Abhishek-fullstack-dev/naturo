@@ -107,6 +107,7 @@ class TestLaunchApp:
     def test_launch_by_path(self, mock_popen, mock_run):
         mock_proc = MagicMock()
         mock_proc.pid = 1234
+        mock_proc.wait.return_value = 0
         mock_popen.return_value = mock_proc
         mock_run.return_value = self._make_run_result(returncode=0)
 

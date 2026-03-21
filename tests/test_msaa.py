@@ -145,6 +145,8 @@ class TestBackendMSAAMocked:
             x=0, y=0, width=800, height=600, children=[],
         )
         be._core.get_element_tree.return_value = empty_el
+        be._core.ia2_get_element_tree.return_value = None  # IA2 not supported
+        be._core.jab_get_element_tree.return_value = None  # JAB not supported
         be._core.msaa_get_element_tree.return_value = msaa_el
         be._core.list_windows.return_value = []
 
@@ -266,6 +268,7 @@ class TestMCPSeeUITreeMSAA:
 
     def test_mcp_see_ui_tree_has_backend_param(self):
         """see_ui_tree function signature includes accessibility_backend."""
+        pytest.importorskip("mcp")
         from naturo.mcp_server import create_server
         import inspect
 

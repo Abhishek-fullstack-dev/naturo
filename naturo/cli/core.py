@@ -481,8 +481,8 @@ def see(app, window_title, hwnd, pid, mode, depth, path, annotate, store_snapsho
 
             # Add DPI context so AI agents know coordinate scaling
             try:
-                dpi_scale = backend.get_dpi_scale(0) if hasattr(backend, "get_dpi_scale") else 1.0
-                monitors = backend.list_monitors()
+                dpi_scale = be.get_dpi_scale(0) if hasattr(be, "get_dpi_scale") else 1.0
+                monitors = be.list_monitors()
                 primary = monitors[0] if monitors else None
                 out["dpi_context"] = {
                     "scale_factor": primary.scale_factor if primary else dpi_scale,

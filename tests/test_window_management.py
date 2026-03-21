@@ -11,6 +11,7 @@ Covers:
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import platform
 from unittest.mock import MagicMock, patch
@@ -661,6 +662,10 @@ class TestAppHideUnhideSwitchCLI:
 # ══════════════════════════════════════════════════════════════════════════════
 
 
+@pytest.mark.skipif(
+    not importlib.util.find_spec("mcp"),
+    reason="mcp package not installed",
+)
 class TestMCPWindowToolsExist:
     """MCP server exposes window management tools."""
 
