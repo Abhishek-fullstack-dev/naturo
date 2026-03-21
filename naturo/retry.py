@@ -177,6 +177,7 @@ def with_retry(policy: RetryPolicy | None = None) -> Callable[[F], F]:
     def decorator(fn: F) -> F:
         @functools.wraps(fn)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
+            """Execute the wrapped function with retry logic."""
             result = execute_with_retry(fn, policy, *args, **kwargs)
             if result.success:
                 return result.result

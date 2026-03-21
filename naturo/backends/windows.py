@@ -14,6 +14,7 @@ from naturo.backends.base import (
     CaptureResult,
 )
 from naturo.bridge import NaturoCore, NaturoCoreError, populate_hierarchy
+from naturo.errors import NaturoError
 from naturo.models.menu import MenuItem
 from typing import List, Optional
 
@@ -1031,14 +1032,19 @@ class WindowsBackend(Backend):
             import pyperclip  # type: ignore
             return pyperclip.paste() or ""
         except ImportError:
-            # Fallback: use win32clipboard if available
+            # Fallback: use ctypes Win32 API directly
             try:
                 import ctypes
                 import ctypes.wintypes
                 user32 = ctypes.windll.user32
                 kernel32 = ctypes.windll.kernel32
+                # Set proper restype/argtypes for 64-bit pointer safety
+                user32.GetClipboardData.restype = ctypes.c_void_p
+                kernel32.GlobalLock.restype = ctypes.c_void_p
+                kernel32.GlobalLock.argtypes = [ctypes.c_void_p]
+                kernel32.GlobalUnlock.argtypes = [ctypes.c_void_p]
                 if not user32.OpenClipboard(0):
-                    return ""
+                    raise NaturoError("Failed to open clipboard")
                 try:
                     CF_UNICODETEXT = 13
                     h = user32.GetClipboardData(CF_UNICODETEXT)
@@ -1046,15 +1052,17 @@ class WindowsBackend(Backend):
                         return ""
                     ptr = kernel32.GlobalLock(h)
                     if not ptr:
-                        return ""
+                        raise NaturoError("Failed to lock clipboard memory")
                     try:
                         return ctypes.wstring_at(ptr)
                     finally:
                         kernel32.GlobalUnlock(h)
                 finally:
                     user32.CloseClipboard()
-            except Exception:
-                return ""
+            except NaturoError:
+                raise
+            except Exception as exc:
+                raise NaturoError(f"Clipboard read failed: {exc}") from exc
 
     def clipboard_set(self, text: str = "") -> None:
         """Set the clipboard text content.
@@ -1071,24 +1079,37 @@ class WindowsBackend(Backend):
                 import ctypes.wintypes
                 user32 = ctypes.windll.user32
                 kernel32 = ctypes.windll.kernel32
+                # Set proper restype/argtypes for 64-bit pointer safety
+                kernel32.GlobalAlloc.restype = ctypes.c_void_p
+                kernel32.GlobalAlloc.argtypes = [ctypes.c_uint, ctypes.c_size_t]
+                kernel32.GlobalLock.restype = ctypes.c_void_p
+                kernel32.GlobalLock.argtypes = [ctypes.c_void_p]
+                kernel32.GlobalUnlock.argtypes = [ctypes.c_void_p]
+                user32.SetClipboardData.restype = ctypes.c_void_p
+                user32.SetClipboardData.argtypes = [ctypes.c_uint, ctypes.c_void_p]
                 CF_UNICODETEXT = 13
                 GMEM_MOVEABLE = 2
                 encoded = (text + "\0").encode("utf-16-le")
                 h = kernel32.GlobalAlloc(GMEM_MOVEABLE, len(encoded))
                 if not h:
-                    return
+                    raise NaturoError("Failed to allocate clipboard memory")
                 ptr = kernel32.GlobalLock(h)
+                if not ptr:
+                    kernel32.GlobalFree = kernel32.GlobalFree  # noqa: keep ref
+                    raise NaturoError("Failed to lock clipboard memory")
                 ctypes.memmove(ptr, encoded, len(encoded))
                 kernel32.GlobalUnlock(h)
                 if not user32.OpenClipboard(0):
-                    return
+                    raise NaturoError("Failed to open clipboard")
                 try:
                     user32.EmptyClipboard()
                     user32.SetClipboardData(CF_UNICODETEXT, h)
                 finally:
                     user32.CloseClipboard()
-            except Exception:
-                pass
+            except NaturoError:
+                raise
+            except Exception as exc:
+                raise NaturoError(f"Clipboard write failed: {exc}") from exc
 
     def list_apps(self) -> list[dict]:
         """List running applications (non-minimized, visible windows).

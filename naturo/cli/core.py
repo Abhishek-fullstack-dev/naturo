@@ -18,9 +18,48 @@ def _get_backend():
 
     Returns:
         A Backend instance for the current platform.
+
+    Raises:
+        RuntimeError: If no backend is available (unsupported platform or
+            missing dependencies like Peekaboo on macOS).
     """
     from naturo.backends.base import get_backend
     return get_backend()
+
+
+def _platform_supports_gui() -> bool:
+    """Check if the current platform has a GUI automation backend.
+
+    Returns:
+        True if Windows or macOS with Peekaboo installed.
+    """
+    system = platform.system()
+    if system == "Windows":
+        return True
+    if system == "Darwin":
+        import shutil
+        return shutil.which("peekaboo") is not None
+    return False
+
+
+def _platform_error_msg(feature: str) -> str:
+    """Build a user-friendly platform error message.
+
+    Args:
+        feature: Description of the feature (e.g. 'Screen capture').
+
+    Returns:
+        Error message string.
+    """
+    system = platform.system()
+    if system == "Darwin":
+        return (
+            f"{feature} requires Peekaboo on macOS. "
+            "Install it from https://github.com/AcePeak/peekaboo"
+        )
+    if system == "Linux":
+        return f"{feature} is not yet supported on Linux (coming in Phase 7)."
+    return f"{feature} is not supported on {system}."
 
 
 # ── capture ─────────────────────────────────────
@@ -49,8 +88,8 @@ def live(app, window_title, hwnd, screen, path, fmt, store_snapshot, json_output
     The screenshot is automatically stored in a snapshot (use --no-snapshot to skip).
     Output format is PNG by default (matching Peekaboo).
     """
-    if platform.system() != "Windows":
-        msg = "Screen capture requires Windows (naturo_core.dll)."
+    if not _platform_supports_gui():
+        msg = _platform_error_msg("Screen capture")
         if json_output:
             click.echo(_json_error_str("PLATFORM_ERROR", msg))
         else:
@@ -203,8 +242,8 @@ def windows(app, process_name, pid, json_output):
     Shows all visible top-level windows with their handles, titles,
     process names, and dimensions.
     """
-    if platform.system() != "Windows":
-        msg = "Window listing requires Windows (naturo_core.dll)."
+    if not _platform_supports_gui():
+        msg = _platform_error_msg("Window listing")
         if json_output:
             click.echo(_json_error_str("PLATFORM_ERROR", msg))
         else:
@@ -388,8 +427,8 @@ def see(app, window_title, hwnd, pid, mode, depth, path, annotate, store_snapsho
             click.echo(f"Error: {msg}", err=True)
         raise SystemExit(1)
 
-    if platform.system() != "Windows":
-        msg = "UI inspection requires Windows (naturo_core.dll)."
+    if not _platform_supports_gui():
+        msg = _platform_error_msg("UI inspection")
         if json_output:
             click.echo(_json_error_str("PLATFORM_ERROR", msg))
         else:
@@ -600,8 +639,8 @@ def find_cmd(query, role, actionable, depth, limit, ai, provider, screenshot, ai
             click.echo(f"Error: {msg}", err=True)
         raise SystemExit(1)
 
-    if platform.system() != "Windows":
-        msg = "UI inspection requires Windows (naturo_core.dll)."
+    if not _platform_supports_gui():
+        msg = _platform_error_msg("UI inspection")
         if json_output:
             click.echo(_json_error_str("PLATFORM_ERROR", msg))
         else:
@@ -796,8 +835,8 @@ def menu_inspect(app, flat, json_output):
     Traverses the application's MenuBar via UIAutomation and displays
     all menu items with their keyboard shortcuts.
     """
-    if platform.system() != "Windows":
-        msg = "Menu inspection requires Windows (naturo_core.dll)."
+    if not _platform_supports_gui():
+        msg = _platform_error_msg("Menu inspection")
         if json_output:
             click.echo(_json_error_str("PLATFORM_ERROR", msg))
         else:
@@ -852,6 +891,7 @@ def menu_inspect(app, flat, json_output):
                         click.echo(f"  {entry['path']}{shortcut}")
             else:
                 def print_menu(item, indent=0):
+                    """Recursively print a menu item and its submenus with indentation."""
                     prefix = "  " * indent
                     shortcut = f" [{item.shortcut}]" if item.shortcut else ""
                     state = ""

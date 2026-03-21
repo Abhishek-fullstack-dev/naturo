@@ -63,7 +63,9 @@ jobs:
           ls -la naturo/bin/
 
       - name: Install package
-        run: pip install -e ".[dev,mcp,annotate]" pywin32
+        run: |
+          pip install -e ".[dev,mcp,annotate]" pywin32
+          python -c "import pywin32_postinstall; pywin32_postinstall.install()" || true
 
       - name: Run all tests
         run: pytest -v

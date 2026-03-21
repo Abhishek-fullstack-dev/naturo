@@ -1,0 +1,37 @@
+{
+  "name": "naturo",
+  "version": "0.1.0",
+  "description": "Windows desktop automation engine for AI agents — see, click, type, automate. MCP server included.",
+  "keywords": [
+    "automation",
+    "windows",
+    "desktop",
+    "ui",
+    "rpa",
+    "accessibility",
+    "uia",
+    "mcp",
+    "ai-agent"
+  ],
+  "license": "MIT",
+  "author": "Ace Li <ace@scoutli.ai>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AcePeak/naturo.git"
+  },
+  "homepage": "https://github.com/AcePeak/naturo",
+  "bugs": {
+    "url": "https://github.com/AcePeak/naturo/issues"
+  },
+  "bin": {
+    "naturo": "./bin/naturo.js"
+  },
+  "files": [
+    "bin/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=16"
+  }
+}
