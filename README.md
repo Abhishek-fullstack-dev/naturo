@@ -27,6 +27,7 @@
 - 🗃️ **Windows Registry** — Read, write, list, delete, and search registry keys/values
 - 🔧 **Windows Services** — List, start, stop, restart, and query service status
 - ⚡ **Electron/CEF Apps** — Detect, list, launch, and connect to Electron apps (VS Code, Slack, Discord, etc.)
+- 🍎 **macOS Support** — Full Peekaboo CLI wrapper (capture, click, type, window management, and more)
 - 🤖 **AI-Ready** — JSON output, agent-friendly CLI, MCP server (76 tools)
 
 ## System Requirements
@@ -36,7 +37,8 @@
 | **Windows** | Windows 10+ (officially supported) |
 | | Windows 7 SP1+ (best-effort, basic features only) |
 | **Python** | 3.9+ |
-| **macOS / Linux** | Python CLI wrapper only (no C++ automation) |
+| **macOS** | macOS 13+ with [Peekaboo](https://github.com/steipete/Peekaboo) installed |
+| **Linux** | Coming in Phase 7 (not yet supported) |
 
 > **Why Windows 10+?** UIAutomation v2/v3 APIs (caching, virtualized controls) require Windows 8+. Windows 7 has been out of support since January 2020. Most enterprise customers have migrated to Windows 10/11.
 
@@ -257,7 +259,8 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details.
 
 ## vs Peekaboo
 
-Naturo is the Windows counterpart to [Peekaboo](https://github.com/AcePeak/peekaboo) (macOS).
+Naturo is the Windows counterpart to [Peekaboo](https://github.com/steipete/Peekaboo) (macOS).
+On macOS, Naturo wraps Peekaboo's CLI so you get one unified API across platforms.
 
 | Feature | Peekaboo (macOS) | Naturo (Windows) |
 |---------|-----------------|-----------------|
