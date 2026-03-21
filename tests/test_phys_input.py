@@ -324,8 +324,10 @@ class TestPhysStubsNonWindows:
             core = NaturoCore()
             with pytest.raises(NaturoCoreError):
                 core.phys_key_type("test", 0)
-        except OSError:
-            pytest.skip("DLL not available")
+        except (OSError, Exception) as exc:
+            if "naturo_core" in str(exc) or "DEPENDENCY_MISSING" in str(getattr(exc, 'code', '')):
+                pytest.skip("DLL not available")
+            raise
 
     def test_phys_key_press_stub(self):
         """phys_key_press should raise on non-Windows (return -1 from stub)."""
@@ -334,8 +336,10 @@ class TestPhysStubsNonWindows:
             core = NaturoCore()
             with pytest.raises(NaturoCoreError):
                 core.phys_key_press("enter")
-        except OSError:
-            pytest.skip("DLL not available")
+        except (OSError, Exception) as exc:
+            if "naturo_core" in str(exc) or "DEPENDENCY_MISSING" in str(getattr(exc, 'code', '')):
+                pytest.skip("DLL not available")
+            raise
 
     def test_phys_key_hotkey_stub(self):
         """phys_key_hotkey should raise on non-Windows (return -1 from stub)."""
@@ -344,8 +348,10 @@ class TestPhysStubsNonWindows:
             core = NaturoCore()
             with pytest.raises(NaturoCoreError):
                 core.phys_key_hotkey("ctrl", "c")
-        except OSError:
-            pytest.skip("DLL not available")
+        except (OSError, Exception) as exc:
+            if "naturo_core" in str(exc) or "DEPENDENCY_MISSING" in str(getattr(exc, 'code', '')):
+                pytest.skip("DLL not available")
+            raise
 
 
 # ── MCP Tool Tests ───────────────────────────────────────────────────────────

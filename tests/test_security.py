@@ -167,8 +167,9 @@ class TestDLLLoadSafety:
         try:
             os.environ["NATURO_CORE_PATH"] = "/nonexistent/path/naturo_core.dll"
             if platform.system() != "Windows":
-                # On non-Windows, we expect FileNotFoundError
-                with pytest.raises(FileNotFoundError):
+                # On non-Windows, we expect DependencyMissingError (NaturoError subclass)
+                from naturo.errors import DependencyMissingError
+                with pytest.raises((FileNotFoundError, DependencyMissingError)):
                     from naturo.bridge import NaturoCore
                     NaturoCore()
             else:

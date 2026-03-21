@@ -41,6 +41,9 @@ class ErrorCode:
     TASKBAR_ITEM_NOT_FOUND = "TASKBAR_ITEM_NOT_FOUND"
     TRAY_ICON_NOT_FOUND = "TRAY_ICON_NOT_FOUND"
 
+    # Dependency errors
+    DEPENDENCY_MISSING = "DEPENDENCY_MISSING"
+
     # System errors
     FILE_IO_ERROR = "FILE_IO_ERROR"
     UNKNOWN_ERROR = "UNKNOWN_ERROR"
@@ -371,5 +374,20 @@ class AIAnalysisFailedError(NaturoError):
             code=ErrorCode.AI_ANALYSIS_FAILED,
             category=ErrorCategory.AI,
             is_recoverable=True,
+            **kwargs,
+        )
+
+
+class DependencyMissingError(NaturoError):
+    """A required dependency (native library, external tool) is missing."""
+
+    def __init__(self, dependency: str, message: str | None = None, **kwargs: Any) -> None:
+        msg = message or f"Required dependency missing: {dependency}"
+        kwargs.setdefault("is_recoverable", True)
+        super().__init__(
+            message=msg,
+            code=ErrorCode.DEPENDENCY_MISSING,
+            category=ErrorCategory.CONFIGURATION,
+            context={"dependency": dependency},
             **kwargs,
         )

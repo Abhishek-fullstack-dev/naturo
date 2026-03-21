@@ -335,9 +335,21 @@ class NaturoCore:
         try:
             return ctypes.CDLL(lib_name)
         except OSError:
-            raise FileNotFoundError(
-                f"Cannot find {lib_name}. Set NATURO_CORE_PATH or install the native library.\n"
-                f"Searched: {env_path}, {pkg_lib}, {cwd_lib}, system PATH"
+            from naturo.errors import DependencyMissingError
+            raise DependencyMissingError(
+                dependency="naturo_core",
+                message=(
+                    f"Native library {lib_name} not found. "
+                    f"This command requires the naturo_core native engine.\n"
+                    f"Install the pre-built wheel: pip install naturo\n"
+                    f"Or set NATURO_CORE_PATH to the library location.\n"
+                    f"Searched: {env_path}, {pkg_lib}, {cwd_lib}, system PATH"
+                ),
+                suggested_action=(
+                    "Install naturo with the native library: pip install naturo. "
+                    "Commands that don't need the native engine (--help, --version, "
+                    "chrome, electron, mcp, learn) will work without it."
+                ),
             )
 
     def version(self) -> str:

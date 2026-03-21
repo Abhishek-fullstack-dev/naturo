@@ -34,8 +34,11 @@ def test_core_double_init():
 
 
 def test_core_not_found_graceful():
-    """On non-Windows, loading should fail gracefully."""
+    """On non-Windows, loading should fail with DependencyMissingError."""
     if platform.system() == "Windows":
         pytest.skip("Only test missing DLL on non-Windows")
-    with pytest.raises(FileNotFoundError):
+    from naturo.errors import DependencyMissingError, ErrorCode
+    with pytest.raises(DependencyMissingError) as exc_info:
         NaturoCore()
+    assert exc_info.value.code == ErrorCode.DEPENDENCY_MISSING
+    assert "naturo_core" in str(exc_info.value)
