@@ -61,7 +61,7 @@ npx naturo mcp start
 naturo version
 
 # Capture a screenshot
-naturo capture --output screen.png
+naturo capture live --path screen.png
 
 # List open windows
 naturo list --type windows
