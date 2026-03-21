@@ -615,3 +615,11 @@
   2. 需要 DLL 的命令（`capture`、`see`、`click` 等）在 DLL 缺失时给出清晰的错误提示，而不是在 import 时就崩
   3. 理想情况：从源码安装时自动下载预编译 DLL（从 GitHub Release assets），或在首次使用时自动下载
 - **根因**: `bridge.py` 在 import 时就加载 DLL，失败则整个模块不可用。应该改为延迟加载（lazy loading），只在真正需要 native 功能时才报错
+
+## BUG-069 — --app 参数应该按进程名匹配而不是窗口标题 🟡 Open
+- **严重度**: 🟡 P1
+- **来源**: 用户报告 (Ace)
+- **复现**: `naturo see --app explorer`
+- **现象**: 匹配到了当前 CMD 窗口（因为标题包含命令文本），而不是 explorer.exe 的窗口
+- **期望行为**: `--app explorer` 应该找到 explorer.exe 进程的窗口，按进程名匹配
+- **补充**: 同时 `--app` 在 CMD 里运行时会匹配到 CMD 自身（因为 CMD 标题栏会显示正在执行的命令）
