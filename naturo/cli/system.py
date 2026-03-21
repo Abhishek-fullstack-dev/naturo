@@ -238,7 +238,7 @@ def clipboard_set(content, file_path, json_output):
 
 @click.command("open")
 @click.argument("target")
-@click.option("--app", help="Open with specific application")
+@click.option("--app", help="Open with specific application", hidden=True)
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 def open_cmd(target, app, json_output):
     """Open a URL or file with default or specified application.
@@ -246,16 +246,23 @@ def open_cmd(target, app, json_output):
     Examples:
         naturo open https://example.com       # Open URL in browser
         naturo open C:\\readme.txt             # Open file with default app
-        naturo open document.pdf --app acrobat
     """
     import json as _json
     import sys
     from naturo.backends.base import get_backend
     from naturo.errors import NaturoError
 
+    # BUG-065: Validate non-empty target
+    if not target.strip():
+        if json_output:
+            from naturo.cli.error_helpers import json_error
+            click.echo(json_error("INVALID_INPUT", "Target cannot be empty"))
+        else:
+            click.echo("Error: Target cannot be empty", err=True)
+        sys.exit(1)
+
     try:
         backend = get_backend()
-        # Future: --app option for opening with specific application
         backend.open_uri(uri=target)
         if json_output:
             click.echo(_json.dumps({"success": True, "target": target}))
