@@ -1,27 +1,31 @@
 # QA Status
 
-## 最新一轮: Round 32（2026-03-21 08:33）
+## 最新轮次: Round 37 (2026-03-21 13:55)
 
 ### 本轮工作
-1. **编译机状态**: 192.168.31.52 仍然 SSH Connection refused（周六早晨关机）
-2. **本地测试**: 1407 passed, 295 skipped，全绿
-3. **代码审查**: 审查 electron.py + extensions.py electron 命令 + MCP electron 工具
-4. **代码质量**: electron 模块结构清晰，错误处理使用 emit_exception_error 统一模式，MCP 工具有 @server.tool() + @_safe_tool 双装饰器
+1. **代码同步** — 编译机从 ad5ca03 同步到 HEAD (3969616)，3 个新 commit
+2. **新命令审查** — `open` 命令（新增）系统性测试
+3. **自发现 3 个新 bug**:
+   - BUG-065: `open ""` 空目标不校验
+   - BUG-066: `open --app` 参数未实现但暴露
+   - BUG-067: `open nonexistent_file.xyz` 挂起（严重）
+4. **本地测试** — 1475 passed, 306 skipped, 0 failed (62.86s)
+5. **已验证通过** — record start/stop 跨进程正常、electron detect known apps 正常、excel hidden 正常
 
-### 代码质量观察
-- electron.py 的 `_require_windows()` 平台守卫模式正确
-- `electron launch` CLI 和 MCP 都有 port 1-65535 校验
-- `electron connect --port` 缺少边界校验（minor，连接失败时报 CDP_CONNECTION_ERROR 也够用）
-- error_helpers.py 新增 NOT_ELECTRON/NO_DEBUG_PORT/ELECTRON_ERROR 恢复提示，对 AI agent 友好
-- 76 个 MCP 工具，README 已更新
-
-### 编译机待验证积压
-- BUG-055: find/menu-inspect --json 格式运行时验证
-- BUG-056/057: chrome port/quality 边界值运行时验证
-- BUG-058: registry/service MCP 工具运行时验证
-- electron 命令运行时验证
+### Bug 状态
+- **总 Bug 数**: 67
+- **✅ Verified**: 64
+- **🔴 Open (新发现)**: 3 (BUG-065, BUG-066, BUG-067)
+- **🟢 Fixed 待验证**: 0
 
 ### 质量评估
-- **整体质量**: 优秀。零 open bug，代码一致性好
-- **测试覆盖**: 1407 测试全通过
-- **风险**: 编译机离线导致新增功能无法运行时验证。建议 Ace 开机后触发 QA 轮次补验
+`open` 命令是新增功能，存在 3 个问题，其中 BUG-067（文件不存在时挂起）为严重级别，会导致 AI agent 卡死。其他两个为中等——空输入不校验和未实现参数暴露（同历史 BUG-035/036 类型）。
+
+**Top 3 风险**:
+1. `open` 命令对 AI agent 不安全——非 URL 目标可能无限阻塞
+2. `open_uri` backend 实现过于简单（直接 `subprocess.run` 无保护）
+3. `--app` 参数暴露但不工作，用户/agent 会误以为已支持
+
+### 下一步
+- 等 Dev 修复 BUG-065/066/067 后验证
+- 继续 Phase 6 macOS backend 代码审查（大量新代码 1035 行）

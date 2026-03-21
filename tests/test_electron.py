@@ -99,34 +99,65 @@ class TestListElectronApps:
 
     @patch("naturo.electron._find_debug_port_from_cmdline")
     @patch("naturo.electron._is_electron_process")
-    @patch("naturo.electron._find_processes_by_name")
-    def test_lists_running_electron_apps(self, mock_find, mock_is_electron, mock_port):
-        """Lists detected Electron apps."""
+    @patch("naturo.electron.subprocess.run")
+    def test_lists_running_electron_apps(self, mock_run, mock_is_electron, mock_port):
+        """Lists detected Electron apps by scanning all processes."""
         from naturo.electron import list_electron_apps
 
-        def side_effect(name):
-            if name == "Code.exe":
-                return [{"pid": 100, "name": "Code.exe"}]
-            return []
-
-        mock_find.side_effect = side_effect
-        mock_is_electron.return_value = True
+        # Simulate tasklist CSV output with an Electron app and a system process
+        mock_run.return_value = MagicMock(
+            stdout=(
+                '"Code.exe","100","Console","1","200,000 K"\n'
+                '"Code.exe","101","Console","1","50,000 K"\n'
+                '"svchost.exe","4","Services","0","10,000 K"\n'
+                '"notepad.exe","200","Console","1","5,000 K"\n'
+            ),
+        )
+        # Only Code.exe is Electron
+        mock_is_electron.side_effect = lambda pid: pid in (100, 101)
         mock_port.return_value = None
 
         result = list_electron_apps()
         assert result["count"] >= 1
         app_names = [a["app_name"] for a in result["apps"]]
         assert "Visual Studio Code" in app_names
+        # svchost is skipped, notepad is not Electron
+        assert "notepad" not in [a["exe_name"] for a in result["apps"]]
 
-    @patch("naturo.electron._find_processes_by_name")
-    def test_no_electron_apps(self, mock_find):
+    @patch("naturo.electron.subprocess.run")
+    def test_no_electron_apps(self, mock_run):
         """Returns empty list when no Electron apps running."""
         from naturo.electron import list_electron_apps
 
-        mock_find.return_value = []
+        mock_run.return_value = MagicMock(stdout="")
         result = list_electron_apps()
         assert result["count"] == 0
         assert result["apps"] == []
+
+    @patch("naturo.electron._find_debug_port_from_cmdline")
+    @patch("naturo.electron._is_electron_process")
+    @patch("naturo.electron.subprocess.run")
+    def test_scans_all_pids_per_exe(self, mock_run, mock_is_electron, mock_port):
+        """Checks multiple PIDs per exe to catch apps like Feishu where
+        only child processes have Electron indicators."""
+        from naturo.electron import list_electron_apps
+
+        mock_run.return_value = MagicMock(
+            stdout=(
+                '"Feishu.exe","1000","Console","1","300,000 K"\n'
+                '"Feishu.exe","1001","Console","1","50,000 K"\n'
+                '"Feishu.exe","1002","Console","1","200,000 K"\n'
+            ),
+        )
+        # Main process (1000) is NOT detected as Electron,
+        # but child process (1001) IS — simulates Feishu behavior
+        mock_is_electron.side_effect = lambda pid: pid == 1001
+        mock_port.return_value = None
+
+        result = list_electron_apps()
+        assert result["count"] == 1
+        assert result["apps"][0]["app_name"] == "Feishu"
+        assert result["apps"][0]["process_count"] == 3
 
 
 # ── get_debug_port ──────────────────────────────

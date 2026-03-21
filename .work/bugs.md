@@ -209,7 +209,7 @@
 ## 🆕 Round 37 自发现（open 命令审查）
 
 ### BUG-065: `open ""` 和 `open "   "` 空目标不校验，报 success
-- **状态**: 🟢 Fixed
+- **状态**: ✅ Verified (Round 38) — 空字符串和纯空白均返回 `{"success": false, "error": {"code": "INVALID_INPUT", "message": "Target cannot be empty"}}`，exit code 1
 - **严重度**: 🟡 中等（违反用户体验原则 — 无意义操作报成功）
 - **现象**: `naturo open "" --json` 返回 `{"success": true, "target": ""}`，`naturo open "   " --json` 返回 `{"success": true, "target": "   "}`。空字符串和纯空白应被拦截
 - **命令**: `naturo open "" --json`, `naturo open "   " --json`
@@ -218,7 +218,7 @@
 - **文件**: naturo/cli/system.py（open_cmd 函数，第 257 行附近）
 
 ### BUG-066: `open --app` 参数声明但未实现，静默忽略
-- **状态**: 🟢 Fixed
+- **状态**: ✅ Verified (Round 38) — `open --help` 不再显示 `--app` 参数，已隐藏
 - **严重度**: 🟡 中等（违反设计原则 #4 — 帮助和实际行为一致；同 BUG-035/036 类型）
 - **现象**: `naturo open https://example.com --app notepad --json` 返回 `{"success": true, ...}`，但 URL 仍然用默认浏览器打开，`--app notepad` 被完全忽略。代码注释写 `# Future: --app option for opening with specific application`
 - **命令**: `naturo open https://example.com --app notepad --json`
@@ -226,7 +226,7 @@
 - **文件**: naturo/cli/system.py（open_cmd 函数，第 260 行 `# Future` 注释）
 
 ### BUG-067: `open nonexistent_file.xyz` 挂起（Windows `start` 弹对话框阻塞）
-- **状态**: 🟢 Fixed
+- **状态**: ✅ Verified (Round 38) — 不存在的文件返回 `{"success": false, "error": {"code": "FILE_NOT_FOUND", "message": "File not found: nonexistent_file_xyz.txt"}}`，exit code 1，不再挂起
 - **严重度**: 🔴 严重（命令永远不返回，AI agent 会卡死）
 - **现象**: `naturo open nonexistent_file.xyz --json` 在 SSH 下永远不返回。`subprocess.run(["start", uri], shell=True)` 调用 Windows `start` 命令，打开不存在的文件时弹出错误对话框，阻塞进程
 - **命令**: `naturo open nonexistent_file.xyz --json`
