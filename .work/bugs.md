@@ -653,3 +653,18 @@
      ```
   5. 用户可以直接：`naturo click e5` 点关闭按钮
 - **对标**: Peekaboo 的 `see` + OpenClaw browser snapshot 的 ref 机制（ax1, ax2...）
+
+## BUG-072 — 缺少 Naturobot 引擎级别的精准 RPA 能力 🔴 Open
+- **严重度**: 🔴 P0 (核心差异化能力缺失)
+- **来源**: Ace 指出
+- **现象**: naturo 的元素操作只能靠坐标点击和简单文本匹配，缺少自然机器人引擎的精准 RPA 能力
+- **需要补齐的能力**:
+  1. **元素属性丰富化** — see 输出 + JSON 应包含：AutomationId、ClassName、IsEnabled、IsOffscreen、ProcessId、NativeWindowHandle、RuntimeId
+  2. **UIA Pattern 操作** — click 应优先用 InvokePattern 而不是坐标点击；支持 Toggle、ExpandCollapse、SelectionItem、Value、ScrollItem 等 Pattern
+  3. **CSS-like 选择器增强** — `Button[AutomationId="btnSave"]`、`Edit[ClassName="TextBox"][Name="用户名"]` 组合条件定位
+  4. **Value 读写** — `naturo get-value --id xxx` 和 `naturo set-value --id xxx "内容"` 直接通过 ValuePattern 操作，不模拟键盘
+  5. **条件搜索** — 用 UIA FindAll + PropertyCondition 精准搜索，不遍历整棵树
+  6. **元素状态** — 检查 IsEnabled/IsOffscreen/Toggle 状态，操作前预检
+  7. **父子导航** — `naturo parent e3`、`naturo children e3`、`naturo sibling e3`
+- **来源参考**: Naturobot_Client_Engine 的 UIA 封装层
+- **目标**: 让 naturo 在元素操作精准度上达到自然机器人引擎同等水平
