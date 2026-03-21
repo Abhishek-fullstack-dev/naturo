@@ -1,31 +1,36 @@
 # QA Status
 
-## 最新轮次: Round 37 (2026-03-21 13:55)
+## 最近一轮: Round 38 (2026-03-21 14:00)
 
-### 本轮工作
-1. **代码同步** — 编译机从 ad5ca03 同步到 HEAD (3969616)，3 个新 commit
-2. **新命令审查** — `open` 命令（新增）系统性测试
-3. **自发现 3 个新 bug**:
-   - BUG-065: `open ""` 空目标不校验
-   - BUG-066: `open --app` 参数未实现但暴露
-   - BUG-067: `open nonexistent_file.xyz` 挂起（严重）
-4. **本地测试** — 1475 passed, 306 skipped, 0 failed (62.86s)
-5. **已验证通过** — record start/stop 跨进程正常、electron detect known apps 正常、excel hidden 正常
+### 验证结果
+- ✅ BUG-065: `open ""` 空目标校验 — INVALID_INPUT，exit code 1
+- ✅ BUG-066: `open --app` 参数已隐藏 — help 中不再显示
+- ✅ BUG-067: `open nonexistent_file.xyz` 不再挂起 — FILE_NOT_FOUND，exit code 1
 
-### Bug 状态
-- **总 Bug 数**: 67
-- **✅ Verified**: 64
-- **🔴 Open (新发现)**: 3 (BUG-065, BUG-066, BUG-067)
-- **🟢 Fixed 待验证**: 0
+### 自发现测试
+- registry get/list/delete/search: 边界值处理正确（空 key、无效 hive、空 query）
+- service start/stop/status: 空名称校验正确
+- tray/taskbar click: 空名称校验正确
+- clipboard set/get: 中文 round-trip 正常
+- record start/stop/list/delete/show: 跨进程持久化正常
+- open: URL/文件/中文文件名/不存在文件 全部正确
+- app launch/list: 空字符串处理正确
+- diff/drag: 无参数错误处理正确
+- electron launch: 空路径处理正确
 
-### 质量评估
-`open` 命令是新增功能，存在 3 个问题，其中 BUG-067（文件不存在时挂起）为严重级别，会导致 AI agent 卡死。其他两个为中等——空输入不校验和未实现参数暴露（同历史 BUG-035/036 类型）。
+### 本轮发现
+无新 bug。
 
-**Top 3 风险**:
-1. `open` 命令对 AI agent 不安全——非 URL 目标可能无限阻塞
-2. `open_uri` backend 实现过于简单（直接 `subprocess.run` 无保护）
-3. `--app` 参数暴露但不工作，用户/agent 会误以为已支持
+## Bug 全局状态
+- 总计: 67 个 bug
+- ✅ Verified: 67 个
+- 🟢 Fixed (待验证): 0 个
+- 🔴 Open: 0 个
+- **所有已知 bug 全部验证通过，bug backlog 清零。**
 
-### 下一步
-- 等 Dev 修复 BUG-065/066/067 后验证
-- 继续 Phase 6 macOS backend 代码审查（大量新代码 1035 行）
+## 质量评估
+产品质量稳定。Phase 3-5 的所有修复经过多轮验证，边界值处理、JSON 一致性、错误码准确性、exit code 正确性均达到良好水平。registry/service/record 等新命令的错误处理也很扎实。
+
+### 当前风险
+1. DLL 缺少 `naturo_msaa_get_element_tree` — 影响 list windows/see/find/dialog 等 UI 树相关命令（编译机 DLL 未更新）
+2. `app list` 返回所有进程（包括 System Idle Process 等系统进程）— 可能需要过滤

@@ -69,7 +69,7 @@
 3. 写修复 + 写回归测试
 4. `python3 -m pytest tests/ -x -q` 全过
 5. `git add [相关文件]` → `git commit -m "fix: [BUG-XXX] 简述"` → `git push`
-6. SCP 同步到编译机: `sshpass -p 'compile@123' scp [文件] Naturobot@192.168.31.52:"C:/Users/Naturobot/naturo/[路径]"`
+6. SCP 同步到编译机: `sshpass -p 'compile@123' scp [文件] Naturobot@100.113.29.45:"C:/Users/Naturobot/naturo/[路径]"`
 7. 更新 bugs.md + STATE.md
 8. 飞书群通知
 
@@ -116,7 +116,7 @@
 - **Python**: 3.10+ 兼容
 - **依赖**: click (CLI), Pillow (图像), pytest (测试)
 - **CI**: GitHub Actions，4 平台
-- **编译机（测试机，有桌面）**: `sshpass -p 'compile@123' ssh Naturobot@192.168.31.52`，路径 `C:\Users\Naturobot\naturo\`
+- **编译机（测试机，有桌面）**: `sshpass -p 'compile@123' ssh Naturobot@100.113.29.45`，路径 `C:\Users\Naturobot\naturo\`
 
 ## 飞书通知格式
 - `[Dev] 🔧 修复 BUG-XXX: 简述`

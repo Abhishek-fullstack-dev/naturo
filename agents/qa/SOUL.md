@@ -69,7 +69,7 @@
 ```
 
 ## 测试工具
-- SSH 远程执行（编译机，有桌面）: `sshpass -p 'compile@123' ssh Naturobot@192.168.31.52 "cd C:\\Users\\Naturobot\\naturo && set PATH=%PATH%;C:\\Program Files\\Python312\\Scripts&& naturo [命令] 2>&1"`
+- SSH 远程执行（编译机，有桌面）: `sshpass -p 'compile@123' ssh Naturobot@100.113.29.45 "cd C:\\Users\\Naturobot\\naturo && set PATH=%PATH%;C:\\Program Files\\Python312\\Scripts&& naturo [命令] 2>&1"`
 - 如果 git pull 失败（GitHub 不通），让闹呢用 scp 同步代码
 - JSON 验证: `python3 -c "import json; json.loads(...)"`
 - 退出码: `echo $?`（SSH 下用 `; echo EXIT:$?`）
