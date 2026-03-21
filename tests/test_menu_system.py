@@ -134,15 +134,67 @@ class TestOpenCLIOptions:
         assert result.exit_code == 0
         assert "TARGET" in result.output or "target" in result.output.lower()
 
-    def test_open_app_option(self, runner):
-        """T184 – open --app option is documented."""
+    def test_open_app_option_hidden(self, runner):
+        """T184 – open --app option is hidden (BUG-066: not yet implemented)."""
         result = runner.invoke(main, ["open", "--help"])
-        assert "--app" in result.output
+        assert "--app" not in result.output
 
     def test_open_json_option(self, runner):
         """T297 – open --json option is documented."""
         result = runner.invoke(main, ["open", "--help"])
         assert "--json" in result.output
+
+
+# ── BUG-065/066/067: open command validation ──────────────────────────────────
+
+
+class TestOpenValidation:
+    """BUG-065/066/067 — open command input validation and error handling."""
+
+    def test_open_empty_target(self, runner):
+        """BUG-065 – open '' should fail with INVALID_INPUT."""
+        result = runner.invoke(main, ["open", "", "--json"])
+        assert result.exit_code != 0
+        import json
+        data = json.loads(result.output)
+        assert data["success"] is False
+        assert data["error"]["code"] == "INVALID_INPUT"
+        assert "empty" in data["error"]["message"].lower()
+
+    def test_open_whitespace_target(self, runner):
+        """BUG-065 – open '   ' should fail with INVALID_INPUT."""
+        result = runner.invoke(main, ["open", "   ", "--json"])
+        assert result.exit_code != 0
+        import json
+        data = json.loads(result.output)
+        assert data["success"] is False
+        assert data["error"]["code"] == "INVALID_INPUT"
+
+    def test_open_empty_target_plain(self, runner):
+        """BUG-065 – open '' plain text mode should fail."""
+        result = runner.invoke(main, ["open", ""])
+        assert result.exit_code != 0
+        assert "empty" in result.output.lower() or "empty" in (result.output + getattr(result, 'stderr', '')).lower()
+
+    def test_open_nonexistent_file_json(self, runner):
+        """BUG-067 – open nonexistent file should fail (not hang)."""
+        result = runner.invoke(main, ["open", "definitely_nonexistent_file_xyz.abc", "--json"])
+        assert result.exit_code != 0
+        import json
+        data = json.loads(result.output)
+        assert data["success"] is False
+        # On Windows: FILE_NOT_FOUND; on macOS: may differ (INTERNAL_SWIFT_ERROR)
+        assert data["error"]["code"] in ("FILE_NOT_FOUND", "INTERNAL_SWIFT_ERROR", "UNKNOWN_ERROR")
+
+    def test_open_app_option_still_accepted(self, runner):
+        """BUG-066 – --app is hidden but still accepted (backward compat)."""
+        # Should not fail on unknown option
+        result = runner.invoke(main, ["open", "", "--app", "notepad", "--json"])
+        # Will fail on empty target (BUG-065 validation), not on --app being unknown
+        assert result.exit_code != 0
+        import json
+        data = json.loads(result.output)
+        assert data["error"]["code"] == "INVALID_INPUT"
 
 
 # ── T297, T299: JSON output and exit codes ────────────────────────────────────
