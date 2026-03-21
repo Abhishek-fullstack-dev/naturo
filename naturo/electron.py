@@ -389,21 +389,34 @@ def list_electron_apps() -> Dict[str, Any]:
         exe_groups[proc_name].append(pid)
 
     # Check each unique exe for Electron characteristics
+    # Must check ALL pids for an exe because the main process often
+    # has no Electron indicators — only child processes (renderer,
+    # gpu-process, utility) do. Apps like Feishu use a custom framework
+    # layer, so main process lacks app.asar and Electron markers.
     for exe_name, pids in exe_groups.items():
-        # Only need to check one PID per exe group
+        found = False
+        main_pid = pids[0]  # First PID is typically the main process
+        debug_port = None
         for pid in pids:
             if _is_electron_process(pid):
-                debug_port = _find_debug_port_from_cmdline(pid)
-                display_name = _get_display_name(exe_name)
-                apps.append({
-                    "app_name": display_name,
-                    "exe_name": exe_name,
-                    "pid": pid,
-                    "debug_port": debug_port,
-                    "debuggable": debug_port is not None,
-                    "process_count": len(pids),
-                })
-                break  # Found one Electron process for this exe, enough
+                found = True
+                port = _find_debug_port_from_cmdline(pid)
+                if port is not None:
+                    debug_port = port
+                break  # One Electron child is enough to confirm
+        if found:
+            # Also check main process for debug port
+            if debug_port is None:
+                debug_port = _find_debug_port_from_cmdline(main_pid)
+            display_name = _get_display_name(exe_name)
+            apps.append({
+                "app_name": display_name,
+                "exe_name": exe_name,
+                "pid": main_pid,
+                "debug_port": debug_port,
+                "debuggable": debug_port is not None,
+                "process_count": len(pids),
+            })
 
     return {"apps": apps, "count": len(apps)}
 
