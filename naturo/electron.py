@@ -308,8 +308,30 @@ def detect_electron_app(app_name: str) -> Dict[str, Any]:
     }
 
 
+def _get_display_name(exe_name: str) -> str:
+    """Map executable name to a friendly display name.
+
+    Args:
+        exe_name: Executable filename (e.g. 'Feishu.exe').
+
+    Returns:
+        Display name from known apps, or exe name without extension.
+    """
+    name_lower = exe_name.lower().replace(".exe", "")
+    known = _KNOWN_ELECTRON_APPS.get(name_lower)
+    if known:
+        return known["display"]
+    # Strip .exe and capitalize
+    return exe_name.replace(".exe", "").replace(".EXE", "")
+
+
 def list_electron_apps() -> Dict[str, Any]:
     """List all detected Electron/CEF applications currently running.
+
+    Scans ALL running processes and checks each for Electron/CEF
+    characteristics (resources/app.asar, electron indicators in
+    command line, etc.). The known apps list is only used for
+    display name mapping.
 
     Returns:
         Dict with keys:
@@ -319,25 +341,69 @@ def list_electron_apps() -> Dict[str, Any]:
     _require_windows()
 
     apps: List[Dict[str, Any]] = []
-    seen_pids: set = set()
+    seen_exes: Dict[str, Dict[str, Any]] = {}  # exe_name -> first app entry
 
-    # Check known Electron apps
-    for key, info in _KNOWN_ELECTRON_APPS.items():
-        processes = _find_processes_by_name(info["exe"])
-        for proc in processes:
-            pid = proc["pid"]
-            if pid in seen_pids:
-                continue
-            seen_pids.add(pid)
+    # Get all running processes
+    try:
+        result = subprocess.run(
+            ["tasklist", "/FO", "CSV", "/NH"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (subprocess.TimeoutExpired, OSError):
+        return {"apps": [], "count": 0}
+
+    # Group processes by executable name
+    exe_groups: Dict[str, List[int]] = {}
+    for line in result.stdout.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        parts = line.split('","')
+        if len(parts) < 2:
+            continue
+        proc_name = parts[0].strip('"')
+        try:
+            pid = int(parts[1].strip('"'))
+        except (ValueError, IndexError):
+            continue
+        # Skip system/common non-Electron processes
+        skip = {
+            "system", "system idle process", "registry", "smss.exe",
+            "csrss.exe", "wininit.exe", "services.exe", "lsass.exe",
+            "svchost.exe", "fontdrvhost.exe", "dwm.exe", "explorer.exe",
+            "tasklist.exe", "conhost.exe", "cmd.exe", "powershell.exe",
+            "pwsh.exe", "wmic.exe", "taskhostw.exe", "sihost.exe",
+            "ctfmon.exe", "dllhost.exe", "mmc.exe", "searchhost.exe",
+            "runtimebroker.exe", "applicationframehost.exe",
+            "textinputhost.exe", "widgetservice.exe", "securityhealthtray.exe",
+            "securityhealthservice.exe", "sgrmbroker.exe", "spoolsv.exe",
+            "openssh-server.exe", "sshd.exe", "tail.exe", "python.exe",
+            "python3.exe", "node.exe", "java.exe", "javaw.exe",
+        }
+        if proc_name.lower() in skip:
+            continue
+        if proc_name not in exe_groups:
+            exe_groups[proc_name] = []
+        exe_groups[proc_name].append(pid)
+
+    # Check each unique exe for Electron characteristics
+    for exe_name, pids in exe_groups.items():
+        # Only need to check one PID per exe group
+        for pid in pids:
             if _is_electron_process(pid):
                 debug_port = _find_debug_port_from_cmdline(pid)
+                display_name = _get_display_name(exe_name)
                 apps.append({
-                    "app_name": info["display"],
-                    "exe_name": proc["name"],
+                    "app_name": display_name,
+                    "exe_name": exe_name,
                     "pid": pid,
                     "debug_port": debug_port,
                     "debuggable": debug_port is not None,
+                    "process_count": len(pids),
                 })
+                break  # Found one Electron process for this exe, enough
 
     return {"apps": apps, "count": len(apps)}
 
