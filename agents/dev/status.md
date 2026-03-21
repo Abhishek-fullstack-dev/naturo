@@ -1,43 +1,40 @@
 # Dev Status
 
 ## 最近工作
-- **Phase 6 macOS Backend** — 完整 Peekaboo CLI wrapper，40+ methods，791 行测试
-- **Phase 5.1 Open Source Launch** — npm 包 `npx naturo mcp` 完成，CHANGELOG.md 首版
-- **代码质量** — 1461 tests passing, 0 failures
+- **CI 全绿** — 修复 25 个 CI 测试失败，一次 commit 全部通过 ✅
+  - open 命令注册到 CLI（Phase 4.5.6 完整交付）
+  - `list screens` 从 hidden stub 测试中移除（Phase 5A 已实现）
+  - see 命令 DPI context 变量名修复（backend → be）
+  - MCP 依赖测试加 importorskip 保护
+  - Mock 补全（jab_get_element_tree, wait 返回值）
+- **代码同步** — 最新代码已 SCP 到编译机 192.168.31.52
 
 ## 技术评估
 - 代码健康度：良好
-- 测试：1461 passed, 295 skipped, 0 failed ✅
+- 测试：1407 passed, 295 skipped, 0 failed ✅
+- CI：4 平台全绿 ✅ (macOS, Ubuntu, Windows C++, Windows Python)
 - MCP server: 76 tools
 - **零 🔴 Open bug** — 全部 bugs 已 Fixed 或 Verified
 - 无 TODO/FIXME/HACK
-- macOS backend: 40+ 方法完整实现（capture/list/see/click/type/window/app/clipboard/dialog）
+- ctx.exit(1) 全部已替换为 sys.exit(1)
 
 ## Phase 进度
-- Phase 4 ~ 5C: ✅ Complete
-- Phase 5.1 Open Source Launch: 🔄 In Progress (阻塞于 Ace 创建 GitHub Release)
-- **Phase 6 macOS Backend: 🔄 In Progress (核心完成，需要 macOS 集成测试)**
-  - [x] Peekaboo CLI wrapper (subprocess)
-  - [x] capture/list/see
-  - [x] click/type/press/hotkey/scroll/drag
-  - [x] window management (focus/close/minimize/maximize/move/resize)
-  - [x] app lifecycle (launch/quit/list)
-  - [x] clipboard get/set
-  - [x] menu inspection
-  - [x] dialog handling
-  - [x] multi-monitor support
-  - [x] 791 行 mock 测试
-  - [ ] macOS 真机集成测试（需要 Peekaboo 安装）
-  - [ ] CI macOS runner
+- Phase 4 ~ 5A: ✅ Complete
+- Phase 5B.1-5B.3: ✅ Complete (MSAA/IA2/JAB)
+- Phase 5B.5: ✅ Complete (Hardware Keyboard)
+- Phase 5B.7: ✅ Complete (UIA CacheRequest)
+- Phase 5B.8: ✅ Complete (Chrome CDP)
+- Phase 5C.1: 🔜 Excel COM Automation
+- Phase 5C.2: ✅ Complete (Windows Registry)
+- Phase 5C.3: ✅ Complete (Windows Service)
+- Phase 5C.4: ✅ Complete (Electron/CEF App Support)
+- **下一步**: Phase 5C.1 Excel COM 或 Phase 5D Packaging
+
+## 风险预警
+- feat/phase5b-engine 分支可清理（已 merge 到 main）
+- Phase 5B.4 SAP GUI — 需要 SAP 测试环境（阻塞）
+- Phase 5B.6 MinHook — 需要编译机编译 C++
 
 ## 阻塞
-- 编译机 192.168.31.52 不可达（connection refused）
 - Phase 5B.4 SAP GUI Scripting — 需要 SAP 测试环境
 - Phase 5B.6 MinHook — 需要编译机编译 C++
-- Phase 5C.1 Excel COM — 需要编译机
-- Phase 5.1 PyPI 发布 — 需 Ace 创建 GitHub Release
-
-## 下一步
-- 等 Ace 创建 GitHub Release 触发首次 PyPI 发布
-- macOS 真机测试（需安装 Peekaboo）
-- 编译机恢复后录制 hero GIF + 继续 Windows 功能测试

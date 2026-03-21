@@ -2,6 +2,7 @@
 import json
 
 from naturo.cli.error_helpers import json_error as _json_error_str
+from naturo.models.snapshot import SnapshotNotFoundError as _ModelsSnapshotNotFoundError
 import sys
 import time
 import click
@@ -101,6 +102,14 @@ def diff(ctx, snapshots, window_title, interval, json_output):
             click.echo(json.dumps(exc.to_json_response(), indent=2))
         else:
             click.echo(f"Error: {exc.message}", err=True)
+        sys.exit(1)
+    except _ModelsSnapshotNotFoundError as exc:
+        # models.snapshot.SnapshotNotFoundError doesn't inherit NaturoError,
+        # so translate it to the proper SNAPSHOT_NOT_FOUND error code.
+        if json_output:
+            click.echo(_json_error_str("SNAPSHOT_NOT_FOUND", str(exc)))
+        else:
+            click.echo(f"Error: {exc}", err=True)
         sys.exit(1)
     except Exception as exc:
         if json_output:
