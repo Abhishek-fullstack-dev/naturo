@@ -604,3 +604,14 @@
 - **影响**: registry get/set/list/delete/search 和 service list/start/stop/restart/status 共 10 个命令无 MCP 入口
 - **对比**: chrome 和 electron 的 MCP 工具已注册
 - **文件**: naturo/mcp_server.py（需添加 registry 和 service 相关 @server.tool）
+
+## BUG-068 — naturo_core.dll 缺失导致整个工具不可用 🔴 Open
+- **严重度**: 🔴 P0
+- **来源**: 用户报告 (Ace)
+- **复现**: `pip install git+https://github.com/AcePeak/naturo.git` 后运行任何需要 native 的命令
+- **现象**: `Error: Cannot find naturo_core.dll`，所有命令不可用
+- **期望行为**:
+  1. 不依赖 DLL 的命令（`--help`、`version`、`electron list`、`chrome tabs` 等纯 Python 功能）应该正常工作，即使没有 DLL
+  2. 需要 DLL 的命令（`capture`、`see`、`click` 等）在 DLL 缺失时给出清晰的错误提示，而不是在 import 时就崩
+  3. 理想情况：从源码安装时自动下载预编译 DLL（从 GitHub Release assets），或在首次使用时自动下载
+- **根因**: `bridge.py` 在 import 时就加载 DLL，失败则整个模块不可用。应该改为延迟加载（lazy loading），只在真正需要 native 功能时才报错
