@@ -221,6 +221,13 @@ def launch_app(
             # Linux
             target = path or name or ""
             proc = subprocess.Popen([target] + cmd_args)
+            # Check if the process exits immediately with an error
+            try:
+                retcode = proc.wait(timeout=2)
+                if retcode is not None and retcode != 0:
+                    raise AppNotFoundError(launch_target)
+            except subprocess.TimeoutExpired:
+                pass  # Still running, treat as success
     except AppNotFoundError:
         raise
     except subprocess.TimeoutExpired:
