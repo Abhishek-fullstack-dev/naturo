@@ -605,7 +605,7 @@
 - **对比**: chrome 和 electron 的 MCP 工具已注册
 - **文件**: naturo/mcp_server.py（需添加 registry 和 service 相关 @server.tool）
 
-## BUG-068 — naturo_core.dll 缺失导致整个工具不可用 🔴 Open
+## BUG-068 — naturo_core.dll 缺失导致整个工具不可用 🟢 Fixed
 - **严重度**: 🔴 P0
 - **来源**: 用户报告 (Ace)
 - **复现**: `pip install git+https://github.com/AcePeak/naturo.git` 后运行任何需要 native 的命令
@@ -633,3 +633,23 @@
   2. 子串匹配：`--window-title 记事` 匹配 "无标题 - 记事本"
   3. 多窗口时匹配最佳结果（最短标题优先，或前台窗口优先）
   4. 匹配不到时给出候选列表："Did you mean: ..."
+
+## BUG-071 — see 输出缺少元素 ID，无法与 click 联动 🟡 Open
+- **严重度**: 🟡 P1
+- **来源**: 用户反馈 (Ace)
+- **现象**: `naturo see` 文本输出只显示 [Role] "Name" (bounds)，没有元素 ID 或 selector
+- **期望行为**:
+  1. `see` 文本输出每个元素带一个短 ID（如 e1, e2, e3...）
+  2. 这个 ID 可以直接用于 `naturo click e3` 或 `naturo click --id e3`
+  3. ID 来自 snapshot，在 snapshot 过期前（10分钟）有效
+  4. 输出示例：
+     ```
+     [Window] "记事本" hwnd=12345
+       [MenuBar] "菜单栏" e1
+         [MenuItem] "文件" e2
+         [MenuItem] "编辑" e3
+       [Edit] "文本编辑器" e4
+       [Button] "关闭" e5
+     ```
+  5. 用户可以直接：`naturo click e5` 点关闭按钮
+- **对标**: Peekaboo 的 `see` + OpenClaw browser snapshot 的 ref 机制（ax1, ax2...）
