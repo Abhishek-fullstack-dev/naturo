@@ -14,6 +14,7 @@ from naturo.backends.base import (
     CaptureResult,
 )
 from naturo.bridge import NaturoCore, NaturoCoreError, populate_hierarchy
+from naturo.errors import NaturoError
 from naturo.models.menu import MenuItem
 from typing import List, Optional
 
