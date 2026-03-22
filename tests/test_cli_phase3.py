@@ -78,7 +78,7 @@ class TestAppCommands:
     def test_app_quit_help(self, runner):
         result = runner.invoke(main, ["app", "quit", "--help"])
         assert result.exit_code == 0
-        assert "--name" in result.output
+        assert "NAME" in result.output  # positional argument
         assert "--pid" in result.output
         assert "--force" in result.output
 

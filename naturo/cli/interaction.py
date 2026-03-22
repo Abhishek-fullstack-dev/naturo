@@ -317,12 +317,14 @@ def hotkey(keys, keys_option, hold_duration, app, window_title, hwnd,
 
 
 @click.command()
+@click.argument("direction_arg", required=False, default=None,
+                type=click.Choice(["up", "down", "left", "right"]))
 @click.option(
     "--direction", "-d",
+    "direction_option",
     type=click.Choice(["up", "down", "left", "right"]),
-    default="down",
+    default=None,
     help="Scroll direction",
-    show_default=True,
 )
 @click.option("--amount", "-a", type=int, default=3, help="Scroll amount (notches)", show_default=True)
 @click.option("--on", "on_text", help="Element to scroll on")
@@ -332,14 +334,18 @@ def hotkey(keys, keys_option, hold_duration, app, window_title, hwnd,
 @click.option("--window-title", help="Window title pattern")
 @click.option("--hwnd", type=int, help="Window handle (HWND)")
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
-def scroll(direction, amount, on_text, smooth, delay, app, window_title,
+def scroll(direction_arg, direction_option, amount, on_text, smooth, delay, app, window_title,
            hwnd, json_output):
     """Scroll in a direction.
 
+    DIRECTION can be: up, down, left, right (default: down)
+
     Examples:
+      naturo scroll down
+      naturo scroll up --amount 5
       naturo scroll --direction down --amount 5
-      naturo scroll -d up -a 3
     """
+    direction = direction_arg or direction_option or "down"
     if amount < 1:
         _json_err(f"--amount must be >= 1, got {amount}", json_output, code="INVALID_INPUT")
         return

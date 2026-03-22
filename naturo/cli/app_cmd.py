@@ -67,18 +67,31 @@ def app_launch(ctx, name, path, wait_until_ready, timeout, no_focus, args, json_
 
 
 @click.command("quit")
-@click.option("--name", help="Application name")
+@click.argument("name", required=False, default=None)
+@click.option("--name", "name_option", hidden=True, help="Application name (deprecated, use positional)")
 @click.option("--pid", type=int, help="Process ID")
 @click.option("--force", is_flag=True, help="Force kill immediately")
 @click.option("--timeout", type=float, default=10.0, help="Graceful shutdown timeout")
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 @click.pass_context
-def app_quit(ctx, name, pid, force, timeout, json_output):
-    """Quit an application gracefully (or force kill)."""
+def app_quit(ctx, name, name_option, pid, force, timeout, json_output):
+    """Quit an application gracefully (or force kill).
+
+    NAME is the application name to quit.
+
+    Examples:
+      naturo app quit notepad
+      naturo app quit chrome --force
+      naturo app quit --pid 12345
+    """
     json_output = json_output or (ctx.obj or {}).get("json", False)
 
+    # Support --name for backward compatibility
+    if not name and name_option:
+        name = name_option
+
     if not name and pid is None:
-        msg = "Specify --name or --pid"
+        msg = "Specify application name or --pid"
         if json_output:
             click.echo(_json_error_str("INVALID_INPUT", msg))
         else:

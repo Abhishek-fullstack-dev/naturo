@@ -79,7 +79,7 @@ naturo type "Hello, World!"
 naturo type "Hello" --input-mode hardware
 
 # Press key combo
-naturo press "ctrl+s"
+naturo hotkey ctrl+s
 
 # Find element
 naturo find "Edit:filename"
@@ -94,6 +94,8 @@ naturo window set-bounds --app "Chrome" --x 0 --y 0 --width 960 --height 1080
 
 # App control
 naturo app launch "notepad"
+naturo app quit "notepad"
+naturo app quit "chrome" --force
 naturo app switch "chrome"
 naturo app hide "notepad"
 naturo app unhide "notepad"
