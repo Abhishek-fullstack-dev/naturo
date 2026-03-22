@@ -1,8 +1,8 @@
 # Naturo 项目状态
 
-**最后更新**: 2026-03-22 18:48  
-**版本**: 0.1.1 (编译机已部署)  
-**状态**: 🟡 **接近可发布** — BUG-011 已修复，仅剩 BUG-003(P2 需产品决策)
+**最后更新**: 2026-03-22 18:56  
+**版本**: 0.1.1 (编译机 commit a32c33c，最新修复未部署)  
+**状态**: 🟡 **接近可发布** — BUG-012 已修复，CI 桌面测试 skip 修复推送中
 
 ---
 
@@ -26,8 +26,8 @@ Phase 1: 核心功能实现（进展中）
 
 ## 待修复问题
 
-### 🟢 BUG-009: taskbar/tray get_ui_tree 缺失 → Fixed (commit 6a189b3，待 QA 验证)
-### 🟢 BUG-010: learn 教程引用错误 → Fixed (commit 6a189b3，待 QA 验证)
+### 🟢 BUG-012: `learn interaction` 教程命令语法错误 → Fixed (commit cb4cb2e)
+### 🟢 BUG-011: `learn capture` 引用 `--region` 参数 → Fixed (commit 71a1217，未部署到编译机)
 ### 🔴 BUG-003: pyvda 依赖缺失 (P2，需产品决策)
 
 ---
@@ -51,6 +51,17 @@ Phase 1: 核心功能实现（进展中）
 - ✅ `naturo learn` (topic 列表正确)
 - ✅ `naturo scroll down` (位置参数生效)
 - ✅ `naturo app quit notepad` (位置参数生效)
+- ✅ `naturo dialog detect --json` → 合法 JSON
+- ✅ `naturo window list --json` → 合法 JSON  
+- ✅ `naturo record stop --json` → 合法 JSON 错误 (无录制时)
+- ✅ `naturo record play nonexistent --json` → 合法 JSON 错误
+- ✅ `naturo paste --help` → 完整参数
+- ✅ `naturo move --help` → 完整参数
+- ✅ `naturo drag --help` → 完整参数
+- ✅ `naturo wait --help` → 完整参数
+- ✅ `naturo describe --help` → 完整参数 (支持 anthropic/openai/ollama)
+- ✅ `naturo agent --help` → 完整参数 (支持 dry-run/verbose)
+- ✅ `naturo mcp tools --json` → 82 个 MCP 工具
 - ✅ 错误输出结构化 JSON (code + message + suggested_action + recoverable)
 
 ## 待桌面验证功能
@@ -90,9 +101,9 @@ Phase 1: 核心功能实现（进展中）
 
 ## 测试覆盖
 
-**已验证命令**: ~30/76 (39%)
-**通过率**: 25/30 (83%)
-**失败**: desktop 缺依赖 (pyvda)
+**已验证命令**: ~42/82 (51%)
+**通过率**: 37/42 (88%)
+**失败**: desktop 缺依赖 (pyvda), learn 教程语法错误
 
 ---
 
@@ -121,4 +132,4 @@ Phase 1: 核心功能实现（进展中）
 
 ---
 
-最后更新: 2026-03-22 18:40 by Dev Agent (BUG-009/010 修复)
+最后更新: 2026-03-22 18:56 by Dev Agent (BUG-012 修复 + CI skip 修复)

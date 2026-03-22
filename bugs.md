@@ -18,13 +18,56 @@
 
 ## 🔴 Open
 
-### BUG-011: `learn capture` 引用不存在的 `--region` 参数（P2 - DOC） → 🟢 Fixed
+### BUG-012: `learn interaction` 教程多处命令语法错误（P2 - DOC） → 🟢 Fixed
+**发现日期**: 2026-03-22 (Round 6)
+**修复日期**: 2026-03-22 (commit cb4cb2e)
+**类型**: 文档不一致
+
+**问题**: `naturo learn interaction` 显示的命令示例与实际 CLI 不符：
+
+| learn 教程写的 | 实际正确语法 | 错误类型 |
+|----------------|-------------|---------|
+| `naturo click 500 300` | `naturo click --coords 500 300` | click 不接受位置坐标参数 |
+| `naturo click 500 300 --button right` | `naturo click --coords 500 300 --right` | 同上 + 参数名不对 |
+| `naturo click 500 300 --double` | `naturo click --coords 500 300 --double` | 同上 |
+| `naturo drag 100 200 400 500` | `naturo drag --from-coords 100 200 --to-coords 400 500` | drag 不接受位置参数 |
+| `naturo move 500 300` | `naturo move --coords 500 300` | move 不接受位置参数 |
+| `naturo scroll up 5` | `naturo scroll up --amount 5` | scroll 数量需要 --amount |
+
+**复现**:
+```
+> naturo click 500 300
+Error: Got unexpected extra argument (300)
+
+> naturo drag 100 200 400 500
+Error: Got unexpected extra arguments (100 200 400 500)
+
+> naturo move 500 300
+Error: Got unexpected extra arguments (500 300)
+
+> naturo scroll up 5
+Error: Got unexpected extra argument (5)
+```
+
+**修复**: 修正所有命令示例：
+- `click 500 300` → `click --coords 500 300`
+- `click --button right` → `click --right`  
+- `drag 100 200 400 500` → `drag --from-coords 100 200 --to-coords 400 500`
+- `move 500 300` → `move --coords 500 300`
+- `scroll up 5` → `scroll up --amount 5`
+- 新增 `click "Submit"` 文本点击示例
+
+---
+
+### BUG-011: `learn capture` 引用不存在的 `--region` 参数（P2 - DOC） → 🟢 Fixed (未部署)
 **发现日期**: 2026-03-22 (Round 5)
 **修复日期**: 2026-03-22 (commit 71a1217)
 **类型**: 文档不一致
 
 **根因**: learn capture 教程引用了 `--region` 参数，但 `capture live` 实际支持的是 `--app`、`--window-title`、`--hwnd`、`--screen`。
 **修复**: 将 `--region 0,0,800,600` 示例替换为 `--app "Notepad"`，将 tip 中的 `--region` 替换为 `--app` / `--window-title`。
+
+**Round 6 验证**: ❌ 未通过 — 编译机仍为 commit a32c33c，修复 commit 71a1217 未部署。learn capture 仍显示 `--region`。需要部署最新代码后重新验证。
 
 ---
 
