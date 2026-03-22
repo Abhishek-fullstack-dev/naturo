@@ -724,13 +724,36 @@ class WindowsBackend(Backend):
                       hwnd: Optional[int] = None) -> int:
         """Resolve a window handle from app name, window title, or direct hwnd.
 
+        Matching strategy (BUG-069/BUG-070):
+
+        When ``app`` is provided, matches against **process name first** (with
+        ``.exe`` suffix stripped), then falls back to window title.  When
+        ``window_title`` is provided, matches against window title only.
+
+        Scoring (higher = better match):
+          4 — exact process-name match  (e.g. ``explorer`` == ``explorer.exe``)
+          3 — process-name substring    (e.g. ``expl`` in ``explorer.exe``)
+          2 — exact title match         (e.g. ``notepad`` == ``Notepad``)
+          1 — title substring           (e.g. ``note`` in ``Untitled - Notepad``)
+
+        Case-insensitive throughout.  Among equal scores the window whose
+        title is shortest wins (heuristic: less noise in the title ⇒ more
+        likely the "main" window).
+
         Args:
-            app: Application/process name to search for (case-insensitive, partial match).
-            window_title: Window title pattern (case-insensitive, partial match).
+            app: Application/process name to search for (case-insensitive,
+                partial match).  Compared against process name first, then
+                window title as fallback.
+            window_title: Window title pattern (case-insensitive, partial
+                match).  Compared against window title only.
             hwnd: Direct window handle (takes priority).
 
         Returns:
             Window handle (HWND), or 0 for the foreground window.
+
+        Raises:
+            WindowNotFoundError: When no matching window is found.  The error
+                message includes up to 5 candidate windows.
         """
         if hwnd:
             return hwnd
@@ -741,12 +764,70 @@ class WindowsBackend(Backend):
 
         search_lower = search.lower()
         windows = self.list_windows()
-        for w in windows:
-            if search_lower in w.title.lower() or search_lower in w.process_name.lower():
-                return w.handle
 
+        # --app → match process name first; --window-title → match title only
+        match_process = app is not None
+
+        best_score = 0
+        best_window = None
+
+        for w in windows:
+            score = 0
+            proc_stem = w.process_name.lower()
+            # Strip .exe suffix for comparison
+            if proc_stem.endswith(".exe"):
+                proc_stem = proc_stem[:-4]
+            title_lower = w.title.lower()
+
+            if match_process:
+                # Process-name matching (priority)
+                if search_lower == proc_stem:
+                    score = 4  # exact process name
+                elif search_lower in proc_stem:
+                    score = 3  # substring in process name
+                # Title fallback (lower priority)
+                elif search_lower == title_lower:
+                    score = 2  # exact title
+                elif search_lower in title_lower:
+                    score = 1  # substring in title
+            else:
+                # --window-title: only match window title
+                if search_lower == title_lower:
+                    score = 4  # exact title
+                elif search_lower in title_lower:
+                    score = 1  # substring in title
+
+            if score > best_score or (
+                score == best_score
+                and score > 0
+                and best_window is not None
+                and len(w.title) < len(best_window.title)
+            ):
+                best_score = score
+                best_window = w
+
+        if best_window is not None:
+            return best_window.handle
+
+        # No match — build candidate suggestions (BUG-070)
         from naturo.errors import WindowNotFoundError
-        raise WindowNotFoundError(search)
+
+        candidates = []
+        seen = set()
+        for w in windows:
+            label = f"{w.process_name} — \"{w.title}\""
+            if label not in seen and w.title:
+                seen.add(label)
+                candidates.append(label)
+            if len(candidates) >= 5:
+                break
+
+        hint = f"No window matching '{search}'."
+        if candidates:
+            hint += " Did you mean:\n" + "\n".join(f"  • {c}" for c in candidates)
+        hint += "\nTip: use 'naturo list windows' to see all windows."
+
+        raise WindowNotFoundError(search, suggested_action=hint)
 
     def get_element_tree(self, window_title: Optional[str] = None,
                          depth: int = 3,

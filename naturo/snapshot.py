@@ -170,6 +170,77 @@ class SnapshotManager:
             len(ui_elements),
         )
 
+    def store_ref_map(self, snapshot_id: str, ref_map: Dict[str, str]) -> None:
+        """Persist the ref → element-id mapping for a snapshot.
+
+        This allows ``e1``, ``e2``, … refs from ``see`` text output to be
+        resolved back to element coordinates by ``click`` and other commands.
+
+        Parameters
+        ----------
+        snapshot_id:
+            Target snapshot.
+        ref_map:
+            Mapping from short ref (e.g. ``"e1"``) to backend element id.
+        """
+        snap_dir = self._snap_dir(snapshot_id)
+        with self._lock:
+            ref_path = snap_dir / "refs.json"
+            self._write_json_atomic(ref_path, ref_map)
+        logger.debug("Stored ref map for snapshot %s (%d refs)", snapshot_id, len(ref_map))
+
+    def resolve_ref(self, ref: str) -> Optional[tuple]:
+        """Resolve a short element ref (e.g. ``e3``) to center coordinates.
+
+        Searches the most recent valid snapshot for the ref, looks up the
+        element in the ``ui_map``, and returns the center of its bounding
+        rectangle.
+
+        Parameters
+        ----------
+        ref:
+            Short ref string (e.g. ``"e3"``).
+
+        Returns
+        -------
+        tuple | None
+            ``(x, y, snapshot_id)`` — center coordinates and the snapshot ID
+            used; or ``None`` if no matching ref was found.
+        """
+        recent_id = self.get_most_recent_snapshot()
+        if not recent_id:
+            return None
+
+        snap_dir = self._snap_dir(recent_id)
+        ref_path = snap_dir / "refs.json"
+
+        with self._lock:
+            if not ref_path.exists():
+                return None
+            try:
+                ref_map = json.loads(ref_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                return None
+
+        element_id = ref_map.get(ref)
+        if not element_id:
+            return None
+
+        try:
+            snapshot = self.get_snapshot(recent_id)
+        except Exception:
+            return None
+
+        element = snapshot.ui_map.get(element_id)
+        if not element:
+            return None
+
+        # Calculate center of bounding rectangle
+        ex, ey, ew, eh = element.frame
+        cx = ex + ew // 2
+        cy = ey + eh // 2
+        return (cx, cy, recent_id)
+
     def store_annotated(self, snapshot_id: str, annotated_path: str) -> None:
         """Copy an annotated screenshot into the snapshot directory.
 

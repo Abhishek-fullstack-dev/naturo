@@ -458,10 +458,15 @@ def see(app, window_title, hwnd, pid, mode, depth, path, annotate, store_snapsho
             mgr = SnapshotManager()
             snapshot_id = mgr.create_snapshot()
 
-            # Flatten element tree into ui_map
+            # Flatten element tree into ui_map and build ref→element mapping
+            # (BUG-071: sequential refs e1, e2, ... for click integration)
             ui_map = {}
+            _ref_seq = [0]
+            ref_map = {}  # "e1" → element_id (backend id)
 
             def _flatten(el, parent_id=None):
+                _ref_seq[0] += 1
+                ref = f"e{_ref_seq[0]}"
                 child_ids = [c.id for c in el.children]
                 props = getattr(el, "properties", {})
                 ui_map[el.id] = UIElement(
@@ -477,11 +482,14 @@ def see(app, window_title, hwnd, pid, mode, depth, path, annotate, store_snapsho
                     children=child_ids,
                     keyboard_shortcut=props.get("keyboard_shortcut"),
                 )
+                ref_map[ref] = el.id
                 for child in el.children:
                     _flatten(child, parent_id=el.id)
 
             _flatten(tree)
             mgr.store_detection_result(snapshot_id, ui_map)
+            # Persist ref mapping so click/type can resolve e<N> refs
+            mgr.store_ref_map(snapshot_id, ref_map)
 
             # Optionally capture screenshot into snapshot
             if path:
@@ -533,18 +541,25 @@ def see(app, window_title, hwnd, pid, mode, depth, path, annotate, store_snapsho
 
             click.echo(json_module.dumps(out, indent=2))
         else:
+            # BUG-071: include short element IDs (e1, e2, ...) that can be
+            # passed to ``naturo click e3`` for quick interaction.
+            _ref_counter = [0]
+
             def print_tree(el, indent=0):
-                """Print element tree in a readable indented format."""
+                """Print element tree with short element refs."""
+                _ref_counter[0] += 1
+                ref = f"e{_ref_counter[0]}"
                 prefix = "  " * indent
                 name_str = f' "{el.name}"' if el.name else ""
                 pos_str = f" ({el.x},{el.y} {el.width}x{el.height})"
-                click.echo(f"{prefix}[{el.role}]{name_str}{pos_str}")
+                click.echo(f"{prefix}[{el.role}]{name_str}{pos_str} {ref}")
                 for child in el.children:
                     print_tree(child, indent + 1)
 
             print_tree(tree)
             if snapshot_id:
                 click.echo(f"\nSnapshot: {snapshot_id}")
+                click.echo("Tip: use 'naturo click e<N>' to click an element by its ref.")
 
         # Generate annotated screenshot
         if annotate and store_snapshot and snapshot_id:
