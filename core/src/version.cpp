@@ -9,7 +9,7 @@
 #include <windows.h>
 #endif
 
-static const char* NATURO_VERSION = "0.1.0";
+static const char* NATURO_VERSION = "0.1.1";
 static bool g_initialized = false;
 
 extern "C" {
