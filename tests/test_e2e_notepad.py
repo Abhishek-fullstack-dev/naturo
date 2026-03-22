@@ -66,10 +66,10 @@ class TestMultiWindowChaos:
         try:
             for _ in range(3):
                 procs.append(_launch_notepad())
-                time.sleep(0.5)
+                time.sleep(1.0)  # CI runners can be slow; 0.5s was flaky
 
             # Give windows time to fully initialize
-            time.sleep(1.0)
+            time.sleep(2.0)
 
             windows = core.list_windows()
             notepad_windows = [
