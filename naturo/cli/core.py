@@ -960,7 +960,7 @@ def learn(topic):
 
   Snapshots (element-annotated screenshots)
   -----------------------------------------
-    naturo snapshot take --path snap.png         Annotated UI snapshot
+    naturo capture live --path snap.png          Capture + store snapshot
     naturo snapshot list                         List saved snapshots
     naturo snapshot clean                        Remove old snapshots
 
@@ -972,7 +972,8 @@ def learn(topic):
 
   Watch for Changes
   -----------------
-    naturo diff --path before.png               Compare current screen to image
+    naturo diff --snapshot ID1 --snapshot ID2    Compare two snapshots
+    naturo diff --window "Notepad"              Capture before/after diff
 
   Tips
   ----
@@ -1120,15 +1121,15 @@ def learn(topic):
     naturo chrome tabs                          List Chrome tabs
     naturo chrome tabs --port 9229              Connect to custom port
 
-  Java Access Bridge (coming soon)
-  --------------------------------
-    naturo java list                            List Java apps
-    naturo java tree --pid 1234                 Inspect UI tree
+  Java Access Bridge (planned)
+  ----------------------------
+    Java UI automation via JAB is on the roadmap.
+    Will enable inspection and control of Swing/AWT applications.
 
-  SAP GUI Scripting (coming soon)
-  -------------------------------
-    naturo sap list                             List SAP sessions
-    naturo sap run SE16                         Run a transaction
+  SAP GUI Scripting (planned)
+  ---------------------------
+    SAP GUI automation via scripting API is on the roadmap.
+    Will enable transaction execution and form interaction.
 
   Tips
   ----
@@ -1141,14 +1142,14 @@ def learn(topic):
             "guide": """\
   MCP Server (Model Context Protocol)
   ------------------------------------
-    naturo mcp serve                            Start MCP server (stdio)
-    naturo mcp tools                            List all 76 MCP tools
+    naturo mcp start                            Start MCP server (stdio)
+    naturo mcp tools                            List all MCP tools
     naturo mcp tools --json                     Tool list as JSON
 
   AI Agent
   --------
-    naturo agent run "Open Notepad and type hello"
-    naturo agent run --model gpt-4 "Fill in the form"
+    naturo agent "Open Notepad and type hello"
+    naturo agent --model gpt-4o "Fill in the form"
     (Provides autonomous UI automation via AI vision)
 
   AI-Powered Commands
@@ -1166,7 +1167,7 @@ def learn(topic):
       "mcpServers": {
         "naturo": {
           "command": "naturo",
-          "args": ["mcp", "serve"]
+          "args": ["mcp", "start"]
         }
       }
     }
