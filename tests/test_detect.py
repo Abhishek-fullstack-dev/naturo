@@ -1,0 +1,409 @@
+"""Tests for the framework detection system.
+
+Tests models, cache, and detection chain logic.
+Most probes require Windows, so probe tests are platform-gated.
+"""
+
+import platform
+import time
+
+import pytest
+
+from naturo.detect.models import (
+    DetectionResult,
+    FrameworkInfo,
+    FrameworkType,
+    InteractionMethod,
+    InteractionMethodType,
+    METHOD_PRIORITY,
+    ProbeStatus,
+)
+from naturo.detect.cache import DetectionCache
+from naturo.detect.chain import detect
+
+
+# ── Models ──────────────────────────────────────────────────────────
+
+
+class TestFrameworkInfo:
+    """Tests for FrameworkInfo data model."""
+
+    def test_to_dict_minimal(self):
+        info = FrameworkInfo(framework_type=FrameworkType.WIN32)
+        result = info.to_dict()
+        assert result["type"] == "win32"
+        assert "version" not in result
+        assert "dll_signatures" not in result
+
+    def test_to_dict_full(self):
+        info = FrameworkInfo(
+            framework_type=FrameworkType.QT,
+            version="Qt 6",
+            dll_signatures=["qt6core.dll", "qt6widgets.dll"],
+        )
+        result = info.to_dict()
+        assert result["type"] == "qt"
+        assert result["version"] == "Qt 6"
+        assert result["dll_signatures"] == ["qt6core.dll", "qt6widgets.dll"]
+
+
+class TestInteractionMethod:
+    """Tests for InteractionMethod data model."""
+
+    def test_to_dict(self):
+        method = InteractionMethod(
+            method=InteractionMethodType.UIA,
+            priority=METHOD_PRIORITY[InteractionMethodType.UIA],
+            status=ProbeStatus.AVAILABLE,
+            capabilities=["click", "type", "find"],
+            confidence=0.9,
+        )
+        result = method.to_dict()
+        assert result["method"] == "uia"
+        assert result["priority"] == 2
+        assert result["status"] == "available"
+        assert "click" in result["capabilities"]
+        assert result["confidence"] == 0.9
+
+    def test_to_dict_with_metadata(self):
+        method = InteractionMethod(
+            method=InteractionMethodType.CDP,
+            priority=1,
+            status=ProbeStatus.AVAILABLE,
+            metadata={"debug_port": 9222},
+        )
+        result = method.to_dict()
+        assert result["metadata"]["debug_port"] == 9222
+
+    def test_to_dict_without_metadata(self):
+        method = InteractionMethod(
+            method=InteractionMethodType.VISION,
+            priority=6,
+            status=ProbeStatus.FALLBACK,
+        )
+        result = method.to_dict()
+        assert "metadata" not in result
+
+
+class TestDetectionResult:
+    """Tests for DetectionResult data model."""
+
+    def test_best_method_selects_highest_priority(self):
+        result = DetectionResult(
+            pid=100,
+            methods=[
+                InteractionMethod(
+                    method=InteractionMethodType.MSAA,
+                    priority=3,
+                    status=ProbeStatus.AVAILABLE,
+                ),
+                InteractionMethod(
+                    method=InteractionMethodType.UIA,
+                    priority=2,
+                    status=ProbeStatus.AVAILABLE,
+                ),
+                InteractionMethod(
+                    method=InteractionMethodType.VISION,
+                    priority=6,
+                    status=ProbeStatus.FALLBACK,
+                ),
+            ],
+        )
+        best = result.best_method()
+        assert best is not None
+        assert best.method == InteractionMethodType.UIA
+
+    def test_best_method_includes_fallback(self):
+        """Fallback methods are considered when no 'available' methods exist."""
+        result = DetectionResult(
+            pid=100,
+            methods=[
+                InteractionMethod(
+                    method=InteractionMethodType.CDP,
+                    priority=1,
+                    status=ProbeStatus.UNAVAILABLE,
+                ),
+                InteractionMethod(
+                    method=InteractionMethodType.VISION,
+                    priority=6,
+                    status=ProbeStatus.FALLBACK,
+                ),
+            ],
+        )
+        best = result.best_method()
+        assert best is not None
+        assert best.method == InteractionMethodType.VISION
+
+    def test_best_method_none_when_empty(self):
+        result = DetectionResult(pid=100, methods=[])
+        assert result.best_method() is None
+
+    def test_best_method_none_when_all_unavailable(self):
+        result = DetectionResult(
+            pid=100,
+            methods=[
+                InteractionMethod(
+                    method=InteractionMethodType.CDP,
+                    priority=1,
+                    status=ProbeStatus.UNAVAILABLE,
+                ),
+                InteractionMethod(
+                    method=InteractionMethodType.JAB,
+                    priority=4,
+                    status=ProbeStatus.ERROR,
+                ),
+            ],
+        )
+        assert result.best_method() is None
+
+    def test_to_dict_structure(self):
+        result = DetectionResult(
+            pid=1234,
+            exe="notepad.exe",
+            app_name="Notepad",
+            frameworks=[FrameworkInfo(framework_type=FrameworkType.WIN32)],
+            methods=[
+                InteractionMethod(
+                    method=InteractionMethodType.UIA,
+                    priority=2,
+                    status=ProbeStatus.AVAILABLE,
+                    capabilities=["click", "type"],
+                ),
+            ],
+        )
+        d = result.to_dict()
+        assert d["pid"] == 1234
+        assert d["exe"] == "notepad.exe"
+        assert d["app"] == "Notepad"
+        assert len(d["framework"]["detected"]) == 1
+        assert d["framework"]["detected"][0]["type"] == "win32"
+        assert len(d["interaction_methods"]) == 1
+        assert d["recommended"] == "uia"
+
+
+class TestMethodPriority:
+    """Tests for METHOD_PRIORITY ordering."""
+
+    def test_cdp_highest_priority(self):
+        assert METHOD_PRIORITY[InteractionMethodType.CDP] < METHOD_PRIORITY[InteractionMethodType.UIA]
+
+    def test_vision_lowest_priority(self):
+        assert METHOD_PRIORITY[InteractionMethodType.VISION] > METHOD_PRIORITY[InteractionMethodType.IA2]
+
+    def test_all_methods_have_priority(self):
+        for method in InteractionMethodType:
+            assert method in METHOD_PRIORITY, f"{method} missing from METHOD_PRIORITY"
+
+
+# ── Cache ───────────────────────────────────────────────────────────
+
+
+class TestDetectionCache:
+    """Tests for the per-PID detection cache."""
+
+    def test_put_and_get(self):
+        cache = DetectionCache(ttl_seconds=60)
+        result = DetectionResult(pid=100)
+        cache.put(100, result)
+        assert cache.get(100) is result
+
+    def test_miss_returns_none(self):
+        cache = DetectionCache()
+        assert cache.get(999) is None
+
+    def test_ttl_expiration(self):
+        cache = DetectionCache(ttl_seconds=0.1)
+        result = DetectionResult(pid=100)
+        cache.put(100, result)
+        assert cache.get(100) is result
+        time.sleep(0.15)
+        assert cache.get(100) is None
+
+    def test_process_restart_invalidation(self):
+        cache = DetectionCache()
+        result = DetectionResult(pid=100)
+        cache.put(100, result, process_create_time=1000.0)
+        # Same process — should hit
+        assert cache.get(100, process_create_time=1000.0) is result
+        # Different creation time — process restarted
+        assert cache.get(100, process_create_time=2000.0) is None
+
+    def test_invalidate(self):
+        cache = DetectionCache()
+        cache.put(100, DetectionResult(pid=100))
+        assert cache.invalidate(100) is True
+        assert cache.get(100) is None
+        assert cache.invalidate(100) is False
+
+    def test_clear(self):
+        cache = DetectionCache()
+        for pid in range(10):
+            cache.put(pid, DetectionResult(pid=pid))
+        assert cache.size() == 10
+        cache.clear()
+        assert cache.size() == 0
+
+    def test_cleanup_expired(self):
+        cache = DetectionCache(ttl_seconds=0.1)
+        for pid in range(5):
+            cache.put(pid, DetectionResult(pid=pid))
+        time.sleep(0.15)
+        # Add a fresh one
+        cache.put(99, DetectionResult(pid=99))
+        removed = cache.cleanup_expired()
+        assert removed == 5
+        assert cache.size() == 1
+        assert cache.get(99) is not None
+
+
+# ── Detection Chain ────────────────────────────────────────────────
+
+
+class TestDetectChain:
+    """Tests for the detect() orchestrator function."""
+
+    def test_detect_nonexistent_pid(self):
+        """Detection of a bogus PID should not crash, returns result with vision fallback."""
+        result = detect(pid=99999999, exe="fake.exe", use_cache=False)
+        assert result.pid == 99999999
+        # Should at least have vision fallback on any platform
+        method_types = [m.method for m in result.methods]
+        assert InteractionMethodType.VISION in method_types
+
+    def test_detect_returns_detection_result(self):
+        result = detect(pid=1, exe="test.exe", use_cache=False)
+        assert isinstance(result, DetectionResult)
+        assert result.pid == 1
+
+    def test_detect_caching(self):
+        """Second call should return cached result."""
+        cache = DetectionCache(ttl_seconds=60)
+        # Manually populate cache
+        cached_result = DetectionResult(
+            pid=42,
+            exe="cached.exe",
+            app_name="Cached App",
+        )
+        cache.put(42, cached_result)
+
+        from naturo.detect import cache as cache_module
+        original_cache = cache_module._global_cache
+        try:
+            cache_module._global_cache = cache
+            from naturo.detect.chain import get_cache as chain_get_cache
+            # Patch get_cache to return our cache
+            import naturo.detect.chain as chain_mod
+            old_get_cache = chain_mod.get_cache
+            chain_mod.get_cache = lambda: cache
+
+            result = detect(pid=42, use_cache=True)
+            assert result is cached_result
+        finally:
+            chain_mod.get_cache = old_get_cache
+            cache_module._global_cache = original_cache
+
+    def test_detect_skip_cache(self):
+        result = detect(pid=1, exe="test.exe", use_cache=False)
+        assert isinstance(result, DetectionResult)
+
+    def test_detect_quick_mode(self):
+        """Quick mode should still return a valid result."""
+        result = detect(pid=99999999, exe="fake.exe", use_cache=False, quick=True)
+        assert isinstance(result, DetectionResult)
+
+    def test_detect_result_serializable(self):
+        """Result should be JSON-serializable via to_dict()."""
+        import json
+        result = detect(pid=1, exe="test.exe", use_cache=False)
+        d = result.to_dict()
+        # Should not raise
+        json_str = json.dumps(d)
+        assert isinstance(json_str, str)
+
+    @pytest.mark.skipif(
+        platform.system() != "Windows",
+        reason="Probe integration tests require Windows",
+    )
+    def test_detect_real_process_windows(self):
+        """On Windows, detect the current Python process."""
+        import os
+        import sys
+        result = detect(pid=os.getpid(), exe=sys.executable, use_cache=False)
+        assert result.pid == os.getpid()
+        assert len(result.methods) > 0
+        assert result.recommended is not None
+
+
+# ── Probes (cross-platform safe) ───────────────────────────────────
+
+
+class TestProbeVision:
+    """Vision probe tests — works on all platforms."""
+
+    def test_vision_always_returns(self):
+        from naturo.detect.probes import probe_vision
+        result = probe_vision(pid=1, exe="anything.exe")
+        assert result is not None
+        assert result.method == InteractionMethodType.VISION
+        assert result.status == ProbeStatus.FALLBACK
+
+
+class TestProbesCrossPlatform:
+    """Probes that return None on non-Windows should not crash."""
+
+    def test_probe_cdp_non_windows(self):
+        if platform.system() == "Windows":
+            pytest.skip("Only tests non-Windows behavior")
+        from naturo.detect.probes import probe_cdp
+        assert probe_cdp(pid=1, exe="test.exe") is None
+
+    def test_probe_uia_non_windows(self):
+        if platform.system() == "Windows":
+            pytest.skip("Only tests non-Windows behavior")
+        from naturo.detect.probes import probe_uia
+        assert probe_uia(pid=1, exe="test.exe") is None
+
+    def test_probe_msaa_non_windows(self):
+        if platform.system() == "Windows":
+            pytest.skip("Only tests non-Windows behavior")
+        from naturo.detect.probes import probe_msaa
+        assert probe_msaa(pid=1, exe="test.exe") is None
+
+    def test_probe_jab_non_windows(self):
+        if platform.system() == "Windows":
+            pytest.skip("Only tests non-Windows behavior")
+        from naturo.detect.probes import probe_jab
+        assert probe_jab(pid=1, exe="test.exe") is None
+
+    def test_probe_ia2_non_windows(self):
+        if platform.system() == "Windows":
+            pytest.skip("Only tests non-Windows behavior")
+        from naturo.detect.probes import probe_ia2
+        assert probe_ia2(pid=1, exe="test.exe") is None
+
+
+class TestFrameworkDetection:
+    """Tests for DLL-based framework detection."""
+
+    def test_detect_frameworks_unknown_exe(self):
+        from naturo.detect.probes import detect_frameworks_from_dlls
+        # Non-Windows or PID 0 — should not crash
+        frameworks = detect_frameworks_from_dlls(pid=0, exe="unknown.exe")
+        # On non-Windows, returns empty or inferred
+        assert isinstance(frameworks, list)
+
+    def test_detect_electron_from_exe_name(self):
+        from naturo.detect.probes import detect_frameworks_from_dlls
+        if platform.system() == "Windows":
+            pytest.skip("This test checks non-Windows exe name heuristic")
+        frameworks = detect_frameworks_from_dlls(pid=0, exe="/usr/bin/electron")
+        types = [f.framework_type for f in frameworks]
+        assert FrameworkType.ELECTRON in types
+
+    def test_detect_java_from_exe_name(self):
+        from naturo.detect.probes import detect_frameworks_from_dlls
+        if platform.system() == "Windows":
+            pytest.skip("This test checks non-Windows exe name heuristic")
+        frameworks = detect_frameworks_from_dlls(pid=0, exe="/usr/bin/java")
+        types = [f.framework_type for f in frameworks]
+        assert FrameworkType.JAVA_SWING in types
