@@ -151,7 +151,7 @@ class TestServiceBackend:
     @patch("naturo.service.platform.system", return_value="Windows")
     @patch("naturo.service.subprocess.run")
     def test_service_list_running(self, mock_run, mock_platform):
-        """service_list with state='running' passes 'active' to sc."""
+        """service_list with state='running' omits state= arg (sc.exe default = active)."""
         from naturo.service import service_list
 
         mock_run.return_value = MagicMock(
@@ -160,7 +160,9 @@ class TestServiceBackend:
         result = service_list("running")
         assert result["count"] == 1
         args = mock_run.call_args[0][0]
-        assert "active" in args
+        # BUG-013: sc.exe doesn't accept "state= active"; omitting state=
+        # returns only running services by default.
+        assert "state=" not in args
 
     @patch("naturo.service.platform.system", return_value="Windows")
     @patch("naturo.service.subprocess.run")
