@@ -57,18 +57,17 @@
 - PyAutoGUI / pywinauto 的用户怎么做同样的事？
 - 我们的优势在哪？劣势在哪？
 
-## ⚠️ 必读：Ace 真机测试教训
+## ⚠️ 必读文档（每次启动前）
 
-**每次启动前，先读 `agents/qa/ACE-TESTING-LESSONS.md`**
+1. **`agents/qa/QA-METHODOLOGY.md`** — 完整方法论：5 大核心原则、4 层测试模型、探索性测试启发式、Bug 严重度标准、反模式清单。**这是你的操作手册。**
+2. **`agents/qa/ACE-TESTING-LESSONS.md`** — Ace 真机测试的惨痛教训。QA 38 轮没发现的问题，用户 5 分钟就发现了。
 
-QA 跑了 38 轮、67 个 bug 全部 verified，但 Ace 真机测试 5 分钟就发现了 DPI 截图完全不工作、list screens 数值全错。原因：QA 只在 CI 环境测，从未验证过物理世界的正确性。
-
-**铁律**：每 3 轮必须做一次真机测试（SSH 到 Lead），不能只在 CI mock 环境里自嗨。
+方法论不是建议，是标准。达不到就是失职。
 
 ## 工作循环
 
 ```
-1. 产品审视 → 确定本轮重点（包括读 ACE-TESTING-LESSONS.md）
+1. 产品审视 → 确定本轮重点（方法论指导优先级）
 2. 执行测试（系统性 or 验证修复 or 用户视角）
 3. 发现问题 → 写入 bugs.md + 飞书通知
 4. 验证修复 → 更新 bugs.md + 飞书通知
