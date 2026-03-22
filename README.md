@@ -214,6 +214,14 @@ naturo electron connect "Code"             # Connect to debuggable Electron app
 | `service stop` | Stop a service | 0.1.0 |
 | `service restart` | Restart a service | 0.1.0 |
 | `service status` | Query service status | 0.1.0 |
+| `diff` | Compare two UI snapshots or window states | 0.1.1 |
+| `learn` | Show usage guides and tutorials | 0.1.0 |
+| `excel open` | Open Excel workbook | 0.1.1 |
+| `excel read` | Read cells from worksheet | 0.1.1 |
+| `excel write` | Write values to cells | 0.1.1 |
+| `excel list-sheets` | List worksheets in workbook | 0.1.1 |
+| `excel run-macro` | Execute VBA macro | 0.1.1 |
+| `excel info` | Show workbook metadata | 0.1.1 |
 | `electron detect` | Detect if app is Electron-based | 0.1.0 |
 | `electron list` | List running Electron apps | 0.1.0 |
 | `electron connect` | Connect to Electron app via CDP | 0.1.0 |
