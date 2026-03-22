@@ -86,7 +86,7 @@ First release. Full Windows automation with AI integration and cross-platform fo
 - [ ] CI stability improvements
 - [ ] Documentation polish
 
-## 0.2.0 — Unified App Model
+## 0.2.0 — Unified App Model + Selector Foundation
 
 Auto-detect application frameworks and route interactions through the optimal channel. Users don't need to know if it's Electron, Java, or WPF.
 
@@ -101,11 +101,22 @@ See [design doc](design/UNIFIED_APP_MODEL.md).
 - [ ] `--quick` mode for fast probe (skip slow checks)
 - [ ] MCP tools for app inspect
 - [ ] Integration tests across framework types
+- [ ] Element ref caching system (temporary eN → coordinates cache with TTL)
+- [ ] Unified Selector format specification ([design doc](design/UNIFIED_SELECTOR.md))
 
-## 0.3.0 — Enterprise Features
+## 0.3.0 — Unified Selector Engine + Enterprise Features
 
-Deep enterprise automation capabilities from Naturobot engine.
+Unified Selector system and deep enterprise automation capabilities from Naturobot engine.
 
+See [Unified Selector design doc](design/UNIFIED_SELECTOR.md).
+
+### Unified Selectors
+- [ ] Unified Selector engine (SelectorBuilder + SelectorResolver)
+- [ ] `see` outputs selectors alongside eN IDs
+- [ ] `click --selector` accepts unified selector format
+- [ ] Built-in selector templates for Top 20 Windows apps
+
+### Enterprise
 - [ ] Excel COM automation (read/write cells, run macros, create charts)
 - [ ] SAP GUI Scripting
 - [ ] MinHook injection (function hooks, intercept/modify Win32 API calls)
@@ -113,9 +124,14 @@ Deep enterprise automation capabilities from Naturobot engine.
 - [ ] `naturo run my_script.py` — execute user scripts with bundled Python
 - [ ] Standalone executable (Nuitka/PyInstaller → naturo.exe)
 
-## 0.4.0 — Open Source Launch
+## 0.4.0 — Open Source Launch + Selector Management
 
-Go public with maximum impact.
+Go public with maximum impact, plus user-facing selector management.
+
+### Selector Management
+- [ ] User selector management (`naturo selector save/load/list/export`)
+
+### Open Source Launch
 
 ### Pre-launch
 - [ ] Branch protection (require PR + CI)
@@ -158,8 +174,9 @@ UOS, Kylin, openEuler support and production recording engine.
 
 ## 1.0.0 — Stable Release
 
-API freeze, ecosystem partnerships.
+API freeze, ecosystem partnerships, community selector registry.
 
+- [ ] Community selector registry (npm-like service for sharing verified selectors)
 - [ ] API stability guarantee (semver contract)
 - [ ] Peekaboo collaboration — official Windows counterpart
 - [ ] OpenClaw recommended Windows tool
