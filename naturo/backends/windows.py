@@ -1987,10 +1987,10 @@ class WindowsBackend(Backend):
             return result
         except ImportError:
             raise NaturoError(
-                message="Virtual desktop support requires pyvda. Install: pip install pyvda",
+                message="Virtual desktop support requires pyvda. Install: pip install naturo[desktop]",
                 code="DEPENDENCY_MISSING",
                 category="system",
-                suggested_action="Run 'pip install pyvda' to enable virtual desktop features.",
+                suggested_action="Run 'pip install naturo[desktop]' to enable virtual desktop features.",
             )
         except Exception as e:
             raise NaturoError(
@@ -2028,10 +2028,10 @@ class WindowsBackend(Backend):
             }
         except ImportError:
             raise NaturoError(
-                message="Virtual desktop support requires pyvda. Install: pip install pyvda",
+                message="Virtual desktop support requires pyvda. Install: pip install naturo[desktop]",
                 code="DEPENDENCY_MISSING",
                 category="system",
-                suggested_action="Run 'pip install pyvda' to enable virtual desktop features.",
+                suggested_action="Run 'pip install naturo[desktop]' to enable virtual desktop features.",
             )
         except NaturoError:
             raise
@@ -2065,10 +2065,10 @@ class WindowsBackend(Backend):
             }
         except ImportError:
             raise NaturoError(
-                message="Virtual desktop support requires pyvda. Install: pip install pyvda",
+                message="Virtual desktop support requires pyvda. Install: pip install naturo[desktop]",
                 code="DEPENDENCY_MISSING",
                 category="system",
-                suggested_action="Run 'pip install pyvda' to enable virtual desktop features.",
+                suggested_action="Run 'pip install naturo[desktop]' to enable virtual desktop features.",
             )
         except Exception as e:
             raise NaturoError(
@@ -2121,10 +2121,10 @@ class WindowsBackend(Backend):
             }
         except ImportError:
             raise NaturoError(
-                message="Virtual desktop support requires pyvda. Install: pip install pyvda",
+                message="Virtual desktop support requires pyvda. Install: pip install naturo[desktop]",
                 code="DEPENDENCY_MISSING",
                 category="system",
-                suggested_action="Run 'pip install pyvda' to enable virtual desktop features.",
+                suggested_action="Run 'pip install naturo[desktop]' to enable virtual desktop features.",
             )
         except NaturoError:
             raise
@@ -2189,10 +2189,10 @@ class WindowsBackend(Backend):
             }
         except ImportError:
             raise NaturoError(
-                message="Virtual desktop support requires pyvda. Install: pip install pyvda",
+                message="Virtual desktop support requires pyvda. Install: pip install naturo[desktop]",
                 code="DEPENDENCY_MISSING",
                 category="system",
-                suggested_action="Run 'pip install pyvda' to enable virtual desktop features.",
+                suggested_action="Run 'pip install naturo[desktop]' to enable virtual desktop features.",
             )
         except NaturoError:
             raise

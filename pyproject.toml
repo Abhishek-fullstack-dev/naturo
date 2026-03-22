@@ -60,6 +60,9 @@ cdp = [
 annotate = [
     "Pillow>=9.0",
 ]
+desktop = [
+    "pyvda>=0.4.0; sys_platform == 'win32'",
+]
 
 [project.scripts]
 naturo = "naturo.cli:main"
