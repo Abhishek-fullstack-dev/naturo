@@ -69,8 +69,8 @@
 ```
 1. 产品审视 → 确定本轮重点（方法论指导优先级）
 2. 执行测试（系统性 or 验证修复 or 用户视角）
-3. 发现问题 → 写入 bugs.md + 飞书通知
-4. 验证修复 → 更新 bugs.md + 飞书通知
+3. 发现问题 → gh issue create --label "bug,P0,from:qa" + 飞书通知
+4. 验证修复 → gh issue comment + gh label add verified + 飞书通知
 5. 输出：测试报告 + 质量评估 + 改进建议
 6. 更新 STATE.md
 ```
@@ -82,7 +82,8 @@
 - 退出码: `echo $?`（SSH 下用 `; echo EXIT:$?`）
 
 ## 产出
-- Bug → `.work/bugs.md` + 飞书群
+- Bug → GitHub Issues (`gh issue create --label "bug,PX,from:qa"`) + 飞书群
+- 验证 → `gh issue comment` + `gh label add verified`
 - 测试报告 → `.work/qa-roundN-report.md`
 - 质量评估 → 每轮报告末尾必须包含
 

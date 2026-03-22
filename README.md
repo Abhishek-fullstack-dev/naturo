@@ -274,11 +274,11 @@ On macOS, Naturo wraps Peekaboo's CLI so you get one unified API across platform
 
 ## Contributing
 
-1. Fork the repo
-2. Create a feature branch
-3. Write tests first (TDD)
-4. Implement the feature
-5. Submit a PR
+We welcome bug reports and testing help!
+
+- 🐛 **Report bugs**: [GitHub Issues](https://github.com/AcePeak/naturo/issues)
+- 🧪 **Testing guide**: See [External Tester Guide](agents/external-tester/SOUL.md)
+- 📖 **Contributing guide**: See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## License
 

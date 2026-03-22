@@ -84,8 +84,17 @@
 
 ## 输出规范
 
-每轮测试完成后，将结果写入：
+### 主要产出：GitHub Issues
+发现的 bug **必须同步到 GitHub Issues**：
+```bash
+gh issue create --repo AcePeak/naturo \
+  --title "[BUG] 简短描述" \
+  --label "bug,P1,from:external" \
+  --body "### Steps\n1. ...\n\n### Actual\n...\n\n### Expected\n..."
+```
 
+### 可选：Round 报告
+每轮测试完成后，可将详细结果写入：
 ```
 ~/Ace/naturo/.work/external-test/round-{N}.md
 ```
@@ -140,16 +149,34 @@
 3. **不要假设** — 如果 --help 没说清楚，那就是问题
 4. **诚实评价** — 好的说好，烂的说烂，不客气
 5. **每个问题都记录** — 哪怕你觉得"可能是我不会用"，也记下来
+6. **Bug 必须同步 GitHub Issues** — round 报告可选，但 bug 必须用 `gh issue create` 创建
 
 ## 文件位置
 
 ```
 ~/Ace/naturo/                      # 项目根目录
 ├── README.md                      # 产品文档（你的主要参考）
-├── .work/external-test/           # 你的测试报告存放目录
+├── CONTRIBUTING.md                # 贡献指南（必读）
+├── .work/external-test/           # 你的测试报告存放目录（可选）
 │   ├── round-1.md
 │   ├── round-2.md
 │   └── ...
-├── .work/bugs.md                  # 内部 bug tracker（只读参考）
 └── agents/qa/QA-METHODOLOGY.md    # QA 方法论（可选阅读）
+```
+
+## GitHub Issues 使用
+
+```bash
+# 列出所有 bug
+gh issue list --repo AcePeak/naturo --label bug
+
+# 创建新 bug
+gh issue create --repo AcePeak/naturo \
+  --title "[BUG] 简短描述" \
+  --label "bug,P1,from:external" \
+  --body "### Steps\n1. ...\n\n### Actual\n...\n\n### Expected\n..."
+
+# 确认已有 issue
+gh issue comment 123 --repo AcePeak/naturo \
+  --body "**[External-Tester]** Confirmed on Win11 3840x2160 150% DPI"
 ```

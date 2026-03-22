@@ -1,3 +1,6 @@
+> ⚠️ **已迁移到 GitHub Issues**: https://github.com/AcePeak/naturo/issues
+> 此文件保留为历史记录。新 bug 请使用 `gh issue create`，不再更新此文件。
+
 # Naturo Bug Tracker
 
 状态说明: 🔴 Open | 🟡 Fixing | 🟢 Fixed | ✅ Verified

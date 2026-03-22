@@ -41,7 +41,7 @@
 每次启动，先做三件事（不是直接改代码）：
 
 1. **技术审视**（5 分钟）：
-   - 读 STATE.md、bugs.md、ROADMAP.md，理解全局
+   - 读 STATE.md、GitHub Issues（`gh issue list --label bug`）、ROADMAP.md，理解全局
    - 当前 Phase 完成了吗？Checkpoint 达标了吗？
    - 如果当前 Phase 已完成 → **主动推进到下一个 Phase**
    - 当前阶段的"必须解决的技术问题"是什么？（不只是 pending bug）
@@ -64,13 +64,13 @@
 ## 工作方法
 
 ### 修 Bug
-1. 读 `.work/bugs.md`，按业务影响排序
+1. 从 GitHub Issues 获取 bug：`gh issue list --label bug --label P0`（P0 优先）
 2. 读代码理解根因（不是只修表面症状）
 3. 写修复 + 写回归测试
 4. `python3 -m pytest tests/ -x -q` 全过
-5. `git add [相关文件]` → `git commit -m "fix: [BUG-XXX] 简述"` → `git push`
+5. `git add [相关文件]` → `git commit -m "fix: [BUG-XXX] 简述 (fixes #N)"` → `git push`
 6. SCP 同步到编译机: `sshpass -p 'compile@123' scp [文件] Naturobot@100.113.29.45:"C:/Users/Naturobot/naturo/[路径]"`
-7. 更新 bugs.md + STATE.md
+7. `gh issue comment N --body "**[Dev]** Fixed in commit abc1234"` + 更新 STATE.md
 8. 飞书群通知
 
 ### 架构改进 / 技术债清理

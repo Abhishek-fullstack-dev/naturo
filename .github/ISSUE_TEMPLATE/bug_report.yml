@@ -1,0 +1,47 @@
+name: Bug Report
+description: Report a bug in naturo
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - P0 - Blocker
+        - P1 - Major
+        - P2 - Minor
+        - P3 - Enhancement
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      placeholder: |
+        1. Run `naturo xxx`
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Result
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Result
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: |
+        - OS: Windows 11
+        - Python: 3.14
+        - naturo version: 0.1.1
+        - Screen: 3840x2160 150% DPI
+    validations:
+      required: true
