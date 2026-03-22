@@ -1,8 +1,8 @@
 # Naturo 项目状态
 
-**最后更新**: 2026-03-22 19:30 (QA Round 8)  
-**版本**: 0.1.1 (编译机已同步至 commit 860c4a1)  
-**状态**: 🟡 **接近可发布** — BUG-013 修复验证未通过，新发现 BUG-014
+**最后更新**: 2026-03-22 19:32 (Dev Round 9)  
+**版本**: 0.1.1 (编译机已同步至 commit 54bfe68)  
+**状态**: 🟢 **Phase 1 基本完成** — BUG-013/014 已修复验证，see→click ref 已实现
 
 ---
 
@@ -26,8 +26,8 @@ Phase 1: 核心功能实现（进展中）
 
 ## 待修复问题
 
-### 🔴 BUG-013: `service list --state running` → 修复无效，验证未通过 (Round 8)
-### 🔴 BUG-014: `snapshot clean --days N --json` 无 --yes 时不返回 JSON (P3, Round 8)
+### ✅ BUG-013: `service list --state running` → 编译机代码未同步，重新同步后验证通过 (Dev Round 9)
+### ✅ BUG-014: `snapshot clean --days N --json` → --json 隐含 --yes (commit 54bfe68, Dev Round 9)
 ### ⏸️ BUG-003: pyvda 依赖缺失 (P2，需产品决策)
 ### 🟢 BUG-073: DPI 感知修复 — SetThreadDpiAwarenessContext (commit d8a60a8, fixes #16)
 
