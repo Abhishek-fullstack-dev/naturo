@@ -1,4 +1,4 @@
-"""Interaction commands: click, type, press, hotkey, scroll, drag, move, paste."""
+"""Interaction commands: click, type, press, hotkey, scroll, drag, move."""
 import json
 import platform
 import sys
@@ -6,7 +6,10 @@ import time as _time
 
 import click
 
-from naturo.cli.record_cmd import record_action as _record_action
+
+def _record_action(command: str, args: dict, duration_ms: float = 0.0) -> None:
+    """No-op stub — recording command removed."""
+    pass
 
 # ── Shared helper ────────────────────────────────────────────────────────────
 
@@ -197,6 +200,9 @@ def click_cmd(query, on_text, element_id, coords, double, right, app, pid,
 @click.option("--escape", is_flag=True, help="Press Escape after typing")
 @click.option("--delete", is_flag=True, help="Delete existing text first")
 @click.option("--clear", is_flag=True, help="Select all + delete before typing")
+@click.option("--paste", "paste_mode", is_flag=True, help="Paste via clipboard (Ctrl+V) instead of typing")
+@click.option("--file", "file_path", type=click.Path(), help="Read text from file (use with --paste)")
+@click.option("--restore/--no-restore", default=True, help="Restore clipboard after --paste", show_default=True)
 @click.option("--app", help="Application name")
 @click.option("--window-title", help="Window title pattern")
 @click.option("--hwnd", type=int, help="Window handle (HWND)")
@@ -209,18 +215,38 @@ def click_cmd(query, on_text, element_id, coords, double, right, app, pid,
 @click.option("--process-name", help="Filter by process name")
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 def type_cmd(text, delay, profile, wpm, press_return, tab_count, escape,
-             delete, clear, app, window_title, hwnd, input_mode,
-             process_name, json_output):
+             delete, clear, paste_mode, file_path, restore, app, window_title,
+             hwnd, input_mode, process_name, json_output):
     """Type text with configurable speed and profile.
 
     TEXT is the string to type. Supports human-like variable-speed typing
     and Windows-specific input modes.
 
+    Use --paste to set clipboard and Ctrl+V instead of keystroke typing.
+    Use --file with --paste to read content from a file.
+
     Examples:
       naturo type "Hello World"
       naturo type "Hello" --return
       naturo type "text" --profile human --wpm 60
+      naturo type "large content" --paste
+      naturo type --paste --file mytext.txt
     """
+    # Handle --file: read content from file
+    if file_path:
+        import os
+        if not os.path.exists(file_path):
+            _json_err(f"File not found: {file_path}", json_output, code="INVALID_INPUT")
+            return
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                text = f.read()
+        except Exception as exc:
+            _json_err(str(exc), json_output, code="FILE_ERROR")
+            return
+        # --file implies --paste
+        paste_mode = True
+
     if not text:
         _json_err("TEXT argument is required", json_output, code="INVALID_INPUT")
         return
@@ -238,8 +264,23 @@ def type_cmd(text, delay, profile, wpm, press_return, tab_count, escape,
         elif delete:
             backend.press_key("delete")
 
-        backend.type_text(text, delay_ms=int(delay), profile=profile, wpm=wpm,
-                          input_mode=input_mode)
+        if paste_mode:
+            # Paste via clipboard: save → set → Ctrl+V → restore
+            old_clip = ""
+            if restore:
+                try:
+                    old_clip = backend.clipboard_get()
+                except Exception:
+                    pass
+            backend.clipboard_set(text)
+            backend.hotkey("ctrl", "v")
+            if restore and old_clip:
+                import time
+                time.sleep(0.1)
+                backend.clipboard_set(old_clip)
+        else:
+            backend.type_text(text, delay_ms=int(delay), profile=profile, wpm=wpm,
+                              input_mode=input_mode)
 
         if press_return:
             backend.press_key("enter")
@@ -253,10 +294,8 @@ def type_cmd(text, delay, profile, wpm, press_return, tab_count, escape,
         _json_err(str(exc), json_output)
         return
 
-    # Record the action
-    _record_action("type", {"text": text, "wpm": wpm})
-
-    _json_ok({"action": "typed", "text": text, "length": len(text)}, json_output)
+    action = "pasted" if paste_mode else "typed"
+    _json_ok({"action": action, "text": text, "length": len(text)}, json_output)
 
 
 # ── press ────────────────────────────────────────────────────────────────────
@@ -523,67 +562,3 @@ def move(to_text, coords, element_id, duration, app, window_title, hwnd,
 
     _json_ok({"action": "moved", "x": x, "y": y}, json_output)
 
-
-# ── paste ────────────────────────────────────────────────────────────────────
-
-
-@click.command()
-@click.argument("text", required=False)
-@click.option("--file", "file_path", type=click.Path(), help="File to paste from")
-@click.option("--restore", is_flag=True, default=True, help="Restore clipboard after paste")
-@click.option("--app", help="Application name")
-@click.option("--window-title", help="Window title pattern")
-@click.option("--hwnd", type=int, help="Window handle (HWND)")
-@click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
-def paste(text, file_path, restore, app, window_title, hwnd, json_output):
-    """Set clipboard content and paste (Ctrl+V), then restore clipboard.
-
-    TEXT is the string to paste. Or use --file to read from a file.
-
-    Examples:
-      naturo paste "Hello World"
-      naturo paste --file mytext.txt
-    """
-    backend = _get_backend()
-
-    if file_path:
-        import os
-        if not os.path.exists(file_path):
-            _json_err(f"File not found: {file_path}", json_output, code="INVALID_INPUT")
-            return
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                content = f.read()
-        except Exception as exc:
-            _json_err(str(exc), json_output, code="FILE_ERROR")
-            return
-    elif text:
-        content = text
-    else:
-        _json_err("Specify TEXT or --file", json_output, code="INVALID_INPUT")
-        return
-
-    try:
-        # Save existing clipboard
-        old_clip = ""
-        if restore:
-            try:
-                old_clip = backend.clipboard_get()
-            except Exception:
-                pass
-
-        # Set new clipboard and paste
-        backend.clipboard_set(content)
-        backend.hotkey("ctrl", "v")
-
-        # Restore clipboard
-        if restore and old_clip:
-            import time
-            time.sleep(0.1)
-            backend.clipboard_set(old_clip)
-
-    except Exception as exc:
-        _json_err(str(exc), json_output)
-        return
-
-    _json_ok({"action": "pasted", "length": len(content)}, json_output)

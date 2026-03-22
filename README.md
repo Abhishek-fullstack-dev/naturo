@@ -1,6 +1,6 @@
-# Naturo — Windows Desktop Automation Engine
+# Naturo — Desktop Automation Engine (Eyes + Hands for AI Agents)
 
-> See, click, type, automate. Built for AI agents.
+> See, click, type, capture. Desktop automation core only.
 
 [![Build & Test](https://github.com/AcePeak/naturo/actions/workflows/build.yml/badge.svg)](https://github.com/AcePeak/naturo/actions/workflows/build.yml)
 [![PyPI version](https://img.shields.io/pypi/v/naturo)](https://pypi.org/project/naturo/)
@@ -23,12 +23,8 @@
 - 📌 **Taskbar & Tray** — List and click taskbar items and system tray icons
 - 🖥️ **Multi-Monitor** — Enumerate monitors, capture specific screens, DPI-aware coordinates
 - 🗂️ **Virtual Desktops** — List, switch, create, close desktops and move windows between them
-- 🌐 **Chrome DevTools** — Control Chrome via CDP (navigate, click, type, screenshot, eval JS)
-- 🗃️ **Windows Registry** — Read, write, list, delete, and search registry keys/values
-- 🔧 **Windows Services** — List, start, stop, restart, and query service status
-- ⚡ **Electron/CEF Apps** — Detect, list, launch, and connect to Electron apps (VS Code, Slack, Discord, etc.)
 - 🍎 **macOS Support** — Full Peekaboo CLI wrapper (capture, click, type, window management, and more)
-- 🤖 **AI-Ready** — JSON output, agent-friendly CLI, MCP server (82 tools)
+- 🤖 **AI-Ready** — JSON output, agent-friendly CLI, MCP server
 
 ## System Requirements
 

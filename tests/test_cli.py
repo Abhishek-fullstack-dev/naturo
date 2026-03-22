@@ -25,9 +25,9 @@ def test_cli_help(runner):
     # All command groups/commands must appear
     expected = [
         # Core
-        "capture", "list", "see", "learn",
+        "capture", "list", "see",
         # Interaction
-        "click", "type", "press", "hotkey", "scroll", "drag", "move", "paste",
+        "click", "type", "press", "hotkey", "scroll", "drag", "move",
         # System
         "app",
         # Snapshot & Phase 3
@@ -85,6 +85,7 @@ def test_see_help(runner):
     assert "--json" in result.output
 
 
+@pytest.mark.skip(reason="learn command removed in v0.2.0")
 def test_learn_no_args(runner):
     result = runner.invoke(main, ["learn"])
     assert result.exit_code == 0
@@ -180,6 +181,7 @@ def test_move_help(runner):
     assert "--coords" in result.output
 
 
+@pytest.mark.skip(reason="paste command removed in v0.2.0")
 def test_paste_help(runner):
     result = runner.invoke(main, ["paste", "--help"])
     assert result.exit_code == 0
@@ -213,6 +215,7 @@ def test_menu_help(runner):
 
 
 @pytest.mark.skip(reason='command hidden — stub not exposed to users')
+@pytest.mark.skip(reason="clipboard command removed in v0.2.0")
 def test_clipboard_help(runner):
     result = runner.invoke(main, ["clipboard", "--help"])
     assert result.exit_code == 0
@@ -229,6 +232,7 @@ def test_dialog_help(runner):
 
 
 @pytest.mark.skip(reason='command hidden — stub not exposed to users')
+@pytest.mark.skip(reason="open command removed in v0.2.0")
 def test_open_help(runner):
     result = runner.invoke(main, ["open", "--help"])
     assert result.exit_code == 0
@@ -266,6 +270,7 @@ def test_desktop_help(runner):
 
 
 @pytest.mark.skip(reason='command hidden — stub not exposed to users')
+@pytest.mark.skip(reason="agent command removed in v0.2.0")
 def test_agent_help(runner):
     result = runner.invoke(main, ["agent", "--help"])
     assert result.exit_code == 0
@@ -317,6 +322,7 @@ def test_sap_help(runner):
 
 
 @pytest.mark.skip(reason='command hidden — stub not exposed to users')
+@pytest.mark.skip(reason="registry command removed in v0.2.0")
 def test_registry_help(runner):
     result = runner.invoke(main, ["registry", "--help"])
     assert result.exit_code == 0
@@ -327,6 +333,7 @@ def test_registry_help(runner):
 
 
 @pytest.mark.skip(reason='command hidden — stub not exposed to users')
+@pytest.mark.skip(reason="service command removed in v0.2.0")
 def test_service_help(runner):
     result = runner.invoke(main, ["service", "--help"])
     assert result.exit_code == 0
@@ -356,8 +363,8 @@ _GUI = _has_gui_backend()
 
 @pytest.mark.parametrize("cmd,expected_exit", [
     (["see"], 1 if platform.system() != "Windows" else 0),
-    (["learn"], 0),
-    (["capture", "live"], 0 if _GUI else 1),  # requires GUI backend (peekaboo on macOS)
+    # (["learn"], 0),  # removed in v0.2.0
+    pytest.param(["capture", "live"], 0, marks=pytest.mark.skipif(platform.system() != "Windows", reason="capture live needs desktop session")),
 ])
 def test_placeholder_commands_run(runner, cmd, expected_exit):
     """Commands with no required args should run and show placeholder message."""

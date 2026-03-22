@@ -25,22 +25,12 @@ class TestBUG022SnapshotCleanExitCode:
         assert data["error"]["code"] == "INVALID_INPUT"
 
 
+@pytest.mark.skip(reason="learn command removed in v0.2.0")
 class TestBUG023LearnUnknownTopic:
-    """BUG-023: learn nonexistent topic should error."""
+    """BUG-023: learn command removed in v0.2.0."""
 
-    def test_learn_unknown_topic(self, runner):
-        result = runner.invoke(main, ["learn", "nonexistent_topic"])
-        assert result.exit_code != 0
-        assert "Unknown topic" in result.output or "nonexistent_topic" in result.output
-
-    def test_learn_valid_topic(self, runner):
-        result = runner.invoke(main, ["learn", "capture"])
-        assert result.exit_code == 0
-
-    def test_learn_no_topic(self, runner):
-        result = runner.invoke(main, ["learn"])
-        assert result.exit_code == 0
-        assert "Available topics" in result.output
+    def test_placeholder(self):
+        pass
 
 
 class TestBUG024JsonFormatConsistency:
@@ -92,12 +82,9 @@ class TestBUG024JsonFormatConsistency:
         assert data["success"] is False
         assert isinstance(data["error"], dict)
 
+    @pytest.mark.skip(reason="paste command removed in v0.2.0, merged into type --paste")
     def test_paste_json_error_format(self, runner):
-        result = runner.invoke(main, ["paste", "--json"])
-        assert result.exit_code != 0
-        data = json.loads(result.output)
-        assert data["success"] is False
-        assert isinstance(data["error"], dict)
+        pass
 
     def test_no_ok_key_in_json(self, runner):
         """Ensure 'ok' key is not used anywhere — only 'success'."""

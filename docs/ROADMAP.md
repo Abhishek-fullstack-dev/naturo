@@ -1,6 +1,6 @@
 # Roadmap
 
-## 0.1.0 ✅ — Core Automation + AI + MCP + macOS
+## 0.1.0 ✅ — Core Automation + MCP + macOS (Eyes + Hands)
 
 First release. Full Windows automation with AI integration and cross-platform foundation.
 
@@ -38,21 +38,21 @@ First release. Full Windows automation with AI integration and cross-platform fo
 - [x] Window list with filters (--app / --pid / --process-name)
 - [x] 105 window management tests
 
-### AI Integration
-- [x] MCP Server — 29 tools, stdio/sse/streamable-http transport
-- [x] Screenshot → AI Vision analysis
-- [x] Natural language element finding
-- [x] Agent command — multi-step autonomous execution
-- [x] Action recording and replay
+### MCP Server
+- [x] MCP Server — stdio/sse/streamable-http transport
 - [x] Agent-friendly error messages with recovery suggestions
-- [x] Multi AI provider (Anthropic / OpenAI / Ollama / custom)
+
+> Note: AI vision (`describe`), agent command, and recording CLI removed in v0.2.0.
+> These features are handled by the orchestrating AI agent (e.g., OpenClaw).
+> Backend modules (vision.py, agent.py, recording.py) kept for internal use.
 
 ### Dialog & System
 - [x] Dialog detection and interaction (accept/dismiss/fill)
-- [x] Clipboard get/set
 - [x] Taskbar interaction (list/click)
 - [x] System tray (list/click)
-- [x] `naturo open <url/file>`
+
+> Note: `clipboard` and `open` CLI commands removed in v0.2.0.
+> These are handled directly by the orchestrating AI agent.
 
 ### Deep Capabilities
 - [x] Multi-monitor capture
@@ -63,10 +63,9 @@ First release. Full Windows automation with AI integration and cross-platform fo
 - [x] Java Access Bridge (Swing/AWT)
 - [x] Hardware-level keyboard (Phys32)
 - [x] UIA cache optimization (CacheRequest, batch properties)
-- [x] Chrome CDP (navigate/click/type/eval/screenshot)
-- [x] Electron/CEF app support (detection + DOM-level ops)
-- [x] Windows Registry read/write
-- [x] Windows Service management
+> Note: Chrome CDP, Electron, Registry, and Service CLI commands removed in v0.2.0.
+> Backend modules kept for Unified App Model internal use.
+> Use PowerShell for registry/service ops, Playwright for browser automation.
 - [x] Process management (launch/quit/relaunch/find)
 - [x] UI tree diff
 
@@ -79,14 +78,36 @@ First release. Full Windows automation with AI integration and cross-platform fo
 - [x] CI: macOS runner integration tests
 - [x] Fallback: pyobjc for Peekaboo-free environments
 
-## 0.1.x — Patch Releases
+## 0.2.0 — Eyes + Hands Focus (Breaking)
 
-- [ ] Electron detection improvements (edge cases with custom CEF builds)
-- [ ] Known issue fixes from community feedback
-- [ ] CI stability improvements
-- [ ] Documentation polish
+Refocused on core "Eyes + Hands" for AI agents. Removed 12 non-core CLI commands.
 
-## 0.2.0 — Unified App Model + Selector Foundation
+### Removed Commands
+- `describe` — AI vision analysis (agent does this)
+- `agent` — Natural language automation (OpenClaw handles this)
+- `learn` — Tutorial content (moved to docs)
+- `record` — High-level orchestration (agent composes commands)
+- `chrome` — Browser automation (use Playwright/browser tools)
+- `registry` — Windows registry ops (use PowerShell)
+- `service` — Windows service ops (use PowerShell)
+- `clipboard` — Agent can do this directly
+- `open` — Agent can do this directly
+- `electron` — Folded into Unified App Model auto-detection
+- `structure` — Unclear function
+- `paste` — Merged into `type --paste` flag
+
+### Kept Commands (Core Eyes + Hands)
+see, find, capture, list, wait, diff, menu-inspect, click, type, press, hotkey, scroll, drag, move, window, app, dialog, taskbar, tray, desktop, mcp, snapshot
+
+### Migration
+- `naturo paste "text"` → `naturo type --paste "text"`
+- `naturo clipboard get` → Use agent's native clipboard access
+- `naturo open <url>` → Use agent's browser tool or system commands
+- `naturo chrome ...` → Use Playwright or browser automation skill
+
+## 0.3.0 — Unified App Model + Selector Foundation
+
+## 0.3.0 — Unified App Model + Selector Foundation
 
 Auto-detect application frameworks and route interactions through the optimal channel. Users don't need to know if it's Electron, Java, or WPF.
 

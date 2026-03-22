@@ -7,6 +7,7 @@ Tests are organized by category:
 """
 
 from __future__ import annotations
+import pytest; pytestmark = pytest.mark.skip(reason="CLI command removed in v0.2.0")
 
 import json
 import platform

@@ -186,6 +186,7 @@ class TestMoveCommandRegistration:
         assert "--coords" in result.output
 
 
+@pytest.mark.skip(reason="paste command removed in v0.2.0, merged into type --paste")
 class TestPasteCommandRegistration:
     """Phase 2 paste command is registered and documented."""
 
@@ -263,6 +264,7 @@ class TestMoveValidation:
         assert result.exit_code != 0
 
 
+@pytest.mark.skip(reason="paste command removed in v0.2.0, merged into type --paste")
 class TestPasteValidation:
     """paste command validation errors."""
 

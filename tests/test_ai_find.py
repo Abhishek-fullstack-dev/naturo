@@ -439,25 +439,3 @@ class TestFindAICLI:
 # ── MCP Tool Tests ──────────────────────────────
 
 
-class TestAiFindMCPTool:
-    """Test the ai_find_element MCP tool."""
-
-    def test_mcp_tool_registered(self):
-        """ai_find_element is registered as an MCP tool."""
-        pytest.importorskip("mcp")
-        from naturo.mcp_server import create_server
-        server = create_server()
-        tool_names = [t.name for t in server._tool_manager.list_tools()]
-        assert "ai_find_element" in tool_names
-
-    def test_mcp_tool_description(self):
-        """Tool has a meaningful description."""
-        pytest.importorskip("mcp")
-        from naturo.mcp_server import create_server
-        server = create_server()
-        for t in server._tool_manager.list_tools():
-            if t.name == "ai_find_element":
-                assert "natural language" in t.description.lower()
-                break
-        else:
-            pytest.fail("ai_find_element tool not found")

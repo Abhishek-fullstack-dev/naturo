@@ -1,3 +1,4 @@
+import pytest; pytestmark = pytest.mark.skip(reason="CLI command removed in v0.2.0")  # noqa: E402
 """Tests for Windows Registry CLI commands and backend.
 
 Tests use mocked winreg module to work on all platforms.

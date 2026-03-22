@@ -21,11 +21,11 @@ if sys.platform == "win32" and not os.environ.get("PYTHONUTF8"):
 import click
 from naturo.version import __version__
 
-from naturo.cli.core import capture, list_cmd, see, find_cmd, menu_inspect, learn
+from naturo.cli.core import capture, list_cmd, see, find_cmd, menu_inspect
 from naturo.cli.interaction import (
-    click_cmd, type_cmd, press, hotkey, scroll, drag, move, paste,
+    click_cmd, type_cmd, press, hotkey, scroll, drag, move,
 )
-from naturo.cli.system import app, clipboard, open_cmd
+from naturo.cli.system import app
 from naturo.cli.dialog_cmd import dialog
 from naturo.cli.taskbar_cmd import taskbar
 from naturo.cli.tray_cmd import tray
@@ -35,10 +35,8 @@ from naturo.cli.wait_cmd import wait
 from naturo.cli.app_cmd import app_launch, app_quit, app_relaunch, app_list, app_find, app_hide, app_unhide, app_switch
 from naturo.cli.window_cmd import window
 from naturo.cli.diff_cmd import diff
-from naturo.cli.ai import mcp, describe, agent
-from naturo.cli.record_cmd import record
-from naturo.cli.chrome_cmd import chrome_group
-from naturo.cli.extensions import excel, registry, service, electron
+from naturo.cli.ai import mcp
+from naturo.cli.extensions import excel
 
 
 @click.group()
@@ -72,7 +70,6 @@ main.add_command(list_cmd, "list")
 main.add_command(see)
 main.add_command(find_cmd, "find")
 main.add_command(menu_inspect, "menu-inspect")
-main.add_command(learn)
 
 # ── Interaction ─────────────────────────────────
 main.add_command(click_cmd, "click")
@@ -82,12 +79,9 @@ main.add_command(hotkey)
 main.add_command(scroll)
 main.add_command(drag)
 main.add_command(move)
-main.add_command(paste)
 
 # ── System ──────────────────────────────────────
 main.add_command(app)
-main.add_command(clipboard)
-main.add_command(open_cmd, "open")
 main.add_command(dialog)
 main.add_command(taskbar)
 main.add_command(tray)
@@ -104,19 +98,10 @@ main.add_command(wait)
 main.add_command(diff)
 
 # ── Phase 4: AI Integration ─────────────────────
-main.add_command(agent)
-main.add_command(describe)
 main.add_command(mcp)
-main.add_command(record)
-
-# ── Phase 5B: Chrome CDP ────────────────────────
-main.add_command(chrome_group, "chrome")
 
 # ── Phase 5C: Enterprise Features ──────────────
 main.add_command(excel)
-main.add_command(registry)
-main.add_command(service)
-main.add_command(electron)
 
 # Replace stub app subcommands with working implementations
 app.add_command(app_launch, "launch")

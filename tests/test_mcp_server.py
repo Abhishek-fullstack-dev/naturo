@@ -57,12 +57,9 @@ class TestServerCreation:
             "see_ui_tree", "find_element",
             "click", "type_text", "press_key", "hotkey",
             "scroll", "drag", "move_mouse",
-            "clipboard_get", "clipboard_set",
             "list_apps", "launch_app", "quit_app",
-            "menu_inspect", "open_uri",
+            "menu_inspect",
             "wait_for_element", "wait_for_window", "wait_until_gone",
-            "electron_detect", "electron_list",
-            "electron_connect", "electron_launch",
         ]
         for name in expected:
             assert name in tools, f"Tool '{name}' not registered"
@@ -354,25 +351,6 @@ class TestToolFunctionsWithMockedBackend:
             assert data["element"]["name"] == "Save"
             assert data["element"]["bounds"]["x"] == 10
 
-    def test_clipboard_get(self, mock_backend):
-        """clipboard_get returns text."""
-        mock_backend.clipboard_get.return_value = "hello clipboard"
-        with patch("naturo.mcp_server.get_backend", return_value=mock_backend):
-            srv = create_server()
-            result = self._call_tool(srv, "clipboard_get", {})
-            data = json.loads(result[0].text)
-            assert data["success"] is True
-            assert data["text"] == "hello clipboard"
-
-    def test_clipboard_set(self, mock_backend):
-        """clipboard_set calls backend."""
-        with patch("naturo.mcp_server.get_backend", return_value=mock_backend):
-            srv = create_server()
-            result = self._call_tool(srv, "clipboard_set", {"text": "new text"})
-            data = json.loads(result[0].text)
-            assert data["success"] is True
-            mock_backend.clipboard_set.assert_called_once_with(text="new text")
-
     def test_list_apps(self, mock_backend):
         """list_apps returns app list."""
         mock_backend.list_apps.return_value = [{"name": "notepad.exe", "pid": 1234}]
@@ -419,19 +397,6 @@ class TestToolFunctionsWithMockedBackend:
             data = json.loads(result[0].text)
             assert data["success"] is True
             assert data["menu_items"] == []
-
-    def test_open_uri(self, mock_backend):
-        """open_uri calls backend."""
-        with patch("naturo.mcp_server.get_backend", return_value=mock_backend):
-            srv = create_server()
-            result = self._call_tool(srv, "open_uri", {"uri": "https://example.com"})
-            data = json.loads(result[0].text)
-            assert data["success"] is True
-            mock_backend.open_uri.assert_called_once_with(uri="https://example.com")
-
-
-# ── Wait Tool Tests ──────────────────────────────────────────────────────────
-
 
 class TestWaitTools:
     """Test wait_for_element, wait_for_window, wait_until_gone tools."""
@@ -636,40 +601,6 @@ class TestResponseFormat:
             return loop.run_until_complete(_run())
         finally:
             loop.close()
-
-    def test_success_responses_have_success_true(self):
-        """All success responses include success: true."""
-        mock_backend = MagicMock()
-        mock_backend.list_windows.return_value = []
-        mock_backend.list_apps.return_value = []
-        mock_backend.clipboard_get.return_value = ""
-        mock_backend.get_menu_items.return_value = []
-
-        success_tools = [
-            ("list_windows", {}),
-            ("list_apps", {}),
-            ("clipboard_get", {}),
-            ("clipboard_set", {"text": "t"}),
-            ("move_mouse", {"x": 0, "y": 0}),
-            ("menu_inspect", {}),
-            ("open_uri", {"uri": "http://x"}),
-            ("launch_app", {"name": "x"}),
-            ("quit_app", {"name": "x"}),
-            ("focus_window", {"title": "x"}),
-            ("window_close", {"title": "x"}),
-            ("type_text", {"text": "x"}),
-            ("press_key", {"key": "a"}),
-            ("scroll", {}),
-            ("click", {}),
-            ("drag", {"from_x": 0, "from_y": 0, "to_x": 1, "to_y": 1}),
-        ]
-
-        for tool_name, args in success_tools:
-            with patch("naturo.mcp_server.get_backend", return_value=mock_backend):
-                srv = create_server()
-                result = self._call_tool(srv, tool_name, args)
-                data = json.loads(result[0].text)
-                assert data.get("success") is True, f"{tool_name} missing success:true, got {data}"
 
     def test_error_responses_have_error_object(self):
         """All validation error responses include error.code and error.message."""

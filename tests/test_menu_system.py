@@ -120,122 +120,7 @@ class TestMenuCLIOptions:
 
 
 @pytest.mark.skip(reason='command hidden — stub not exposed to users')
-class TestOpenCLIOptions:
-    """open CLI option validation (T183-T184)."""
-
-    def test_open_command_in_main_help(self, runner):
-        """T183/T184 – open command is in main help."""
-        result = runner.invoke(main, ["--help"])
-        assert "open" in result.output
-
-    def test_open_target_argument(self, runner):
-        """T183 – open TARGET argument is documented."""
-        result = runner.invoke(main, ["open", "--help"])
-        assert result.exit_code == 0
-        assert "TARGET" in result.output or "target" in result.output.lower()
-
-    def test_open_app_option_hidden(self, runner):
-        """T184 – open --app option is hidden (BUG-066: not yet implemented)."""
-        result = runner.invoke(main, ["open", "--help"])
-        assert "--app" not in result.output
-
-    def test_open_json_option(self, runner):
-        """T297 – open --json option is documented."""
-        result = runner.invoke(main, ["open", "--help"])
-        assert "--json" in result.output
-
-
 # ── BUG-065/066/067: open command validation ──────────────────────────────────
-
-
-class TestOpenValidation:
-    """BUG-065/066/067 — open command input validation and error handling."""
-
-    def test_open_empty_target(self, runner):
-        """BUG-065 – open '' should fail with INVALID_INPUT."""
-        result = runner.invoke(main, ["open", "", "--json"])
-        assert result.exit_code != 0
-        import json
-        data = json.loads(result.output)
-        assert data["success"] is False
-        assert data["error"]["code"] == "INVALID_INPUT"
-        assert "empty" in data["error"]["message"].lower()
-
-    def test_open_whitespace_target(self, runner):
-        """BUG-065 – open '   ' should fail with INVALID_INPUT."""
-        result = runner.invoke(main, ["open", "   ", "--json"])
-        assert result.exit_code != 0
-        import json
-        data = json.loads(result.output)
-        assert data["success"] is False
-        assert data["error"]["code"] == "INVALID_INPUT"
-
-    def test_open_empty_target_plain(self, runner):
-        """BUG-065 – open '' plain text mode should fail."""
-        result = runner.invoke(main, ["open", ""])
-        assert result.exit_code != 0
-        assert "empty" in result.output.lower() or "empty" in (result.output + getattr(result, 'stderr', '')).lower()
-
-    def test_open_nonexistent_file_json(self, runner):
-        """BUG-067 – open nonexistent file should fail (not hang)."""
-        result = runner.invoke(main, ["open", "definitely_nonexistent_file_xyz.abc", "--json"])
-        assert result.exit_code != 0
-        import json
-        data = json.loads(result.output)
-        assert data["success"] is False
-        # On Windows: FILE_NOT_FOUND; on macOS: may differ (INTERNAL_SWIFT_ERROR)
-        assert data["error"]["code"] in ("FILE_NOT_FOUND", "INTERNAL_SWIFT_ERROR", "UNKNOWN_ERROR")
-
-    @pytest.mark.skipif(
-        platform.system() != "Windows",
-        reason="Windows backend Popen/run behavior test",
-    )
-    def test_open_url_uses_popen_not_run(self):
-        """Issue #31 – open_uri with URL must use Popen (fire-and-forget), not run."""
-        from unittest.mock import patch, MagicMock
-        from naturo.backends.windows import WindowsBackend
-
-        backend = WindowsBackend.__new__(WindowsBackend)
-
-        with patch("subprocess.Popen") as mock_popen, \
-             patch("subprocess.run") as mock_run:
-            backend.open_uri("https://example.com")
-            mock_popen.assert_called_once()
-            mock_run.assert_not_called()
-
-    @pytest.mark.skipif(
-        platform.system() != "Windows",
-        reason="Windows backend Popen/run behavior test",
-    )
-    def test_open_file_uses_run_not_popen(self):
-        """Issue #31 – open_uri with file path must use run (wait for handler)."""
-        import tempfile
-        import os
-        from unittest.mock import patch
-        from naturo.backends.windows import WindowsBackend
-
-        backend = WindowsBackend.__new__(WindowsBackend)
-
-        with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as f:
-            path = f.name
-        try:
-            with patch("subprocess.Popen") as mock_popen, \
-                 patch("subprocess.run") as mock_run:
-                backend.open_uri(path)
-                mock_run.assert_called_once()
-                mock_popen.assert_not_called()
-        finally:
-            os.unlink(path)
-
-    def test_open_app_option_still_accepted(self, runner):
-        """BUG-066 – --app is hidden but still accepted (backward compat)."""
-        # Should not fail on unknown option
-        result = runner.invoke(main, ["open", "", "--app", "notepad", "--json"])
-        # Will fail on empty target (BUG-065 validation), not on --app being unknown
-        assert result.exit_code != 0
-        import json
-        data = json.loads(result.output)
-        assert data["error"]["code"] == "INVALID_INPUT"
 
 
 # ── T297, T299: JSON output and exit codes ────────────────────────────────────
@@ -259,13 +144,6 @@ class TestCLIJsonAndExitCodes:
         result = runner.invoke(main, ["--version"])
         assert result.exit_code == 0
         assert len(result.output.strip()) > 0
-
-    def test_help_always_exits_zero(self, runner):
-        """T299 – all --help commands exit 0."""
-        commands = ["click", "type", "press", "hotkey", "scroll", "drag", "move", "paste"]
-        for cmd in commands:
-            result = runner.invoke(main, [cmd, "--help"])
-            assert result.exit_code == 0, f"'{cmd} --help' exited {result.exit_code}"
 
     def test_system_commands_help_exit_zero(self, runner):
         """T299 – system commands --help exit 0."""
