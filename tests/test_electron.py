@@ -414,6 +414,66 @@ class TestInternalHelpers:
         with patch("naturo.electron._get_process_exe_path", return_value=None):
             assert _is_electron_process(5678) is False
 
+    def test_is_electron_process_with_proc_info(self):
+        """Uses pre-fetched proc_info instead of wmic calls."""
+        from naturo.electron import _is_electron_process
+
+        proc_info = {
+            100: {
+                "command_line": '"C:\\Code.exe" --type=renderer',
+                "exe_path": "C:\\Code\\Code.exe",
+            },
+            200: {
+                "command_line": '"C:\\notepad.exe"',
+                "exe_path": "C:\\Windows\\notepad.exe",
+            },
+        }
+        assert _is_electron_process(100, proc_info=proc_info) is True
+        assert _is_electron_process(200, proc_info=proc_info) is False
+
+    def test_find_debug_port_with_proc_info(self):
+        """Extracts debug port from pre-fetched proc_info."""
+        from naturo.electron import _find_debug_port_from_cmdline
+
+        proc_info = {
+            100: {
+                "command_line": '"C:\\Code.exe" --remote-debugging-port=9229',
+                "exe_path": "",
+            },
+            200: {
+                "command_line": '"C:\\notepad.exe"',
+                "exe_path": "",
+            },
+        }
+        assert _find_debug_port_from_cmdline(100, proc_info=proc_info) == 9229
+        assert _find_debug_port_from_cmdline(200, proc_info=proc_info) is None
+
+    @patch("naturo.electron.subprocess.run")
+    def test_bulk_get_process_info(self, mock_run):
+        """Parses bulk wmic CSV output."""
+        from naturo.electron import _bulk_get_process_info
+
+        mock_run.return_value = MagicMock(
+            stdout=(
+                "Node,CommandLine,ExecutablePath,ProcessId\n"
+                'WIN11,C:\\Code.exe --type=renderer,C:\\Code\\Code.exe,100\n'
+                'WIN11,C:\\notepad.exe,C:\\Windows\\notepad.exe,200\n'
+            ),
+        )
+        info = _bulk_get_process_info()
+        assert 100 in info
+        assert "renderer" in info[100]["command_line"]
+        assert 200 in info
+        assert "notepad" in info[200]["exe_path"]
+
+    @patch("naturo.electron.subprocess.run")
+    def test_bulk_get_process_info_timeout(self, mock_run):
+        """Returns empty dict on timeout."""
+        from naturo.electron import _bulk_get_process_info
+
+        mock_run.side_effect = subprocess.TimeoutExpired("wmic", 15)
+        assert _bulk_get_process_info() == {}
+
     @patch("naturo.electron._get_process_command_line")
     def test_find_debug_port_from_cmdline(self, mock_cmdline):
         """Extracts debug port from command line."""
