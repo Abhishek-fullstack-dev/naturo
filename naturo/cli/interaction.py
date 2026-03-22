@@ -54,44 +54,91 @@ def _validate_method(method: str, json_output: bool) -> bool:
 def _check_desktop_session() -> None:
     """Raise NoDesktopSessionError if running without an interactive desktop.
 
-    On Windows, checks the SESSIONNAME environment variable and whether
-    explorer.exe is running (a reliable proxy for a desktop session).
+    On Windows, verifies the *current* session has desktop access — not just
+    that a desktop exists somewhere on the machine.
+
+    Detection logic:
+    1. SESSIONNAME == "Console" or starts with "RDP-Tcp" → interactive desktop, OK.
+    2. SESSIONNAME == "Services" or empty/unset → likely non-interactive.
+       - If empty AND explorer.exe is running, this is the SSH-into-desktop-machine
+         scenario: another session owns the desktop but *this* session cannot
+         interact with it. Raise a clear error instead of letting COM fail.
+    3. Any other SESSIONNAME value → assume interactive (e.g., Citrix, VNC).
+
     No-op on other platforms.
     """
     import platform as _plat
     if _plat.system() != "Windows":
         return
+
     import os
     session = os.environ.get("SESSIONNAME", "")
-    # Services session or empty session name = no desktop
-    if session and session.lower() != "services":
+    session_lower = session.lower()
+
+    # Known interactive session types — allow through
+    if session_lower == "console" or session_lower.startswith("rdp-tcp"):
         return
-    # Double-check: is explorer.exe running? (indicates a desktop shell)
-    import subprocess
-    try:
-        result = subprocess.run(
-            ["tasklist", "/FI", "IMAGENAME eq explorer.exe", "/NH", "/FO", "CSV"],
-            capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace",
-        )
-        if "explorer.exe" in result.stdout.lower():
-            return  # Desktop session exists even if SESSIONNAME is odd
-    except Exception:
-        pass
-    from naturo.errors import NoDesktopSessionError
-    raise NoDesktopSessionError()
+
+    # Known non-interactive session types — reject
+    if session_lower == "services":
+        from naturo.errors import NoDesktopSessionError
+        raise NoDesktopSessionError()
+
+    # Empty/unset SESSIONNAME — SSH or headless service
+    if not session:
+        # Even if explorer.exe is running (from an RDP/Console session),
+        # this SSH session cannot interact with that desktop.
+        # Provide a specific error message for this scenario.
+        import subprocess
+        explorer_running = False
+        try:
+            result = subprocess.run(
+                ["tasklist", "/FI", "IMAGENAME eq explorer.exe", "/NH", "/FO", "CSV"],
+                capture_output=True, text=True, timeout=5,
+                encoding="utf-8", errors="replace",
+            )
+            explorer_running = "explorer.exe" in result.stdout.lower()
+        except Exception:
+            pass
+
+        from naturo.errors import NoDesktopSessionError
+        if explorer_running:
+            raise NoDesktopSessionError(
+                "No interactive desktop in this session. "
+                "A desktop session exists on this machine (explorer.exe running), "
+                "but the current SSH/service session cannot interact with it. "
+                "Connect via RDP or Console instead."
+            )
+        raise NoDesktopSessionError()
+
+    # Any other SESSIONNAME value (Citrix ICA, VNC, etc.) — assume interactive
+    return
 
 
-def _get_backend():
+def _get_backend(json_output: bool = False):
     """Return the platform backend, raising UsageError if unavailable.
 
     Also performs a pre-flight check for an interactive desktop session
     on Windows to provide clear errors instead of cryptic COM exceptions.
+
+    Args:
+        json_output: When True, emit JSON-formatted error and sys.exit
+            instead of raising an exception for NoDesktopSessionError.
     """
-    _check_desktop_session()
+    try:
+        _check_desktop_session()
+    except Exception as exc:
+        if json_output:
+            from naturo.cli.error_helpers import json_error
+            click.echo(json_error("NO_DESKTOP_SESSION", str(exc)))
+            sys.exit(1)
+        raise click.UsageError(str(exc))
     from naturo.backends.base import get_backend
     try:
         return get_backend()
     except Exception as exc:
+        if json_output:
+            _json_err(str(exc), True, code="BACKEND_ERROR")
         raise click.UsageError(str(exc))
 
 
@@ -160,7 +207,7 @@ def click_cmd(query, on_text, element_id, coords, double, right, app, pid,
       naturo click --coords 500 300 --right
       naturo click --id "button_ok"
     """
-    backend = _get_backend()
+    backend = _get_backend(json_output)
 
     button = "right" if right else "left"
 
@@ -294,7 +341,7 @@ def type_cmd(text, delay, profile, wpm, press_return, tab_count, escape,
         _json_err(f"--wpm must be >= 1, got {wpm}", json_output, code="INVALID_INPUT")
         return
 
-    backend = _get_backend()
+    backend = _get_backend(json_output)
 
     try:
         if clear:
@@ -370,7 +417,7 @@ def press(key, count, delay, app, window_title, hwnd, input_mode, method, json_o
         return
 
     import time
-    backend = _get_backend()
+    backend = _get_backend(json_output)
 
     try:
         for i in range(count):
@@ -416,8 +463,8 @@ def hotkey(keys, keys_option, hold_duration, app, window_title, hwnd,
       naturo hotkey ctrl+z
       naturo hotkey --keys ctrl --keys shift --keys z
     """
-    backend = _get_backend()
-
+    # Validate parameters BEFORE acquiring backend (which may raise
+    # NoDesktopSessionError on headless CI).
     # Parse key combo from positional arg (e.g. "ctrl+c") or --keys options
     if keys:
         key_list = [k.strip() for k in keys.replace("+", " ").split()]
@@ -430,6 +477,8 @@ def hotkey(keys, keys_option, hold_duration, app, window_title, hwnd,
     if hold_duration is not None and hold_duration < 0:
         _json_err(f"--hold-duration must be >= 0, got {hold_duration}", json_output, code="INVALID_INPUT")
         return
+
+    backend = _get_backend(json_output)
 
     try:
         backend.hotkey(*key_list,
@@ -484,7 +533,7 @@ def scroll(direction_arg, direction_option, amount, on_text, smooth, delay, app,
         _json_err(f"--amount must be >= 1, got {amount}", json_output, code="INVALID_INPUT")
         return
 
-    backend = _get_backend()
+    backend = _get_backend(json_output)
 
     try:
         backend.scroll(direction=direction, amount=amount, smooth=smooth)
@@ -541,7 +590,7 @@ def drag(from_text, from_coords, to_text, to_coords, duration, steps,
         _json_err(f"--duration must be >= 0, got {duration}", json_output, code="INVALID_INPUT")
         return
 
-    backend = _get_backend()
+    backend = _get_backend(json_output)
 
     fx, fy = from_coords
     tx, ty = to_coords
@@ -592,7 +641,7 @@ def move(to_text, coords, element_id, duration, app, window_title, hwnd,
         _json_err("Specify --coords X Y", json_output, code="INVALID_INPUT")
         return
 
-    backend = _get_backend()
+    backend = _get_backend(json_output)
     x, y = coords
 
     try:
