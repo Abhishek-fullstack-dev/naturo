@@ -1,8 +1,8 @@
 # Naturo 项目状态
 
 **最后更新**: 2026-03-22 18:10  
-**版本**: 0.1.0 (编译机)  
-**状态**: 🟡 **条件可用** — 核心 DLL 已修复，文档仍需完善
+**版本**: 0.1.1 (编译机已部署)  
+**状态**: 🟡 **接近可发布** — 核心功能稳定，文档修复已验证
 
 ---
 
@@ -12,92 +12,109 @@ Phase 1: 核心功能实现（进展中）
 
 ---
 
-## 已修复问题
+## 已验证修复 (Round 3)
 
 ### ✅ BUG-001: DLL 函数缺失 → 已修复验证
-- UI 自动化核心功能恢复
-- `list windows`/`see`/`find` 不再崩溃
-- 仍需桌面 session 做完整 UI 操作验证
-
 ### ✅ BUG-002: README 5 处不一致 → 已修复验证
-- version、list、see、registry 命令文档已修正
+### ✅ BUG-004: README `press "ctrl+s"` → `hotkey ctrl+s` → 已修复验证 (v0.1.1)
+### ✅ BUG-005: `app quit` 支持位置参数 → 已修复验证 (v0.1.1)
+### ✅ BUG-006: scroll 支持位置参数 → 已修复验证 (v0.1.1)
 
 ---
 
 ## 待修复问题
 
-### 🟢 BUG-004: README `press "ctrl+s"` → `hotkey ctrl+s` (P1) — 已修复 c9418ba
-### 🟢 BUG-005: `app quit` 支持位置参数 (P1) — 已修复 c9418ba
-### 🟢 BUG-006: scroll 支持位置参数 (P2) — 已修复 c9418ba
+### 🔴 BUG-007: `electron list` 命令挂起不返回 (P1)
+### 🔴 BUG-008: `learn <topic>` 内容空洞，只有一句话 (P2)
 ### 🔴 BUG-003: pyvda 依赖缺失 (P2，需产品决策)
 
 ---
 
-## 可用功能 (~40% 已验证)
+## 可用功能 (~50% 已验证)
 
-- ✅ `naturo --version`
-- ✅ `naturo app list` / `app launch` / `app quit --name` / `app switch`
-- ✅ `naturo list windows` / `list screens`
-- ✅ `naturo see` (SSH 下无窗口但不崩溃)
-- ✅ `naturo capture live --path`
-- ✅ `naturo service list` / `service status`
-- ✅ `naturo clipboard get` / `clipboard set`
-- ✅ `naturo registry get` / `registry list`
-- ✅ `naturo snapshot list` / `snapshot clean`
-- ✅ `naturo learn` (帮助系统)
-- ✅ `naturo find` (帮助格式正确，需桌面验证)
+- ✅ `naturo --version` (v0.1.1)
+- ✅ `naturo --help` (30+ 命令组)
+- ✅ `naturo capture live --path` + `--json`
+- ✅ `naturo list windows/screens` + `--json`
+- ✅ `naturo app list/launch/quit/switch/find` + `--json`
+- ✅ `naturo service list/status` + `--json`
+- ✅ `naturo clipboard get/set` + `--json`
+- ✅ `naturo registry list/get` + `--json`
+- ✅ `naturo snapshot list/clean` + `--json`
+- ✅ `naturo record list` + `--json`
+- ✅ `naturo electron detect` + `--json`
+- ✅ `naturo mcp tools` (76 MCP tools)
+- ✅ `naturo open <url>` / `open <nonexistent>`
+- ✅ `naturo see/find` (SSH 下 graceful error)
+- ✅ `naturo learn` (topic 列表正确)
+- ✅ `naturo scroll down` (位置参数生效)
+- ✅ `naturo app quit notepad` (位置参数生效)
+- ✅ 错误输出结构化 JSON (code + message + suggested_action + recoverable)
 
 ## 待桌面验证功能
 
-以下功能在 SSH 下报 "System/COM error"（预期，需要交互式桌面）：
-- ⏳ `naturo click` / `type` / `press` / `hotkey` / `scroll` / `drag` / `move`
+- ⏳ `naturo click/type/press/hotkey/scroll/drag/move` (SSH 下报 COM error)
 - ⏳ `naturo window focus/close/minimize/maximize/move/resize`
 - ⏳ `naturo dialog detect/accept/dismiss`
 - ⏳ `naturo taskbar list/click` / `tray list/click`
 
-## 不可用功能
+## 不可用/有问题功能
 
 - ❌ `naturo desktop *` — pyvda 未安装 (BUG-003)
+- ❌ `naturo electron list` — 命令挂起 (BUG-007)
+- ⚠️ `naturo learn <topic>` — 只返回一句话 (BUG-008)
 
 ---
 
 ## JSON 输出一致性
 
 已验证 `--json` 输出合法 JSON 的命令：
-- ✅ `list windows --json`
-- ✅ `app list --json`
-- ✅ `service list --json`
+- ✅ `list windows/screens --json`
+- ✅ `app list/quit/find --json`
+- ✅ `service list/status --json`
 - ✅ `capture live --json`
 - ✅ `snapshot list --json`
-- ✅ `press enter --json` (错误时也返回合法 JSON)
-- ✅ `app quit --name notepad --json`
+- ✅ `clipboard get/set --json`
+- ✅ `registry list --json`
+- ✅ `record list --json`
+- ✅ `electron detect --json`
+- ✅ `mcp tools --json`
+- ✅ `hotkey/press --json` (错误时也返回合法 JSON)
+- ✅ `see --json` (错误时也返回合法 JSON)
+- ✅ `chrome tabs --json` (CDP 连接错误也返回合法 JSON)
 
 ---
 
 ## 测试覆盖
 
-**已验证命令**: ~20/76 (26%)
-**通过率**: 15/20 (75%)
-**文档不一致**: 3 处 (BUG-004/005/006)
+**已验证命令**: ~25/76 (33%)
+**通过率**: 22/25 (88%)
+**失败**: electron list 挂起、learn 内容空、desktop 缺依赖
 
 ---
 
 ## 质量门禁
 
-**当前状态**: 🟡 **接近可用** — 阻塞性问题已解决
+**当前状态**: 🟡 **接近可发布**
+
+**已完成**:
+- ✅ P0 bug 全部修复验证
+- ✅ README 一致性修正
+- ✅ 核心 CLI 命令可用
+- ✅ JSON 输出一致
+- ✅ 错误信息结构化且友好
 
 **发布前必须**:
-- ✅ BUG-001 修复并验证
-- ✅ README 主要不一致已修正
-- 🔲 BUG-004/005/006 修复
+- 🔲 BUG-007 (electron list 挂起) 修复
 - 🔲 核心命令桌面 session 验证
 - 🔲 pyvda 依赖策略确定
 
 **下一步**:
-1. Dev 修复 BUG-004/005/006（文档 + app quit API 一致性）
+1. Dev 修复 electron list 超时问题
 2. 在有桌面的环境下做 UI 操作完整测试
-3. 决策 pyvda 依赖策略
+3. 充实 learn 教程内容
+4. 决策 pyvda 依赖策略
 
 ---
 
-最后更新: 2026-03-22 18:02 by QA Agent (Round 2)
+最后更新: 2026-03-22 18:10 by QA Agent (Round 3)

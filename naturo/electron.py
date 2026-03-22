@@ -134,6 +134,63 @@ def _get_process_exe_path(pid: int) -> Optional[str]:
     return None
 
 
+def _bulk_get_process_info() -> Dict[int, Dict[str, str]]:
+    """Batch-fetch CommandLine and ExecutablePath for all processes.
+
+    Uses a single ``wmic`` call to retrieve info for every process at once,
+    avoiding per-PID subprocess overhead that causes ``electron list`` to hang.
+
+    Returns:
+        Dict mapping PID to {command_line: str, exe_path: str}.
+    """
+    info: Dict[int, Dict[str, str]] = {}
+    try:
+        result = subprocess.run(
+            [
+                "wmic",
+                "process",
+                "get",
+                "ProcessId,CommandLine,ExecutablePath",
+                "/format:csv",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+        lines = result.stdout.strip().splitlines()
+        # CSV header line: Node,CommandLine,ExecutablePath,ProcessId
+        header_idx = -1
+        for i, line in enumerate(lines):
+            if "ProcessId" in line and "CommandLine" in line:
+                header_idx = i
+                break
+        if header_idx < 0:
+            return info
+        headers = [h.strip() for h in lines[header_idx].split(",")]
+        try:
+            pid_col = headers.index("ProcessId")
+            cmd_col = headers.index("CommandLine")
+            exe_col = headers.index("ExecutablePath")
+        except ValueError:
+            return info
+
+        for line in lines[header_idx + 1 :]:
+            parts = line.split(",")
+            if len(parts) <= max(pid_col, cmd_col, exe_col):
+                continue
+            try:
+                pid = int(parts[pid_col].strip())
+            except (ValueError, IndexError):
+                continue
+            info[pid] = {
+                "command_line": parts[cmd_col].strip(),
+                "exe_path": parts[exe_col].strip(),
+            }
+    except (subprocess.TimeoutExpired, OSError):
+        pass
+    return info
+
+
 def _find_processes_by_name(name: str) -> List[Dict[str, Any]]:
     """Find running processes matching a name pattern.
 
@@ -175,7 +232,10 @@ def _find_processes_by_name(name: str) -> List[Dict[str, Any]]:
     return processes
 
 
-def _is_electron_process(pid: int) -> bool:
+def _is_electron_process(
+    pid: int,
+    proc_info: Optional[Dict[int, Dict[str, str]]] = None,
+) -> bool:
     """Check if a process is an Electron/CEF application.
 
     Checks for Electron-specific files adjacent to the executable
@@ -183,12 +243,22 @@ def _is_electron_process(pid: int) -> bool:
 
     Args:
         pid: Process ID to check.
+        proc_info: Optional pre-fetched bulk process info from
+            ``_bulk_get_process_info()``.  When provided, avoids
+            per-PID ``wmic`` calls.
 
     Returns:
         True if the process appears to be Electron-based.
     """
+    # Resolve command line and exe path, preferring bulk data
+    if proc_info and pid in proc_info:
+        cmdline = proc_info[pid].get("command_line") or None
+        exe_path = proc_info[pid].get("exe_path") or None
+    else:
+        cmdline = _get_process_command_line(pid)
+        exe_path = _get_process_exe_path(pid)
+
     # Check command line for Electron indicators
-    cmdline = _get_process_command_line(pid)
     if cmdline:
         electron_indicators = [
             "--type=renderer",
@@ -203,7 +273,6 @@ def _is_electron_process(pid: int) -> bool:
             return True
 
     # Check for Electron files next to the executable
-    exe_path = _get_process_exe_path(pid)
     if exe_path:
         exe_dir = os.path.dirname(exe_path)
         electron_files = [
@@ -221,16 +290,24 @@ def _is_electron_process(pid: int) -> bool:
     return False
 
 
-def _find_debug_port_from_cmdline(pid: int) -> Optional[int]:
+def _find_debug_port_from_cmdline(
+    pid: int,
+    proc_info: Optional[Dict[int, Dict[str, str]]] = None,
+) -> Optional[int]:
     """Extract --remote-debugging-port from a process command line.
 
     Args:
         pid: Process ID.
+        proc_info: Optional pre-fetched bulk process info from
+            ``_bulk_get_process_info()``.
 
     Returns:
         Port number if found, None otherwise.
     """
-    cmdline = _get_process_command_line(pid)
+    if proc_info and pid in proc_info:
+        cmdline = proc_info[pid].get("command_line") or None
+    else:
+        cmdline = _get_process_command_line(pid)
     if cmdline:
         match = re.search(r"--remote-debugging-port=(\d+)", cmdline)
         if match:
@@ -388,6 +465,10 @@ def list_electron_apps() -> Dict[str, Any]:
             exe_groups[proc_name] = []
         exe_groups[proc_name].append(pid)
 
+    # Bulk-fetch command lines and exe paths in a single wmic call
+    # to avoid per-PID subprocess overhead that caused hanging (BUG-007).
+    proc_info = _bulk_get_process_info()
+
     # Check each unique exe for Electron characteristics
     # Must check ALL pids for an exe because the main process often
     # has no Electron indicators — only child processes (renderer,
@@ -398,16 +479,18 @@ def list_electron_apps() -> Dict[str, Any]:
         main_pid = pids[0]  # First PID is typically the main process
         debug_port = None
         for pid in pids:
-            if _is_electron_process(pid):
+            if _is_electron_process(pid, proc_info=proc_info):
                 found = True
-                port = _find_debug_port_from_cmdline(pid)
+                port = _find_debug_port_from_cmdline(pid, proc_info=proc_info)
                 if port is not None:
                     debug_port = port
                 break  # One Electron child is enough to confirm
         if found:
             # Also check main process for debug port
             if debug_port is None:
-                debug_port = _find_debug_port_from_cmdline(main_pid)
+                debug_port = _find_debug_port_from_cmdline(
+                    main_pid, proc_info=proc_info,
+                )
             display_name = _get_display_name(exe_name)
             apps.append({
                 "app_name": display_name,

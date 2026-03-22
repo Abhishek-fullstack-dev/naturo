@@ -32,24 +32,35 @@ Error: Virtual desktop support requires pyvda. Install: pip install pyvda
 2. 如果是可选功能，应该在 README 中说明
 3. 错误提示已经很清楚，但用户期望 `pip install naturo` 后所有功能开箱即用
 
----
+### BUG-007: `electron list` 命令挂起不返回（P1）
+**发现日期**: 2026-03-22 (Round 3)
+**影响**: 用户执行 `naturo electron list` 后命令永不退出，必须 Ctrl+C
 
-## 🟢 Fixed (待 QA 验证)
+**复现步骤**:
+```bash
+naturo electron list --json
+# 等待 >30 秒无任何输出
+```
 
-### BUG-004: README Quick Start `press "ctrl+s"` → `hotkey ctrl+s`（P1 - DOC）
-**发现日期**: 2026-03-22 (Round 2)
-**修复日期**: 2026-03-22 (commit c9418ba)
-**修复内容**: README 示例改为 `naturo hotkey ctrl+s`
+**预期**: 应在合理时间内（<5 秒）返回结果，即使没有发现 Electron app
+**对比**: `naturo electron detect msedge` 正常返回（~2 秒）
 
-### BUG-005: `app quit` API 不一致 → 支持位置参数（P1 - API）
-**发现日期**: 2026-03-22 (Round 2)
-**修复日期**: 2026-03-22 (commit c9418ba)
-**修复内容**: `app quit` 现在接受 NAME 作为位置参数（`naturo app quit notepad`），与 launch/switch/hide/unhide 一致。`--name` 保留为隐藏的向后兼容选项。
+**分析**: 可能是在扫描大量进程时对每个进程进行 CDP 端口探测导致超时累积。需要加总超时或并发控制。
 
-### BUG-006: scroll 不接受位置参数 → 支持位置参数（P2 - UX）
-**发现日期**: 2026-03-22 (Round 2)
-**修复日期**: 2026-03-22 (commit c9418ba)
-**修复内容**: `scroll` 现在接受方向作为可选位置参数（`naturo scroll down`），同时保留 `--direction` 选项。
+### BUG-008: `learn <topic>` 只返回一句话描述，无实际教程内容（P2 - UX）
+**发现日期**: 2026-03-22 (Round 3)
+**影响**: 用户期望 `naturo learn capture` 返回详细用法指导，实际只返回一句话
+
+**复现**:
+```bash
+$ naturo learn capture
+capture: Capture screenshots, video, or watch for changes.
+$ naturo learn interaction  
+interaction: Click, type, press, hotkey, scroll, drag, move, paste.
+```
+
+**预期**: 每个 topic 应包含：常用命令示例、参数说明、使用场景
+**现实**: 只有命令组的一句描述，和 `--help` 的 description 完全一样
 
 ---
 
@@ -61,50 +72,83 @@ Error: Virtual desktop support requires pyvda. Install: pip install pyvda
 **验证日期**: 2026-03-22 (Round 2)
 
 **验证结果**: ✅ 通过
-- `naturo list windows` → 正常（SSH 下无桌面窗口但不报错，提示清楚）
-- `naturo list windows --json` → 合法 JSON，`{"success": true, "windows": []}`
-- `naturo see` → "No window found or UI tree is empty"（合理，SSH 无桌面）
-- 不再报 `function 'naturo_msaa_get_element_tree' not found`
-
----
 
 ### BUG-002: README 命令示例与实际不符（P1 - DOC）
 **发现日期**: 2026-03-22
 **修复日期**: 2026-03-22 (commit 1c89246)
 **验证日期**: 2026-03-22 (Round 2)
 
-**验证结果**: ✅ 部分通过（原报告的 5 处已修正）
-- `naturo --version` ✅ 正确
-- `naturo list windows` ✅ 正确
-- `naturo see --window-title "Notepad"` ✅ 参数名正确
-- `naturo registry get/set` ✅ 子命令名正确
+**验证结果**: ✅ 通过
 
-**新增不一致**: → 已拆分为 BUG-004、BUG-005
+### BUG-004: README Quick Start `press "ctrl+s"` → `hotkey ctrl+s`（P1 - DOC）
+**发现日期**: 2026-03-22 (Round 2)
+**修复日期**: 2026-03-22 (commit c9418ba)
+**验证日期**: 2026-03-22 (Round 3, v0.1.1)
+
+**验证结果**: ✅ 通过
+- README 已改为 `naturo hotkey ctrl+s`
+- `naturo hotkey ctrl+s --json` → 命令被接受（SSH 下报 COM error 是预期行为）
+
+### BUG-005: `app quit` API 不一致 → 支持位置参数（P1 - API）
+**发现日期**: 2026-03-22 (Round 2)
+**修复日期**: 2026-03-22 (commit c9418ba)
+**验证日期**: 2026-03-22 (Round 3, v0.1.1)
+
+**验证结果**: ✅ 通过
+- `naturo app quit notepad` → 接受位置参数（报 "Application not found" 而不是 "unexpected extra argument"）
+- `naturo app quit --help` → 显示 `[NAME]` 位置参数
+
+### BUG-006: scroll 不接受位置参数 → 支持位置参数（P2 - UX）
+**发现日期**: 2026-03-22 (Round 2)
+**修复日期**: 2026-03-22 (commit c9418ba)
+**验证日期**: 2026-03-22 (Round 3, v0.1.1)
+
+**验证结果**: ✅ 通过
+- `naturo scroll down` → 接受位置参数（SSH 下报 COM error 是预期行为）
+- `naturo scroll --help` → 显示 `[[up|down|left|right]]` 位置参数
 
 ---
 
 ## 质量评估
 
-**当前状态**: 🟡 **条件可用** — 核心 DLL 问题已修复，但文档仍有不一致
+**当前状态**: 🟡 **接近可发布** — 核心功能稳定，版本已升至 0.1.1
 
-**改善点**:
-- BUG-001 (P0 核心阻塞) 已修复验证 ✅
-- BUG-002 (P1 文档主要问题) 已部分修复 ✅
-- 基础命令全部可用：app list、list screens、service list/status、clipboard get/set、registry get/list、capture live、snapshot list
+**已验证通过 (v0.1.1)**:
+- ✅ `naturo --version` → "naturo, version 0.1.1"
+- ✅ `naturo --help` → 完整命令列表（30+ 命令组）
+- ✅ `naturo capture live --path X --json` → 截图成功，合法 JSON
+- ✅ `naturo list windows/screens --json` → 合法 JSON
+- ✅ `naturo app list/launch/quit/switch/find --json` → 正常
+- ✅ `naturo service list/status --json` → 正常
+- ✅ `naturo clipboard get/set --json` → 正常
+- ✅ `naturo registry list/get --json` → 正常
+- ✅ `naturo snapshot list/clean --json` → 正常
+- ✅ `naturo record list --json` → 合法 JSON
+- ✅ `naturo electron detect msedge --json` → 正常
+- ✅ `naturo mcp tools --json` → 76 个 MCP 工具
+- ✅ `naturo open <url>` → 正常（打开浏览器）
+- ✅ `naturo open <nonexistent>` → 友好错误 "File not found"
+- ✅ `naturo open` (无参数) → 友好错误 "Missing argument 'TARGET'"
+- ✅ `naturo find/click/type/press/hotkey/scroll/drag` → help 输出完整
+- ✅ `naturo window focus/close/minimize/maximize/move/resize/set-bounds` → help 正确
+- ✅ `naturo diff/wait/describe/agent/record/chrome/mcp` → help 正确
+- ✅ 错误信息质量：结构化 JSON error（code + message + suggested_action + recoverable）
 
-**待解决**:
-- 3 个文档不一致 (BUG-004/005/006)
-- pyvda 依赖决策 (BUG-003)
-- 输入命令 (press/hotkey/type/click/scroll) 在 SSH 下报 System/COM error（预期行为，但错误信息可以更友好）
+**Open 问题**:
+| Bug | 严重度 | 影响 |
+|-----|--------|------|
+| BUG-003 | P2 | pyvda 缺失，desktop 命令不可用 |
+| BUG-007 | P1 | electron list 挂起 |
+| BUG-008 | P2 | learn 内容空洞 |
 
 **风险评估**:
-| 风险类型 | 等级 | 说明 |
-|---------|------|------|
-| 功能完整性 | 🟡 中等 | 核心 DLL 已修复，需要桌面 session 验证 UI 操作 |
-| 用户体验 | 🟡 中等 | 文档仍有 3 处不一致 |
-| 文档质量 | 🟡 中等 | 大部分修正，仍有遗漏 |
-| 竞争力 | 📋 待验证 | 需要桌面 session 做完整 UI 自动化测试 |
+| 风险 | 等级 | 说明 |
+|------|------|------|
+| electron list 挂起 | 🔴 高 | 用户可能以为工具卡死 |
+| UI 操作未桌面验证 | 🟡 中等 | click/type/hotkey 等核心功能需桌面 session |
+| learn 体验 | 🟡 中等 | 帮助系统框架在但内容空 |
+| pyvda 依赖策略 | 🟢 低 | 错误提示清楚，不阻塞其他功能 |
 
 ---
 
-最后更新: 2026-03-22 18:02 by QA Agent (Round 2)
+最后更新: 2026-03-22 18:08 by QA Agent (Round 3)

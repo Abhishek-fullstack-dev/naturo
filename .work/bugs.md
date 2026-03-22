@@ -668,3 +668,26 @@
   7. **父子导航** — `naturo parent e3`、`naturo children e3`、`naturo sibling e3`
 - **来源参考**: Naturobot_Client_Engine 的 UIA 封装层
 - **目标**: 让 naturo 在元素操作精准度上达到自然机器人引擎同等水平
+
+### BUG-073: capture 截图分辨率受 DPI 缩放影响，输出逻辑分辨率而非物理分辨率
+- **状态**: 🔴 Open
+- **优先级**: P0
+- **复现**: 3840×2160 屏幕 + 150% 缩放 → `naturo capture live` 输出 2560×1440
+- **预期**: 输出 3840×2160 物理分辨率
+- **根因**: C++ DLL 的 GDI BitBlt 截屏可能在 DPI awareness 设置之前就绑定了逻辑分辨率，或未使用物理坐标的显示器尺寸
+- **修复方向**: 
+  1. DLL 端 capture_screen 用 GetSystemMetrics(SM_CXSCREEN) 前先确保 DPI aware
+  2. 或用 DXGI Desktop Duplication API 替代 GDI（天然物理分辨率）
+  3. 最简方案：DLL 内部调 SetProcessDpiAwarenessContext 再截
+- **发现者**: Ace 真机测试 (Lead, 2026-03-22)
+
+**BUG-073 补充 (list screens 也受影响)**:
+- `naturo list screens` 同样报告逻辑值：2560×1440 / Scale 1.0x / DPI 96
+- 实际应为：3840×2160 / Scale 1.5x / DPI 144
+- 说明 `_ensure_dpi_awareness()` 的 SetProcessDpiAwarenessContext 调用未生效
+- 可能原因：进程已有默认 DPI context（Python.exe manifest 声明了 System DPI Aware），再调 Per-Monitor V2 会被 Windows 拒绝
+- **修复方向更新**：
+  1. CLI entry point 最早期调用（在任何 import 之前）
+  2. 或用 app manifest 声明 Per-Monitor V2
+  3. 或 DLL 内部用 SetThreadDpiAwarenessContext（线程级，不受进程限制）
+  4. 最可靠：DLL 内 GetDpiForMonitor + 物理坐标计算，不依赖进程 DPI awareness

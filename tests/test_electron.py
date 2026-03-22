@@ -97,10 +97,13 @@ class TestListElectronApps:
         with patch("naturo.electron.platform.system", return_value="Windows"):
             yield
 
+    @patch("naturo.electron._bulk_get_process_info", return_value={})
     @patch("naturo.electron._find_debug_port_from_cmdline")
     @patch("naturo.electron._is_electron_process")
     @patch("naturo.electron.subprocess.run")
-    def test_lists_running_electron_apps(self, mock_run, mock_is_electron, mock_port):
+    def test_lists_running_electron_apps(
+        self, mock_run, mock_is_electron, mock_port, mock_bulk,
+    ):
         """Lists detected Electron apps by scanning all processes."""
         from naturo.electron import list_electron_apps
 
@@ -114,7 +117,7 @@ class TestListElectronApps:
             ),
         )
         # Only Code.exe is Electron
-        mock_is_electron.side_effect = lambda pid: pid in (100, 101)
+        mock_is_electron.side_effect = lambda pid, **kw: pid in (100, 101)
         mock_port.return_value = None
 
         result = list_electron_apps()
@@ -124,8 +127,9 @@ class TestListElectronApps:
         # svchost is skipped, notepad is not Electron
         assert "notepad" not in [a["exe_name"] for a in result["apps"]]
 
+    @patch("naturo.electron._bulk_get_process_info", return_value={})
     @patch("naturo.electron.subprocess.run")
-    def test_no_electron_apps(self, mock_run):
+    def test_no_electron_apps(self, mock_run, mock_bulk):
         """Returns empty list when no Electron apps running."""
         from naturo.electron import list_electron_apps
 
@@ -134,10 +138,13 @@ class TestListElectronApps:
         assert result["count"] == 0
         assert result["apps"] == []
 
+    @patch("naturo.electron._bulk_get_process_info", return_value={})
     @patch("naturo.electron._find_debug_port_from_cmdline")
     @patch("naturo.electron._is_electron_process")
     @patch("naturo.electron.subprocess.run")
-    def test_scans_all_pids_per_exe(self, mock_run, mock_is_electron, mock_port):
+    def test_scans_all_pids_per_exe(
+        self, mock_run, mock_is_electron, mock_port, mock_bulk,
+    ):
         """Checks multiple PIDs per exe to catch apps like Feishu where
         only child processes have Electron indicators."""
         from naturo.electron import list_electron_apps
@@ -151,7 +158,7 @@ class TestListElectronApps:
         )
         # Main process (1000) is NOT detected as Electron,
         # but child process (1001) IS — simulates Feishu behavior
-        mock_is_electron.side_effect = lambda pid: pid == 1001
+        mock_is_electron.side_effect = lambda pid, **kw: pid == 1001
         mock_port.return_value = None
 
         result = list_electron_apps()
