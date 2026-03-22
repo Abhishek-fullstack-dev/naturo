@@ -1367,17 +1367,25 @@ class WindowsBackend(Backend):
                 code="FILE_NOT_FOUND",
             )
 
-        try:
-            subprocess.run(
-                ["start", "", uri], shell=True, timeout=15,
+        if is_url:
+            # URLs: fire-and-forget — don't wait for browser process
+            subprocess.Popen(
+                ["start", "", uri], shell=True,
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
             )
-        except subprocess.TimeoutExpired:
-            from naturo.errors import NaturoError
-            raise NaturoError(
-                f"Open command timed out for: {uri}",
-                code="OPEN_TIMEOUT",
-            )
+        else:
+            # Files/apps: wait briefly for the handler to launch
+            try:
+                subprocess.run(
+                    ["start", "", uri], shell=True, timeout=15,
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                )
+            except subprocess.TimeoutExpired:
+                from naturo.errors import NaturoError
+                raise NaturoError(
+                    f"Open command timed out for: {uri}",
+                    code="OPEN_TIMEOUT",
+                )
 
     # === Phase 4.5: Dialog Detection & Interaction ===
 

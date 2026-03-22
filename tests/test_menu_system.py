@@ -186,6 +186,47 @@ class TestOpenValidation:
         # On Windows: FILE_NOT_FOUND; on macOS: may differ (INTERNAL_SWIFT_ERROR)
         assert data["error"]["code"] in ("FILE_NOT_FOUND", "INTERNAL_SWIFT_ERROR", "UNKNOWN_ERROR")
 
+    @pytest.mark.skipif(
+        platform.system() != "Windows",
+        reason="Windows backend Popen/run behavior test",
+    )
+    def test_open_url_uses_popen_not_run(self):
+        """Issue #31 – open_uri with URL must use Popen (fire-and-forget), not run."""
+        from unittest.mock import patch, MagicMock
+        from naturo.backends.windows import WindowsBackend
+
+        backend = WindowsBackend.__new__(WindowsBackend)
+
+        with patch("subprocess.Popen") as mock_popen, \
+             patch("subprocess.run") as mock_run:
+            backend.open_uri("https://example.com")
+            mock_popen.assert_called_once()
+            mock_run.assert_not_called()
+
+    @pytest.mark.skipif(
+        platform.system() != "Windows",
+        reason="Windows backend Popen/run behavior test",
+    )
+    def test_open_file_uses_run_not_popen(self):
+        """Issue #31 – open_uri with file path must use run (wait for handler)."""
+        import tempfile
+        import os
+        from unittest.mock import patch
+        from naturo.backends.windows import WindowsBackend
+
+        backend = WindowsBackend.__new__(WindowsBackend)
+
+        with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as f:
+            path = f.name
+        try:
+            with patch("subprocess.Popen") as mock_popen, \
+                 patch("subprocess.run") as mock_run:
+                backend.open_uri(path)
+                mock_run.assert_called_once()
+                mock_popen.assert_not_called()
+        finally:
+            os.unlink(path)
+
     def test_open_app_option_still_accepted(self, runner):
         """BUG-066 – --app is hidden but still accepted (backward compat)."""
         # Should not fail on unknown option
