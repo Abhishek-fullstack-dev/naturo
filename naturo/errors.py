@@ -44,7 +44,8 @@ class ErrorCode:
     # Dependency errors
     DEPENDENCY_MISSING = "DEPENDENCY_MISSING"
 
-    # System errors
+    # System / environment errors
+    NO_DESKTOP_SESSION = "NO_DESKTOP_SESSION"
     FILE_IO_ERROR = "FILE_IO_ERROR"
     UNKNOWN_ERROR = "UNKNOWN_ERROR"
 
@@ -64,6 +65,7 @@ class ErrorCategory:
     PERMISSIONS = "permissions"
     AUTOMATION = "automation"
     CONFIGURATION = "configuration"
+    ENVIRONMENT = "environment"
     AI = "ai"
     IO = "io"
     NETWORK = "network"
@@ -389,5 +391,32 @@ class DependencyMissingError(NaturoError):
             code=ErrorCode.DEPENDENCY_MISSING,
             category=ErrorCategory.CONFIGURATION,
             context={"dependency": dependency},
+            **kwargs,
+        )
+
+
+class NoDesktopSessionError(NaturoError):
+    """Raised when a GUI command runs without an interactive desktop session.
+
+    Typical scenario: running naturo commands over SSH or as a Windows service
+    where no desktop (explorer shell) is available.
+    """
+
+    def __init__(self, command: str | None = None, **kwargs: Any) -> None:
+        msg = (
+            "No interactive desktop session detected. "
+            "Naturo GUI commands require a logged-in Windows desktop with an active session. "
+            "If connecting via SSH, use RDP or a VNC session instead."
+        )
+        super().__init__(
+            message=msg,
+            code=ErrorCode.NO_DESKTOP_SESSION,
+            category=ErrorCategory.ENVIRONMENT,
+            suggested_action=(
+                "Connect via RDP or VNC to get a desktop session, "
+                "or run naturo on the machine's physical console."
+            ),
+            is_recoverable=False,
+            context={"command": command} if command else {},
             **kwargs,
         )

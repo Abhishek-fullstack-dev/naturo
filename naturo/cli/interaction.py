@@ -11,8 +11,43 @@ from naturo.cli.record_cmd import record_action as _record_action
 # ── Shared helper ────────────────────────────────────────────────────────────
 
 
+def _check_desktop_session() -> None:
+    """Raise NoDesktopSessionError if running without an interactive desktop.
+
+    On Windows, checks the SESSIONNAME environment variable and whether
+    explorer.exe is running (a reliable proxy for a desktop session).
+    No-op on other platforms.
+    """
+    import platform as _plat
+    if _plat.system() != "Windows":
+        return
+    import os
+    session = os.environ.get("SESSIONNAME", "")
+    # Services session or empty session name = no desktop
+    if session and session.lower() != "services":
+        return
+    # Double-check: is explorer.exe running? (indicates a desktop shell)
+    import subprocess
+    try:
+        result = subprocess.run(
+            ["tasklist", "/FI", "IMAGENAME eq explorer.exe", "/NH", "/FO", "CSV"],
+            capture_output=True, text=True, timeout=5, encoding="utf-8", errors="replace",
+        )
+        if "explorer.exe" in result.stdout.lower():
+            return  # Desktop session exists even if SESSIONNAME is odd
+    except Exception:
+        pass
+    from naturo.errors import NoDesktopSessionError
+    raise NoDesktopSessionError()
+
+
 def _get_backend():
-    """Return the platform backend, raising UsageError if unavailable."""
+    """Return the platform backend, raising UsageError if unavailable.
+
+    Also performs a pre-flight check for an interactive desktop session
+    on Windows to provide clear errors instead of cryptic COM exceptions.
+    """
+    _check_desktop_session()
     from naturo.backends.base import get_backend
     try:
         return get_backend()

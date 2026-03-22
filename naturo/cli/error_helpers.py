@@ -80,6 +80,11 @@ _RECOVERY_HINTS: dict[str, tuple[str, bool]] = {
         "is in the foreground, 3) take a screenshot to check the current UI state.",
         True,
     ),
+    "NO_DESKTOP_SESSION": (
+        "No interactive desktop session. Connect via RDP or VNC to get a "
+        "desktop session, or run naturo on the machine's physical console.",
+        False,
+    ),
     "PLATFORM_ERROR": (
         "This command requires a platform feature not available in the current "
         "environment. Naturo GUI commands require Windows with a desktop session.",
