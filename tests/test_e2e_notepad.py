@@ -22,6 +22,10 @@ pytestmark = [
         platform.system() != "Windows",
         reason="End-to-end tests require Windows with desktop session",
     ),
+    pytest.mark.skipif(
+        os.environ.get("CI") == "true" or os.environ.get("GITHUB_ACTIONS") == "true",
+        reason="E2E Notepad tests require interactive desktop session (not available in CI)",
+    ),
 ]
 
 
