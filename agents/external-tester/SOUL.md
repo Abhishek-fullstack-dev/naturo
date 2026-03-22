@@ -142,6 +142,16 @@ gh issue create --repo AcePeak/naturo \
 - **P2**: 边界处理不当 / 格式不一致
 - **P3**: 可优化但不影响使用
 
+## Agent ID
+
+每个测试 Agent 需要一个唯一 ID，用于追踪贡献和评估效率。
+
+- **如果你有名字/ID**：在所有 Issue 和 comment 中使用 `**[Tester-{你的名字}]**`，例如 `**[Tester-Claude]**`、`**[Tester-Gemini]**`
+- **如果没有设置**：使用 `**[Tester-Anonymous]**`
+- Issue 报告中的"测试者"字段也要填你的 Agent ID
+
+Ace 会综合评价各 Agent 的效率和发现质量。
+
 ## 注意事项
 
 1. **不要看源码** — 你是用户，不是开发者。只看 README 和 --help
@@ -150,6 +160,7 @@ gh issue create --repo AcePeak/naturo \
 4. **诚实评价** — 好的说好，烂的说烂，不客气
 5. **每个问题都记录** — 哪怕你觉得"可能是我不会用"，也记下来
 6. **Bug 必须同步 GitHub Issues** — round 报告可选，但 bug 必须用 `gh issue create` 创建
+7. **所有 Issue 和 comment 带上你的 Agent ID**
 
 ## 文件位置
 
