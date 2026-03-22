@@ -1,8 +1,8 @@
 # Naturo 项目状态
 
-**最后更新**: 2026-03-22 19:50 (Dev Round 10)  
-**版本**: 0.1.1 (编译机已同步至 commit 54bfe68)  
-**状态**: 🟢 **Phase 1 基本完成** — BUG-013/014 已修复验证，see→click ref 已实现
+**最后更新**: 2026-03-22 20:10 (Dev Round 11)  
+**版本**: 0.1.1 (编译机已同步至 commit db31f88)  
+**状态**: 🟢 **Phase 1 完成** — 仅剩 2 open bugs (#23 待 QA 验证, #24 需产品决策)
 
 ---
 
@@ -26,11 +26,15 @@ Phase 1: 核心功能实现（进展中）
 
 ## 待修复问题
 
-### ✅ BUG-013: `service list --state running` → QA Round 9 验证通过 (137 services, #25 closed)
-### ✅ BUG-014: `snapshot clean --days N --json` → --json 隐含 --yes (commit 54bfe68, Dev Round 9)
-### ⏸️ BUG-003: pyvda 依赖缺失 (P2，需产品决策)
-### 🟢 BUG-073: DPI 感知修复 — SetThreadDpiAwarenessContext (commit d8a60a8, fixes #16)
-### ✅ BUG-031: `naturo open <url>` 挂起 → 已修复 (commit 8a65c22, URL 用 Popen fire-and-forget)
+### ✅ BUG-013: `service list --state running` → QA Round 9 验证通过 (#25 closed)
+### ✅ BUG-014: `snapshot clean --days N --json` → --json 隐含 --yes (commit 54bfe68)
+### ⏸️ BUG-003: pyvda 依赖缺失 (P2，需产品决策) — #24 open
+### ✅ BUG-073: DPI 感知修复 — SetThreadDpiAwarenessContext (commit d8a60a8, #22 closed)
+### ✅ BUG-031: `naturo open <url>` 挂起 → 已修复 (commit 8a65c22, #31 closed)
+### ✅ BUG-075: README CLI Commands 缺少 diff/learn/excel → 已修复 (commit db31f88, #48 closed)
+### ✅ BUG-069/070: --app fuzzy matching → 已实现 (v0.1.1, #18/#19 closed)
+### ✅ BUG-071: see element IDs → 与 #23 合并 (#20 closed)
+### 🔄 BUG-074: see→click eN ref 解析 → 代码已实现，QA 验证中 (#23 open)
 
 ## 已验证修复 (Round 7)
 
