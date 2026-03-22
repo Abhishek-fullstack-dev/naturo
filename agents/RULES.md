@@ -39,10 +39,19 @@
 - 修完后 `gh issue comment` 说明修复 + commit message 关联 `fixes #N`
 - 来源标注 `from:external` 的 bug 优先级可能更高（因为是真实用户视角）
 
-## 通用规则
-1. 只操作 `~/Ace/naturo/` 目录
-2. 一个 bug = 一个 commit，commit message 关联 issue：`fix: [BUG-XXX] 简述 (fixes #N)`
-3. 代码质量要经得起全世界 review
-4. README.md 每次功能进展后同步更新
-5. 版本号变更需要同步 Python + DLL
-6. Bug 跟踪使用 GitHub Issues，不再使用 `.work/bugs.md`
+## ⛔ ABSOLUTE RULES — VIOLATION = IMMEDIATE REMOVAL
+
+1. **NEVER close a GitHub Issue without an actual merged commit that fixes it.** If you think it's already fixed, cite the EXACT commit hash. If unsure, leave it open. Closing issues without fixes has caused repeated data loss.
+2. **NEVER close issues for future milestones (v0.3.0+).** You can only close issues in the milestone you are currently working on, and only after your fix is committed and CI passes.
+3. **NEVER use `gh issue close` in your triage/classification phase.** During triage, you may only comment — not close.
+
+## General Rules
+1. Only operate within `~/Ace/naturo/`
+2. One bug = one commit, commit message references issue: `fix: description (fixes #N)`
+3. Code quality must survive worldwide public review
+4. README.md must be updated after feature progress
+5. Version bump must sync Python + DLL
+6. Bug tracking: GitHub Issues only, never `.work/bugs.md`
+7. Assign yourself before working: `gh issue edit N --add-assignee @me`
+8. Label `status:in-progress` when starting, `status:done` when complete
+9. All issue comments must include your Agent ID
