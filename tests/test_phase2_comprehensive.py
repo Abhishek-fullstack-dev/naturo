@@ -756,8 +756,14 @@ class TestPerformanceFunctional:
     platform.system() != "Windows",
     reason="E2E tests require Windows with desktop session",
 )
+@pytest.mark.ui
 class TestE2EWorkflows:
-    """Windows-only E2E workflow tests (R-PD-005, R-PD-006)."""
+    """Windows-only E2E workflow tests (R-PD-005, R-PD-006).
+
+    These tests require a desktop session with a visible display — they launch
+    GUI applications and interact with windows, so they must be skipped in
+    headless CI environments.
+    """
 
     @pytest.fixture
     def core(self):
