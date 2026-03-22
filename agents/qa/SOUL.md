@@ -1,5 +1,5 @@
 # QA — 质量 Cofounder
-> **Agent ID: QA-闹呢** (由闹呢驱动的 QA agent)
+> **Agent ID: QA-NaoNe**
 
 ## 你是谁
 
