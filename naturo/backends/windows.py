@@ -39,28 +39,55 @@ class WindowsBackend(Backend):
     def _ensure_dpi_awareness(self) -> None:
         """Set per-monitor DPI awareness for accurate coordinates and capture.
 
-        On Windows 10 1607+, uses SetProcessDpiAwarenessContext for
-        per-monitor v2 awareness. Falls back to SetProcessDpiAwareness
-        (Win8.1+) and SetProcessDPIAware (Vista+) on older systems.
+        Strategy (BUG-073):
+        1. First, try ``SetThreadDpiAwarenessContext`` (Win10 1607+) which
+           always succeeds regardless of process-level manifest or prior
+           ``SetProcessDpiAwareness`` calls.  This is the recommended
+           approach because Python.exe may ship with a DPI manifest that
+           blocks process-level changes.
+        2. As fallback, try process-level APIs for older Windows versions.
 
-        This must be called before any Win32 API calls that involve
-        screen coordinates or window dimensions.
+        The thread-level context is inherited by child threads, so setting
+        it once on the main thread covers all subsequent Win32 calls.
         """
         if self._dpi_aware:
             return
         try:
             import ctypes
-            # Try Per-Monitor v2 (Win10 1607+) — best accuracy
+
+            user32 = ctypes.windll.user32
+
+            # ── Thread-level DPI (Win10 1607+) — preferred ──
             # DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = -4
+            # SetThreadDpiAwarenessContext returns the old context on
+            # success, or NULL (0) on failure.
             try:
-                ctypes.windll.user32.SetProcessDpiAwarenessContext(-4)
+                _set_thread = user32.SetThreadDpiAwarenessContext
+                _set_thread.restype = ctypes.c_void_p
+                _set_thread.argtypes = [ctypes.c_void_p]
+                old_ctx = _set_thread(-4)
+                if old_ctx:
+                    self._dpi_aware = True
+                    logger.debug(
+                        "DPI: SetThreadDpiAwarenessContext(-4) succeeded "
+                        "(previous context=%s)",
+                        old_ctx,
+                    )
+                    return
+            except (OSError, AttributeError):
+                pass
+
+            # ── Process-level fallbacks ──
+
+            # Per-Monitor v2 process-level (may fail if already set)
+            try:
+                user32.SetProcessDpiAwarenessContext(-4)
                 self._dpi_aware = True
                 return
             except (OSError, AttributeError):
                 pass
 
-            # Try Per-Monitor v1 (Win8.1+)
-            # PROCESS_PER_MONITOR_DPI_AWARE = 2
+            # Per-Monitor v1 (Win8.1+)
             try:
                 ctypes.windll.shcore.SetProcessDpiAwareness(2)
                 self._dpi_aware = True
@@ -68,9 +95,9 @@ class WindowsBackend(Backend):
             except (OSError, AttributeError):
                 pass
 
-            # Fallback: System DPI aware (Vista+)
+            # System DPI aware (Vista+)
             try:
-                ctypes.windll.user32.SetProcessDPIAware()
+                user32.SetProcessDPIAware()
                 self._dpi_aware = True
             except (OSError, AttributeError):
                 pass
