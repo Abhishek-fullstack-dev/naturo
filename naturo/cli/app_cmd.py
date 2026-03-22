@@ -1,4 +1,4 @@
-"""CLI app command extensions — launch, quit, relaunch, list, find.
+"""CLI app command extensions — launch, quit, relaunch, list, find, inspect.
 
 Replaces the stub implementations in system.py with working process management.
 These are registered as subcommands of the existing ``app`` group.
@@ -375,3 +375,170 @@ def app_find(ctx, name, pid, json_output):
         else:
             _safe_echo(f"Not found: {name}")
         sys.exit(1)
+
+
+@click.command("inspect")
+@click.argument("name", required=False, default=None)
+@click.option("--pid", type=int, help="Inspect by process ID")
+@click.option("--all", "scan_all", is_flag=True, help="Scan all visible windows")
+@click.option("--quick", is_flag=True, help="Fast probe — stop at first available method")
+@click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
+@click.pass_context
+def app_inspect(ctx, name, pid, scan_all, quick, json_output):
+    """Probe an application and report available interaction methods.
+
+    Detects which UI framework the app uses (Electron, WPF, Qt, etc.)
+    and which interaction methods are available (CDP, UIA, MSAA, JAB, IA2, Vision).
+
+    Examples:
+      naturo app inspect notepad
+      naturo app inspect --pid 12345
+      naturo app inspect --all
+      naturo app inspect chrome --quick --json
+    """
+    json_output = json_output or (ctx.obj or {}).get("json", False)
+
+    from naturo.detect import detect, DetectionResult
+    from naturo.detect.models import ProbeStatus
+
+    if scan_all:
+        _inspect_all_windows(quick, json_output)
+        return
+
+    if not name and pid is None:
+        msg = "Specify application name, --pid, or --all"
+        if json_output:
+            click.echo(_json_error_str("INVALID_INPUT", msg))
+        else:
+            _safe_echo(f"Error: {msg}", err=True)
+        sys.exit(1)
+        return
+
+    # Resolve PID from name
+    target_pid = pid
+    target_exe = ""
+    target_name = name or ""
+
+    if name and not pid:
+        from naturo.process import find_process
+        proc = find_process(name=name)
+        if not proc:
+            msg = f"No running process found matching '{name}'"
+            if json_output:
+                click.echo(_json_error_str("PROCESS_NOT_FOUND", msg))
+            else:
+                _safe_echo(f"Error: {msg}", err=True)
+            sys.exit(1)
+            return
+        target_pid = proc.pid
+        target_exe = proc.path or ""
+        target_name = proc.name or name
+
+    result = detect(
+        pid=target_pid,
+        exe=target_exe,
+        app_name=target_name,
+        use_cache=True,
+        quick=quick,
+    )
+
+    if json_output:
+        click.echo(json.dumps({"success": True, **result.to_dict()}, indent=2))
+    else:
+        _print_inspect_result(result)
+
+
+def _inspect_all_windows(quick: bool, json_output: bool) -> None:
+    """Scan all visible windows and report detection results.
+
+    Args:
+        quick: If True, use quick probe mode.
+        json_output: If True, output as JSON.
+    """
+    from naturo.detect import detect
+
+    try:
+        from naturo.backends.base import get_backend
+        backend = get_backend()
+        apps_data = backend.list_apps()
+    except Exception as exc:
+        if json_output:
+            click.echo(_json_error_str("BACKEND_ERROR", str(exc)))
+        else:
+            _safe_echo(f"Error: {exc}", err=True)
+        sys.exit(1)
+        return
+
+    results = []
+    seen_pids = set()
+
+    for app_info in apps_data:
+        app_pid = app_info.get("pid")
+        if not app_pid or app_pid in seen_pids:
+            continue
+        seen_pids.add(app_pid)
+
+        result = detect(
+            pid=app_pid,
+            exe=app_info.get("process", ""),
+            app_name=app_info.get("name", ""),
+            use_cache=True,
+            quick=quick,
+        )
+        results.append(result)
+
+    if json_output:
+        click.echo(json.dumps({
+            "success": True,
+            "apps": [r.to_dict() for r in results],
+            "count": len(results),
+        }, indent=2))
+    else:
+        if not results:
+            click.echo("No visible applications found")
+            return
+        for i, result in enumerate(results):
+            if i > 0:
+                click.echo("")
+            _print_inspect_result(result)
+        click.echo(f"\n{len(results)} applications scanned")
+
+
+def _print_inspect_result(result) -> None:
+    """Pretty-print a DetectionResult to the terminal.
+
+    Args:
+        result: DetectionResult to display.
+    """
+    from naturo.detect.models import ProbeStatus
+
+    header = f"{result.app_name or result.exe or 'Unknown'} (PID: {result.pid})"
+    _safe_echo(f"  {header}")
+    _safe_echo(f"  {'─' * len(header)}")
+
+    # Frameworks
+    if result.frameworks:
+        fw_names = [f.framework_type.value for f in result.frameworks]
+        _safe_echo(f"  Framework:  {', '.join(fw_names)}")
+
+    # Methods
+    if result.methods:
+        for m in result.methods:
+            status_icon = {
+                ProbeStatus.AVAILABLE: "✅",
+                ProbeStatus.FALLBACK: "🔄",
+                ProbeStatus.UNAVAILABLE: "❌",
+                ProbeStatus.ERROR: "⚠️",
+                ProbeStatus.SKIPPED: "⏭️",
+            }.get(m.status, "?")
+
+            rec_marker = " ← recommended" if result.recommended == m.method else ""
+            caps = ", ".join(m.capabilities) if m.capabilities else ""
+            _safe_echo(f"  {status_icon} {m.method.value:<8} ({m.status.value}){rec_marker}")
+            if caps:
+                _safe_echo(f"             capabilities: {caps}")
+            if m.metadata:
+                for key, val in m.metadata.items():
+                    _safe_echo(f"             {key}: {val}")
+    else:
+        _safe_echo("  No interaction methods detected")
