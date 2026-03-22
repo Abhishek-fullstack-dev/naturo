@@ -363,7 +363,6 @@ _GUI = _has_gui_backend()
 
 @pytest.mark.parametrize("cmd,expected_exit", [
     (["see"], 1 if platform.system() != "Windows" else 0),
-    # (["learn"], 0),  # removed in v0.2.0
     pytest.param(["capture", "live"], 0, marks=pytest.mark.skipif(platform.system() != "Windows", reason="capture live needs desktop session")),
 ])
 def test_placeholder_commands_run(runner, cmd, expected_exit):

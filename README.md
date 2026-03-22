@@ -116,21 +116,9 @@ naturo desktop create --name "Work"        # Create named desktop
 naturo desktop close                       # Close current desktop
 naturo desktop move-window 1 --app "Notepad"  # Move window to desktop 1
 
-# Chrome browser automation (requires --remote-debugging-port=9222)
-naturo chrome tabs                         # List open tabs
-naturo chrome screenshot --path page.png   # Capture current tab
-naturo chrome navigate "https://example.com"
-naturo chrome eval "document.title"        # Run JavaScript
-naturo chrome click "button#submit"        # Click DOM element
-naturo chrome type "input#search" "hello"  # Type into input
-naturo chrome title                        # Get page title
-naturo chrome html --selector "#main"      # Get element HTML
-
-# Electron/CEF application automation
-naturo electron list                       # List running Electron apps
-naturo electron detect "Code"              # Check if app is Electron-based
-naturo electron launch "C:\Apps\Code.exe"  # Launch with remote debugging
-naturo electron connect "Code"             # Connect to debuggable Electron app
+# Paste text via clipboard (fast for large content)
+naturo type "large content" --paste        # Set clipboard → Ctrl+V → restore
+naturo type --paste --file data.txt        # Read file → paste
 ```
 
 ## CLI Commands
@@ -152,7 +140,7 @@ naturo electron connect "Code"             # Connect to debuggable Electron app
 | `scroll` | Scroll mouse wheel | 0.1.0 |
 | `drag` | Drag from/to coordinates | 0.1.0 |
 | `move` | Move mouse cursor | 0.1.0 |
-| `paste` | Paste from clipboard | 0.1.0 |
+| `type --paste` | Paste text via clipboard (Ctrl+V) | 0.2.0 |
 | `wait` | Wait for element/window | 0.1.0 |
 | `app launch` | Launch application | 0.1.0 |
 | `app quit` | Quit application | 0.1.0 |
@@ -170,18 +158,13 @@ naturo electron connect "Code"             # Connect to debuggable Electron app
 | `window resize` | Resize a window | 0.1.0 |
 | `window set-bounds` | Set position + size | 0.1.0 |
 | `window list` | List windows with filters | 0.1.0 |
-| `open` | Open URL/file with default app | 0.1.0 |
 | `mcp start` | Start MCP server | 0.1.0 |
-| `describe` | AI-powered screenshot analysis | 0.1.0 |
-| `agent` | Natural language automation | 0.1.0 |
-| `record start/stop` | Record action sequences | 0.1.0 |
-| `record list/play` | List/replay recordings | 0.1.0 |
 | `dialog detect` | Detect active system dialogs | 0.1.0 |
 | `dialog accept` | Accept (OK/Yes) a dialog | 0.1.0 |
 | `dialog dismiss` | Dismiss (Cancel/No) a dialog | 0.1.0 |
 | `dialog click-button` | Click specific dialog button | 0.1.0 |
 | `dialog type` | Type in dialog input field | 0.1.0 |
-| `clipboard get/set` | Get/set clipboard contents | 0.1.0 |
+
 | `taskbar list` | List taskbar items | 0.1.0 |
 | `taskbar click` | Click taskbar item | 0.1.0 |
 | `tray list` | List system tray icons | 0.1.0 |
