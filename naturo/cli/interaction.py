@@ -104,6 +104,24 @@ def click_cmd(query, on_text, element_id, coords, double, right, app, pid,
         _json_err("Specify --coords X Y, --id, or --on TEXT", json_output, code="INVALID_INPUT")
         return
 
+    # BUG-074: Resolve eN refs from the most recent `see` snapshot
+    import re as _re
+    if target_id and _re.fullmatch(r"e\d+", target_id):
+        from naturo.snapshot import SnapshotManager
+        mgr = SnapshotManager()
+        resolved = mgr.resolve_ref(target_id)
+        if resolved:
+            x, y = resolved[0], resolved[1]
+            target_id = None  # use coordinates instead
+        else:
+            _json_err(
+                f"Element ref '{target_id}' not found. Run 'naturo see' first to "
+                f"capture a fresh snapshot, then use the eN ref within 10 minutes.",
+                json_output,
+                code="REF_NOT_FOUND",
+            )
+            return
+
     try:
         if target_id:
             backend.click(element_id=target_id, button=button, double=double,

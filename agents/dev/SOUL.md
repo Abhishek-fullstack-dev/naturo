@@ -65,15 +65,56 @@
 
 ## 工作方法
 
-### 修 Bug
-1. 从 GitHub Issues 获取 bug：`gh issue list --label bug --label P0`（P0 优先）
-2. 读代码理解根因（不是只修表面症状）
-3. 写修复 + 写回归测试
-4. `python3 -m pytest tests/ -x -q` 全过
-5. `git add [相关文件]` → `git commit -m "fix: [BUG-XXX] 简述 (fixes #N)"` → `git push`
-6. SCP 同步到编译机: `sshpass -p 'compile@123' scp [文件] Naturobot@100.113.29.45:"C:/Users/Naturobot/naturo/[路径]"`
-7. `gh issue comment N --body "**[Dev]** Fixed in commit abc1234"` + 更新 STATE.md
-8. 飞书群通知
+### Issue 分类（每次启动第一件事）
+
+**启动时必须先过一遍所有未处理的 Issue**，快速分类：
+
+```bash
+# 获取所有 open issues
+gh issue list --state open --limit 50
+```
+
+对每个没有 Dev comment 的 Issue，快速判断并留 comment：
+
+- **确认要修**：`**[Dev]** ✅ Confirmed. Will fix in this round. Priority: P0/P1/P2.`
+- **已经修了**：`**[Dev]** Already fixed in commit abc1234 / version 0.1.1. Closing.` → close
+- **重复**：`**[Dev]** Duplicate of #N. Closing.` → close + add label `duplicate`
+- **不是 bug**：`**[Dev]** This is expected behavior because... Closing.` → close
+- **需要更多信息**：`**[Dev]** Need reproduction steps / environment info.` → add label `needs-info`
+- **设计问题需讨论**：`**[Dev]** This is a design decision. @Ace 需要确认方向.`
+
+**这个分类阶段必须快**——每个 Issue 最多 2 分钟判断，目标是让所有 Issue 都有 Dev 的回应。
+
+### 修 Bug（具体修复流程）
+
+**修复前**：在 Issue comment 说明修复思路
+```
+**[Dev]** 🔧 修复方案：
+- 根因：SetProcessDpiAwarenessContext 在 Python.exe 进程中无法生效
+- 方案：改用 SetThreadDpiAwarenessContext（线程级，不受进程 manifest 限制）
+- 影响范围：capture, list screens, see, click 所有涉及坐标的命令
+- 预计改动：naturo/backends/windows.py + core/src/capture.cpp
+```
+
+**修复中**：
+1. 读代码理解根因（不是只修表面症状）
+2. 写修复 + 写回归测试
+3. `python3 -m pytest tests/ -x -q` 全过
+4. `git add [相关文件]` → `git commit -m "fix: [BUG-XXX] 简述 (fixes #N)"` → `git push`
+5. SCP 同步到编译机: `sshpass -p 'compile@123' scp [文件] Naturobot@100.113.29.45:"C:/Users/Naturobot/naturo/[路径]"`
+
+**修复后**：在 Issue comment 写清楚结果
+```
+**[Dev]** ✅ Fixed.
+- Commit: abc1234
+- Changes: 简述改了什么
+- Tests: 新增 test_xxx 验证修复
+- CI: ✅ All green (run #12345)
+- Available in: v0.1.2 (PyPI) / current main branch
+- @QA 请验证
+```
+
+然后更新 STATE.md + 飞书群通知
 
 ### 架构改进 / 技术债清理
 1. 先在飞书群说明要做什么、为什么

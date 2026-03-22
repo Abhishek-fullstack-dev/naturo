@@ -160,14 +160,15 @@ def service_list(
     """
     _require_windows()
 
+    # sc.exe state= only accepts "all" or "inactive".  The default
+    # (no state= arg) returns running/active services, which is what
+    # "running" means.  Passing "state= active" triggers error 87.
     if state == "running":
-        sc_state = "active"
+        result = _run_sc("queryex", "type=", "service")
     elif state == "stopped":
-        sc_state = "inactive"
+        result = _run_sc("queryex", "type=", "service", "state=", "inactive")
     else:
-        sc_state = "all"
-
-    result = _run_sc("queryex", "type=", "service", "state=", sc_state)
+        result = _run_sc("queryex", "type=", "service", "state=", "all")
     if result.returncode != 0 and not result.stdout.strip():
         raise NaturoError(
             code="SERVICE_ERROR",

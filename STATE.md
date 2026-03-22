@@ -1,8 +1,8 @@
 # Naturo 项目状态
 
-**最后更新**: 2026-03-22 18:56  
-**版本**: 0.1.1 (编译机 commit a32c33c，最新修复未部署)  
-**状态**: 🟡 **接近可发布** — BUG-012 已修复，CI 桌面测试 skip 修复推送中
+**最后更新**: 2026-03-22 19:15  
+**版本**: 0.1.1 (编译机已同步至 commit 7301bf1)  
+**状态**: 🟡 **接近可发布** — BUG-011/012 已验证，新发现 BUG-013 (service list --state running)
 
 ---
 
@@ -26,9 +26,13 @@ Phase 1: 核心功能实现（进展中）
 
 ## 待修复问题
 
-### 🟢 BUG-012: `learn interaction` 教程命令语法错误 → Fixed (commit cb4cb2e)
-### 🟢 BUG-011: `learn capture` 引用 `--region` 参数 → Fixed (commit 71a1217，未部署到编译机)
+### 🔴 BUG-013: `service list --state running` 返回 0 结果 (P1，sc.exe state= 参数错误)
 ### 🔴 BUG-003: pyvda 依赖缺失 (P2，需产品决策)
+
+## 已验证修复 (Round 7)
+
+### ✅ BUG-012: `learn interaction` 教程命令语法错误 → Verified (Round 7)
+### ✅ BUG-011: `learn capture` 引用 `--region` 参数 → Verified (Round 7)
 
 ---
 
@@ -132,4 +136,4 @@ Phase 1: 核心功能实现（进展中）
 
 ---
 
-最后更新: 2026-03-22 18:56 by Dev Agent (BUG-012 修复 + CI skip 修复)
+最后更新: 2026-03-22 19:15 by QA Agent (Round 7: BUG-011/012 验证通过，新发现 BUG-013)
