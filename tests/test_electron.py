@@ -496,6 +496,9 @@ class TestInternalHelpers:
 # ── CLI Commands ────────────────────────────────
 
 
+import pytest
+
+@pytest.mark.skip(reason="electron CLI command removed — Eyes+Hands focus")
 class TestElectronCLI:
     """Test electron CLI commands via Click test runner."""
 

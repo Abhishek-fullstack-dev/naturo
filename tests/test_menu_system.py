@@ -203,6 +203,7 @@ class TestCLIJsonAndExitCodes:
 class TestMenuSystemFunctionalWindows:
     """T170-T172, T183-T184 – Windows functional tests."""
 
+    @pytest.mark.skip(reason="open command removed — Eyes+Hands focus")
     def test_open_uri_https(self, runner):
         """T183 – naturo open with HTTPS URL runs on Windows."""
         import time
@@ -210,6 +211,7 @@ class TestMenuSystemFunctionalWindows:
         assert result.exit_code == 0
         time.sleep(0.5)
 
+    @pytest.mark.skip(reason="open command removed — Eyes+Hands focus")
     def test_open_file_path(self, runner):
         """T184 – naturo open with local file path runs on Windows."""
         import tempfile
