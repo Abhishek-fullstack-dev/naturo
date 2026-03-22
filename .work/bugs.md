@@ -691,3 +691,27 @@
   2. 或用 app manifest 声明 Per-Monitor V2
   3. 或 DLL 内部用 SetThreadDpiAwarenessContext（线程级，不受进程限制）
   4. 最可靠：DLL 内 GetDpiForMonitor + 物理坐标计算，不依赖进程 DPI awareness
+
+### BUG-074: see 输出的 eN 标识符无法用于 click --id，用户直觉用法完全不工作
+- **状态**: 🔴 Open
+- **优先级**: P0
+- **关联**: BUG-071 的具体用户场景
+- **复现**: 
+  ```
+  naturo see --hwnd 330760    # 输出 [Button] "最小化" e16
+  naturo click --id "e16"     # Error: element not found
+  naturo click --id "e16" --hwnd 330760  # Error: element not found
+  ```
+- **预期**: `click --id e16` 应该直接点击 see 中标记为 e16 的元素
+- **根因**: 
+  - `see` 的 eN 是临时序号，不持久化，click 不认
+  - `click --id` 内部调 `find_element(selector=...)` 按 "role:name" 格式搜索
+  - 两个功能完全割裂，没有打通
+- **用户影响**: 极高——这是最自然的使用流程（看到 → 点击），完全不能用
+- **修复方向**:
+  1. `see` 输出 eN 时缓存元素信息（坐标+role+name+hwnd）
+  2. `click --id eN` 先查缓存，命中则直接用缓存的坐标/selector
+  3. 缓存可以存临时文件或内存，有 TTL（如 60s）
+  4. 或者 click --id 直接支持 "Button:最小化" 这种格式，see 也输出这种格式
+- **Ace 原话**: "没有例子给我的情况下，我的第一反应就是这么用"
+- **发现者**: Ace 真机测试 (Lead, 2026-03-22)
