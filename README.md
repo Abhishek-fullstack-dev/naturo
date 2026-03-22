@@ -58,16 +58,16 @@ npx naturo mcp start
 
 ```bash
 # Check version
-naturo version
+naturo --version
 
 # Capture a screenshot
 naturo capture live --path screen.png
 
 # List open windows
-naturo list --type windows
+naturo list windows
 
 # Inspect UI tree
-naturo see --window "Notepad" --depth 5
+naturo see --window-title "Notepad" --depth 5
 
 # Click an element
 naturo click "Button:Save"
@@ -139,7 +139,7 @@ naturo electron connect "Code"             # Connect to debuggable Electron app
 
 | Command | Description | Since |
 |---------|-------------|-------|
-| `version` | Show version info | 0.1.0 |
+| `--version` | Show version info | 0.1.0 |
 | `capture` | Screenshot screen/window | 0.1.0 |
 | `list` | List windows/processes | 0.1.0 |
 | `see` | Inspect UI element tree | 0.1.0 |
@@ -202,8 +202,8 @@ naturo electron connect "Code"             # Connect to debuggable Electron app
 | `chrome title` | Get page title | 0.1.0 |
 | `chrome html` | Get page/element HTML | 0.1.0 |
 | `chrome version` | Show Chrome version info | 0.1.0 |
-| `registry read` | Read registry value | 0.1.0 |
-| `registry write` | Write registry value | 0.1.0 |
+| `registry get` | Read registry value | 0.1.0 |
+| `registry set` | Write registry value | 0.1.0 |
 | `registry list` | List subkeys/values | 0.1.0 |
 | `registry delete` | Delete key/value | 0.1.0 |
 | `registry search` | Search registry | 0.1.0 |
