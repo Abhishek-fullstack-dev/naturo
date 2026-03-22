@@ -153,31 +153,70 @@ def app_relaunch(ctx, name, wait_until_ready, timeout, json_output):
 
 
 @click.command("list")
+@click.option("--all", "show_all", is_flag=True, help="Show all processes (not just apps with windows)")
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 @click.pass_context
-def app_list(ctx, json_output):
-    """List running applications."""
+def app_list(ctx, show_all, json_output):
+    """List running applications with visible windows.
+
+    By default, only user-facing applications with visible windows are shown.
+    Use --all to include all processes (system services, background tasks).
+    """
     json_output = json_output or (ctx.obj or {}).get("json", False)
 
-    from naturo.process import list_apps
+    if show_all:
+        # Legacy behavior: list all processes via tasklist/ps
+        from naturo.process import list_apps as list_all_processes
+        apps = list_all_processes()
+        if json_output:
+            click.echo(json.dumps({
+                "success": True,
+                "apps": [
+                    {"pid": a.pid, "name": a.name, "path": a.path, "is_running": a.is_running}
+                    for a in apps
+                ],
+                "count": len(apps),
+            }, indent=2))
+        else:
+            if not apps:
+                click.echo("No running processes found")
+            else:
+                for a in apps:
+                    _safe_echo(f"  {a.pid:>8}  {a.name}")
+                click.echo(f"\n{len(apps)} processes")
+        return
 
-    apps = list_apps()
+    # Default: only apps with visible windows (via backend)
+    from naturo.errors import NaturoError
+    try:
+        from naturo.backends.base import get_backend
+        backend = get_backend()
+        apps_data = backend.list_apps()
+    except Exception as exc:
+        if json_output:
+            click.echo(_json_error_str("BACKEND_ERROR", str(exc)))
+        else:
+            _safe_echo(f"Error: {exc}", err=True)
+        sys.exit(1)
+        return
+
     if json_output:
         click.echo(json.dumps({
             "success": True,
-            "apps": [
-                {"pid": a.pid, "name": a.name, "path": a.path, "is_running": a.is_running}
-                for a in apps
-            ],
-            "count": len(apps),
+            "apps": apps_data,
+            "count": len(apps_data),
         }, indent=2))
     else:
-        if not apps:
-            click.echo("No running applications found")
+        if not apps_data:
+            click.echo("No running applications with visible windows found")
         else:
-            for a in apps:
-                _safe_echo(f"  {a.pid:>8}  {a.name}")
-            click.echo(f"\n{len(apps)} applications")
+            for a in apps_data:
+                pid = a.get("pid", "")
+                name = a.get("name", "")
+                title = a.get("title", "")
+                path = a.get("process", a.get("path", ""))
+                _safe_echo(f"  {pid:>8}  {name:<30} {title}")
+            click.echo(f"\n{len(apps_data)} applications")
 
 
 @click.command("hide")

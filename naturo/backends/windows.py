@@ -1219,27 +1219,51 @@ class WindowsBackend(Backend):
             except Exception as exc:
                 raise NaturoError(f"Clipboard write failed: {exc}") from exc
 
-    def list_apps(self) -> list[dict]:
-        """List running applications (non-minimized, visible windows).
+    # System/framework processes to exclude from app list — these have visible
+    # windows but are not user-facing applications.
+    _SYSTEM_PROCESS_NAMES: set[str] = {
+        "applicationframehost.exe", "textinputhost.exe", "shellexperiencehost.exe",
+        "searchhost.exe", "startmenuexperiencehost.exe", "lockapp.exe",
+        "systemsettings.exe", "gamebar.exe", "gamebarftserver.exe",
+        "windowsinternal.composableshell.experiences.textinput.inputapp.exe",
+        "widgets.exe", "widgetservice.exe", "people.exe", "cortana.exe",
+        "secureinput.exe", "dwm.exe", "csrss.exe", "winlogon.exe",
+        "fontdrvhost.exe", "dllhost.exe", "sihost.exe", "ctfmon.exe",
+        "runtimebroker.exe", "backgroundtaskhost.exe", "taskhostw.exe",
+        "smartscreen.exe", "searchui.exe", "shellhost.exe",
+    }
 
-        Returns each unique process as a dict with name, pid, and window title.
+    def list_apps(self) -> list[dict]:
+        """List running applications with visible, non-minimized windows.
+
+        Filters out known system/framework host processes that have visible
+        windows but are not user-facing applications.
 
         Returns:
-            List of dicts with keys: name, pid, title.
+            List of dicts with keys: name, pid, title, path, process.
         """
+        import os
+
         windows = self.list_windows()
         seen_pids: set[int] = set()
         apps: list[dict] = []
         for w in windows:
-            if w.is_visible and not w.is_minimized and w.pid not in seen_pids:
-                seen_pids.add(w.pid)
-                import os
-                apps.append({
-                    "name": os.path.basename(w.process_name),
-                    "pid": w.pid,
-                    "title": w.title,
-                    "process": w.process_name,
-                })
+            if not w.is_visible or w.is_minimized or w.pid in seen_pids:
+                continue
+            basename = os.path.basename(w.process_name).lower()
+            if basename in self._SYSTEM_PROCESS_NAMES:
+                continue
+            # Skip windows with empty titles (likely invisible/utility windows)
+            if not w.title or not w.title.strip():
+                continue
+            seen_pids.add(w.pid)
+            apps.append({
+                "name": os.path.basename(w.process_name),
+                "pid": w.pid,
+                "title": w.title,
+                "path": w.process_name,
+                "process": w.process_name,
+            })
         return apps
 
     def launch_app(self, name: str = "") -> None:

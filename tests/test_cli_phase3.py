@@ -1,5 +1,6 @@
 """CLI integration tests for Phase 3 commands (wait, app, diff)."""
 import json
+import platform
 import pytest
 from unittest.mock import patch
 from click.testing import CliRunner
@@ -329,3 +330,66 @@ class TestGlobalJsonFlag:
         # Should produce JSON error output
         data = json.loads(result.output)
         assert "success" in data
+
+
+class TestAppListFiltering:
+    """Issue #98: app list should filter system processes."""
+
+    def test_app_list_has_all_flag(self, runner):
+        """--all flag is available in app list help."""
+        result = runner.invoke(main, ["app", "list", "--help"])
+        assert result.exit_code == 0
+        assert "--all" in result.output
+
+    def test_system_process_exclusion_list(self):
+        """Windows backend defines system process exclusion set."""
+        if platform.system() != "Windows":
+            pytest.skip("Windows-only backend test")
+        from naturo.backends.windows import WindowsBackend
+        excluded = WindowsBackend._SYSTEM_PROCESS_NAMES
+        # Key system processes should be excluded
+        assert "applicationframehost.exe" in excluded
+        assert "textinputhost.exe" in excluded
+        assert "dwm.exe" in excluded
+        assert "csrss.exe" in excluded
+        # Normal apps should NOT be in the exclusion list
+        assert "notepad.exe" not in excluded
+        assert "chrome.exe" not in excluded
+
+    def test_list_apps_filters_empty_titles(self):
+        """list_apps should skip windows with empty titles."""
+        if platform.system() != "Windows":
+            pytest.skip("Windows-only backend test")
+        from unittest.mock import MagicMock, patch
+        from naturo.backends.windows import WindowsBackend
+
+        backend = WindowsBackend.__new__(WindowsBackend)
+        mock_win_visible = MagicMock()
+        mock_win_visible.is_visible = True
+        mock_win_visible.is_minimized = False
+        mock_win_visible.pid = 100
+        mock_win_visible.process_name = "notepad.exe"
+        mock_win_visible.title = "Untitled - Notepad"
+
+        mock_win_empty = MagicMock()
+        mock_win_empty.is_visible = True
+        mock_win_empty.is_minimized = False
+        mock_win_empty.pid = 200
+        mock_win_empty.process_name = "svchost.exe"
+        mock_win_empty.title = ""
+
+        mock_win_system = MagicMock()
+        mock_win_system.is_visible = True
+        mock_win_system.is_minimized = False
+        mock_win_system.pid = 300
+        mock_win_system.process_name = "ApplicationFrameHost.exe"
+        mock_win_system.title = "Some Frame"
+
+        with patch.object(backend, "list_windows", return_value=[mock_win_visible, mock_win_empty, mock_win_system]):
+            apps = backend.list_apps()
+
+        # Only notepad should survive filtering
+        assert len(apps) == 1
+        assert apps[0]["name"] == "notepad.exe"
+        assert apps[0]["pid"] == 100
+        assert apps[0]["path"] == "notepad.exe"
