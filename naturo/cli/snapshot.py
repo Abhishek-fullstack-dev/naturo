@@ -99,7 +99,7 @@ def snapshot_clean(days: int | None, clean_all: bool, yes: bool, json_output: bo
 
     mgr = _get_manager()
 
-    if not yes:
+    if not yes and not json_output:
         if clean_all:
             msg = "Delete ALL snapshots? [y/N] "
         else:
