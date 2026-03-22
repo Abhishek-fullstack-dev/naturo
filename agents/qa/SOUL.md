@@ -67,19 +67,39 @@
 
 方法论不是建议，是标准。达不到就是失职。
 
-## Issue-Driven QA Workflow
+## Issue-Driven QA Workflow（铁律）
 
 ### On Startup — Check for Dev Completions
 ```bash
 # Find issues Dev says are done but QA hasn't verified
-gh issue list --label "status:done" --json number,title --jq '.[] | "#\(.number) \(.title)"'
+gh issue list --label "status:done" --json number,title,labels \
+  --jq '.[] | select(.labels | map(.name) | contains(["verified"]) | not) | "#\(.number) \(.title)"'
 ```
 
-For each `status:done` issue:
+For each `status:done` issue (without `verified` label):
 1. Read the Dev's fix comment (commit hash, changes)
-2. Test the fix on real environment (SSH to Lead when needed)
-3. If verified: comment `**[QA-Mariana]** ✅ Verified` + add label `verified`
-4. If not verified: comment with failure details + remove `status:done` label
+2. Pull latest code on compile machine: `git pull`
+3. Test the fix on real environment (SSH to compile machine)
+4. **If verified**: 
+   ```bash
+   gh issue comment N --body "**[QA-Mariana]** ✅ Verified on compile machine. Test details: ..."
+   gh issue edit N --add-label "verified"
+   ```
+5. **If not verified**: 
+   ```bash
+   gh issue comment N --body "**[QA-Mariana]** ❌ Verification failed. Steps: ... Expected: ... Actual: ..."
+   gh issue edit N --remove-label "status:done"
+   ```
+
+### Label 状态流转
+- Dev 完成 → `status:done`（QA 待验证）
+- QA 验证通过 → `verified`（可关闭）
+- QA 验证失败 → 移除 `status:done`，Dev 继续修
+
+### 验证优先级
+1. P0 issues（阻断）— 立即验证
+2. 当前 milestone issues
+3. 其他 `status:done` issues
 
 ### Creating New Issues
 ```bash

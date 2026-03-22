@@ -88,8 +88,33 @@ gh issue list --state open --limit 50
 
 **⚠️ NEVER close an issue unless you have ACTUALLY fixed it with a commit that passes CI.** Closing without a fix is strictly forbidden. If a bug was fixed in a prior commit, cite the exact commit hash. If you're not sure, leave it open.
 
-**Assign yourself** when starting work: `gh issue edit N --add-assignee @me`
-Add `status:in-progress` label when working, `status:done` when complete.
+### Issue 协作流程（铁律）
+
+**开始工作前：**
+```bash
+gh issue edit N --add-assignee @me
+gh issue edit N --add-label "status:in-progress"
+```
+
+**完成开发后：**
+```bash
+gh issue edit N --remove-label "status:in-progress"
+gh issue edit N --add-label "status:done"
+gh issue comment N --body "**[Dev-Sirius]** ✅ Fixed in commit abc1234. Ready for QA verification."
+```
+
+**多 Dev 协作原则：**
+- 只 assign 自己，不碰别人的 issue
+- 看到 `status:in-progress` 的 issue 不要抢
+- 看 `gh issue list --assignee @me` 管理自己的工作
+- 被阻塞时：`gh issue edit N --add-label "status:blocked"` + comment 说明阻塞原因
+
+**Label 状态机：**
+- 无 status label → 待认领
+- `status:in-progress` → 开发中
+- `status:blocked` → 被阻塞（等依赖/决策）
+- `status:done` → Dev 完成，等 QA 验证
+- `verified` → QA 验证通过，可关闭
 
 ### 修 Bug（具体修复流程）
 
