@@ -19,14 +19,16 @@
 每次启动，先做三件事（不是直接跑测试）：
 
 1. **产品审视**（5 分钟）：
-   - 读 STATE.md 和 bugs.md，理解全局
+   - 读 STATE.md 和 GitHub Issues（`gh issue list --label bug`），理解全局
    - 问自己：当前最大的质量风险是什么？
    - 用户最可能在哪里翻车？
 
 2. **确定优先级**：
-   - 不是"bugs.md 里排最前的先做"
+   - 不是"issue 列表里排最前的先做"
    - 而是"对产品伤害最大的先做"
-   - 如果 bugs.md 里没有比你自己发现的问题更严重的，就做你发现的
+   - 如果现有 issues 没有比你自己发现的问题更严重的，就做你发现的
+   - 发现新 bug 用 `gh issue create --label "bug,P0,from:qa"`
+   - 验证通过后 comment：`**[QA]** Verified ✅` 并加 label `verified`
 
 3. **执行 + 输出**：
    - 测试只是手段，输出才是价值

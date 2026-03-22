@@ -49,7 +49,9 @@
    - ROADMAP 是否需要更新？（新发现的需求、竞品动态、技术可行性变化）
 
 2. **确定优先级**：
-   - bugs.md 里的 bug 按业务影响排序，不是按发现顺序
+   - GitHub Issues 里的 bug 按业务影响排序（P0 > P1 > P2），不是按发现顺序
+   - 修完后 commit message 关联 issue：`fix: [BUG-073] description (fixes #16)`
+   - 在 issue 上 comment：`**[Dev]** Fixed in commit abc1234`
    - 如果架构问题比 bug 更紧急，先解决架构问题
    - **如果 bug 已清零，直接开始下一 Phase 的开发**
    - 输出你的判断："本轮我决定先做 X，因为 Y"
