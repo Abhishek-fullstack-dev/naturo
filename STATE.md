@@ -56,7 +56,7 @@ Phase 1: 核心功能实现（进展中）
 - ✅ `naturo snapshot list/clean` + `--json`
 - ✅ `naturo record list` + `--json`
 - ✅ `naturo electron detect` + `--json`
-- ✅ `naturo mcp tools` (76 MCP tools)
+- ✅ `naturo mcp tools` (82 MCP tools)
 - ✅ `naturo open <url>` / `open <nonexistent>`
 - ✅ `naturo see/find` (SSH 下 graceful error)
 - ✅ `naturo learn` (topic 列表正确)

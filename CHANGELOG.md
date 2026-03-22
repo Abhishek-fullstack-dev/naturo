@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Clipboard** — Get/set clipboard text and files
 - **Action Recording** — Record and replay user operation sequences
 - **AI Integration** — Vision describe, natural language find, agent command, multi-provider
-- **MCP Server** — 76 tools via stdio/SSE/streamable-http transport
+- **MCP Server** — 82 tools via stdio/SSE/streamable-http transport
 - **npm Package** — `npx naturo mcp` for Node.js ecosystem
 - **JSON Output** — Every command supports `--json` for structured output
 - **macOS Backend** — Full Peekaboo CLI wrapper (40+ methods) for cross-platform support

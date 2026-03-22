@@ -27,7 +27,7 @@ The npm package is a thin wrapper that finds and invokes the Python `naturo` CLI
 - 🖥️ Screen capture & UI tree inspection
 - 🖱️ Click, type, press, scroll, drag
 - 🪟 Window management (focus, close, move, resize)
-- 🤖 MCP server with 76 tools for AI agents
+- 🤖 MCP server with 82 tools for AI agents
 - 🌐 Chrome DevTools Protocol support
 - And much more — see [full documentation](https://github.com/AcePeak/naturo)
 

@@ -1177,7 +1177,7 @@ def learn(topic):
   Tips
   ----
     • MCP server exposes all naturo capabilities as tools
-    • 76 tools covering capture, interaction, system, and more
+    • 82 tools covering capture, interaction, system, and more
     • Use --json output format for reliable LLM parsing
     • AI find works best with descriptive element names""",
         },

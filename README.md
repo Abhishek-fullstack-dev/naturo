@@ -28,7 +28,7 @@
 - 🔧 **Windows Services** — List, start, stop, restart, and query service status
 - ⚡ **Electron/CEF Apps** — Detect, list, launch, and connect to Electron apps (VS Code, Slack, Discord, etc.)
 - 🍎 **macOS Support** — Full Peekaboo CLI wrapper (capture, click, type, window management, and more)
-- 🤖 **AI-Ready** — JSON output, agent-friendly CLI, MCP server (76 tools)
+- 🤖 **AI-Ready** — JSON output, agent-friendly CLI, MCP server (82 tools)
 
 ## System Requirements
 
