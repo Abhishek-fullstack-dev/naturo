@@ -18,7 +18,7 @@
 
 ## 🔴 Open
 
-### BUG-003: 缺少 pyvda 依赖导致虚拟桌面功能不可用（P2）
+### BUG-003: 缺少 pyvda 依赖导致虚拟桌面功能不可用（P2 — 需产品决策）
 **发现日期**: 2026-03-22
 **影响**: Virtual Desktop 命令全部报错
 
@@ -32,40 +32,29 @@ Error: Virtual desktop support requires pyvda. Install: pip install pyvda
 2. 如果是可选功能，应该在 README 中说明
 3. 错误提示已经很清楚，但用户期望 `pip install naturo` 后所有功能开箱即用
 
-### BUG-009: taskbar/tray 全部命令报 `'NaturoCore' object has no attribute 'get_ui_tree'`（P1）
+### BUG-009: taskbar/tray 全部命令报 `'NaturoCore' object has no attribute 'get_ui_tree'`（P1） → 🟢 Fixed
 **发现日期**: 2026-03-22 (Round 4)
+**修复日期**: 2026-03-22 (commit 6a189b3)
 **影响**: taskbar list/click、tray list/click 全部不可用
 **类型**: 功能缺陷
 
-**复现**:
-```
-naturo taskbar list --json → {"success": false, "error": {"code": "UNKNOWN_ERROR", "message": "'NaturoCore' object has no attribute 'get_ui_tree'"}}
-naturo tray list --json → 同上
-naturo taskbar click Chrome --json → 同上
-naturo tray click Volume --json → 同上
-```
+**根因**: 代码调用了不存在的 `core.get_ui_tree()` 方法。NaturoCore 只有 `get_element_tree(hwnd, depth)`。
+**修复**: 使用 `FindWindowW("Shell_TrayWnd")` 定位 taskbar 窗口句柄，再调 `get_element_tree(hwnd, depth)` 获取 UIA 树。Tray 额外检查 `NotifyIconOverflowWindow`。集合方法从 dict 访问改为 ElementInfo dataclass 属性访问。
 
-**分析**: NaturoCore 类缺少 `get_ui_tree` 方法，说明 DLL 没有导出这个函数或 Python 绑定未映射。taskbar/tray 功能的底层实现依赖 UIAutomation 树遍历，该方法未完成。
-
-**建议**: 
-1. 在 NaturoCore 中实现 get_ui_tree 或映射 DLL 导出
-2. 若功能未完成，taskbar/tray 命令应标注"coming soon"或给出更清晰的错误消息
-3. README Quick Start 不应列出不可用的命令
-
-### BUG-010: `learn` 教程引用不存在的命令/参数（P2 - DOC）
+### BUG-010: `learn` 教程引用不存在的命令/参数（P2 - DOC） → 🟢 Fixed
 **发现日期**: 2026-03-22 (Round 4)
+**修复日期**: 2026-03-22 (commit 6a189b3)
 **类型**: 文档不一致
 
-**不一致列表**:
-| learn 教程内容 | 实际情况 |
-|---------------|---------|
-| `naturo snapshot take --path snap.png` | ❌ 无 `snapshot take` 命令，只有 list/clean |
-| `naturo mcp serve` | ❌ 应为 `naturo mcp start` |
-| `naturo agent run "..."` | ❌ 应为 `naturo agent "..."` (无 run 子命令) |
-| `naturo diff --path before.png` | ❌ diff 无 `--path` 参数 (有 --snapshot/--window) |
-| `naturo java list` / `naturo sap list` | ⚠️ 标了 "coming soon" 但命令完全不存在 |
-
-**建议**: learn 内容应与实际 CLI 100% 一致，这是用户学习路径的入口。建议从代码中的 --help 自动生成 learn 内容，避免手工维护的不一致。
+**修复内容**:
+| 原内容 | 修复后 |
+|--------|--------|
+| `naturo snapshot take --path snap.png` | `naturo capture live --path snap.png` |
+| `naturo mcp serve` | `naturo mcp start` |
+| `naturo agent run "..."` | `naturo agent "..."` |
+| `naturo diff --path before.png` | `naturo diff --snapshot ID1 --snapshot ID2` / `--window` |
+| `naturo java list` / `naturo sap list` | 改为"planned"说明文字，不再列出假命令 |
+| MCP config `"args": ["mcp", "serve"]` | `"args": ["mcp", "start"]` |
 
 ### BUG-007: `electron list` 命令挂起不返回（P1） → ✅ Verified
 **发现日期**: 2026-03-22 (Round 3)
@@ -162,16 +151,13 @@ naturo tray click Volume --json → 同上
 **Open 问题**:
 | Bug | 严重度 | 影响 |
 |-----|--------|------|
-| BUG-003 | P2 | pyvda 缺失，desktop 命令不可用 |
-| BUG-007 | P1 | electron list 挂起 |
-| BUG-008 | P2 | learn 内容空洞 |
+| BUG-003 | P2 | pyvda 缺失，desktop 命令不可用（需产品决策） |
 
 **风险评估**:
 | 风险 | 等级 | 说明 |
 |------|------|------|
-| electron list 挂起 | 🔴 高 | 用户可能以为工具卡死 |
 | UI 操作未桌面验证 | 🟡 中等 | click/type/hotkey 等核心功能需桌面 session |
-| learn 体验 | 🟡 中等 | 帮助系统框架在但内容空 |
+| taskbar/tray 需桌面验证 | 🟡 中等 | BUG-009 修复后需实机验证 |
 | pyvda 依赖策略 | 🟢 低 | 错误提示清楚，不阻塞其他功能 |
 
 ---

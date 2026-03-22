@@ -1,8 +1,8 @@
 # Naturo 项目状态
 
-**最后更新**: 2026-03-22 18:35  
+**最后更新**: 2026-03-22 18:40  
 **版本**: 0.1.1 (编译机已部署)  
-**状态**: 🟡 **接近可发布** — BUG-007/008 已验证通过，新发现 BUG-009(P1)/010(P2)
+**状态**: 🟡 **接近可发布** — BUG-009/010 已修复，仅剩 BUG-003(P2 需产品决策)
 
 ---
 
@@ -26,8 +26,8 @@ Phase 1: 核心功能实现（进展中）
 
 ## 待修复问题
 
-### 🔴 BUG-009: taskbar/tray 全部命令报错 `get_ui_tree` 缺失 (P1)
-### 🔴 BUG-010: learn 教程引用 5 个不存在的命令/参数 (P2 - DOC)
+### 🟢 BUG-009: taskbar/tray get_ui_tree 缺失 → Fixed (commit 6a189b3，待 QA 验证)
+### 🟢 BUG-010: learn 教程引用错误 → Fixed (commit 6a189b3，待 QA 验证)
 ### 🔴 BUG-003: pyvda 依赖缺失 (P2，需产品决策)
 
 ---
@@ -63,9 +63,9 @@ Phase 1: 核心功能实现（进展中）
 ## 不可用/有问题功能
 
 - ❌ `naturo desktop *` — pyvda 未安装 (BUG-003)
-- ❌ `naturo taskbar *` / `naturo tray *` — get_ui_tree 未实现 (BUG-009)
+- 🟢 `naturo taskbar *` / `naturo tray *` — 已修复，待桌面验证 (BUG-009)
 - ✅ `naturo electron list` — 已验证修复 (BUG-007)
-- ✅ `naturo learn <topic>` — 内容已充实，但有引用错误 (BUG-008/010)
+- ✅ `naturo learn <topic>` — 内容已充实，引用已修正 (BUG-008/010)
 
 ---
 
@@ -92,7 +92,7 @@ Phase 1: 核心功能实现（进展中）
 
 **已验证命令**: ~30/76 (39%)
 **通过率**: 25/30 (83%)
-**失败**: taskbar/tray 4 命令 get_ui_tree 缺失、desktop 缺依赖
+**失败**: desktop 缺依赖 (pyvda)
 
 ---
 
@@ -114,11 +114,11 @@ Phase 1: 核心功能实现（进展中）
 
 **下一步**:
 1. ~~Dev 修复 electron list 超时问题~~ ✅ 已验证
-2. Dev 修复 taskbar/tray get_ui_tree 缺失 (BUG-009)
-3. Dev 修复 learn 教程引用错误 (BUG-010)
+2. ~~Dev 修复 taskbar/tray get_ui_tree 缺失 (BUG-009)~~ ✅ 已修复
+3. ~~Dev 修复 learn 教程引用错误 (BUG-010)~~ ✅ 已修复
 4. 在有桌面的环境下做 UI 操作完整测试
 5. 决策 pyvda 依赖策略
 
 ---
 
-最后更新: 2026-03-22 18:35 by QA Agent (Round 4)
+最后更新: 2026-03-22 18:40 by Dev Agent (BUG-009/010 修复)
