@@ -986,13 +986,15 @@ def learn(topic):
             "guide": """\
   Mouse
   -----
-    naturo click 500 300                        Click at coordinates (x, y)
-    naturo click 500 300 --button right          Right-click
-    naturo click 500 300 --double               Double-click
-    naturo drag 100 200 400 500                 Drag from (100,200) to (400,500)
-    naturo move 500 300                         Move mouse cursor
+    naturo click --coords 500 300               Click at coordinates (x, y)
+    naturo click --coords 500 300 --right        Right-click
+    naturo click --coords 500 300 --double       Double-click
+    naturo click "Submit"                        Click element by text
+    naturo drag --from-coords 100 200 --to-coords 400 500
+                                                Drag from (100,200) to (400,500)
+    naturo move --coords 500 300                Move mouse cursor
     naturo scroll down                          Scroll down
-    naturo scroll up 5                          Scroll up 5 clicks
+    naturo scroll up --amount 5                 Scroll up 5 clicks
 
   Keyboard
   --------

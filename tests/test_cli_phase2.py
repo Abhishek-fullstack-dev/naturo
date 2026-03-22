@@ -7,6 +7,7 @@ Functional tests that invoke SendInput are Windows-only and guarded by @pytest.m
 from __future__ import annotations
 
 import json
+import os
 import platform
 
 import pytest
@@ -475,6 +476,10 @@ class TestPhase2FunctionalWindows:
 @pytest.mark.skipif(
     platform.system() != "Windows",
     reason="E2E tests require Windows with desktop session",
+)
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true" or os.environ.get("GITHUB_ACTIONS") == "true",
+    reason="Requires interactive desktop session (not available in CI)",
 )
 class TestNotepadAutomation:
     """Phase 2 checkpoint: Can automate Notepad — open, type, save, close."""

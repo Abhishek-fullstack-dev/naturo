@@ -10,6 +10,7 @@ Tests are organized by category:
 from __future__ import annotations
 
 import json
+import os
 import platform
 
 import pytest
@@ -362,6 +363,10 @@ def _window_management_implemented():
 @pytest.mark.skipif(
     platform.system() != "Windows" or not _window_management_implemented(),
     reason="E2E app control tests require Windows with implemented window management methods",
+)
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true" or os.environ.get("GITHUB_ACTIONS") == "true",
+    reason="Requires interactive desktop session (not available in CI)",
 )
 class TestAppLifecycleE2EWindows:
     """T039 – Window lifecycle E2E: launch → appears → close → disappears."""
