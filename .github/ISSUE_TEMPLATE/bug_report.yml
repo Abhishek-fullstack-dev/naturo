@@ -2,46 +2,79 @@ name: Bug Report
 description: Report a bug in naturo
 labels: ["bug"]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Please fill in as much detail as possible.
   - type: dropdown
     id: severity
     attributes:
       label: Severity
       options:
-        - P0 - Blocker
-        - P1 - Major
-        - P2 - Minor
-        - P3 - Enhancement
+        - "P0 - Blocker (core feature broken / intuitive usage fails / wrong data)"
+        - "P1 - Major (non-core broken / useless error message / docs mismatch)"
+        - "P2 - Minor (edge case / format inconsistency)"
+        - "P3 - Enhancement (nice to have)"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Clear, concise description of the bug.
     validations:
       required: true
   - type: textarea
     id: steps
     attributes:
       label: Steps to Reproduce
+      description: Exact commands to reproduce the issue.
       placeholder: |
-        1. Run `naturo xxx`
-        2. ...
-    validations:
-      required: true
-  - type: textarea
-    id: actual
-    attributes:
-      label: Actual Result
+        ```bash
+        naturo capture live --path screen.png
+        # Check output image dimensions
+        ```
     validations:
       required: true
   - type: textarea
     id: expected
     attributes:
-      label: Expected Result
+      label: Expected Behavior
+      description: What should happen?
     validations:
       required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happens? Include error messages, wrong values, etc.
+    validations:
+      required: true
+  - type: textarea
+    id: root_cause
+    attributes:
+      label: Root Cause Analysis (optional)
+      description: If you have insight into why this happens, share it here.
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: How many users are affected? How severe is the impact?
+      placeholder: "e.g., Affects all users with high-DPI screens (35%+ of Windows users)"
+  - type: textarea
+    id: proposed_solution
+    attributes:
+      label: Proposed Solution (optional)
+      description: Suggested fix approach, alternatives, or references.
   - type: textarea
     id: environment
     attributes:
       label: Environment
+      description: Your test environment details.
       placeholder: |
         - OS: Windows 11
         - Python: 3.14
         - naturo version: 0.1.1
-        - Screen: 3840x2160 150% DPI
+        - Screen: 3840x2160, 150% DPI
     validations:
       required: true

@@ -18,9 +18,40 @@
 
 ## 🔴 Open
 
-### BUG-012: `learn interaction` 教程多处命令语法错误（P2 - DOC） → 🟢 Fixed
+### BUG-013: `service list --state running` 返回 0 结果（P1 - 功能缺陷） 🔴 Open
+**发现日期**: 2026-03-22 (Round 7)
+**类型**: 功能缺陷
+
+**问题**: `naturo service list --state running` 返回空结果，而实际有 141 个活跃服务。`--state stopped` 和默认（无过滤）都正常。
+
+**根因**: `naturo/service.py` 第 165 行，当 `state == "running"` 时设置 `sc_state = "active"`，但 `sc.exe queryex` 不接受 `state= active`（error 87: 无效字段）。`sc.exe` 的有效 state 值只有 `all` 和 `inactive`。默认不传 state 参数即返回活跃服务。
+
+**复现**:
+```
+> naturo service list --state running
+No running services found.
+
+> naturo service list --state running --json
+{"success": true, "services": [], "count": 0}
+```
+
+**修复建议**: 当 `state == "running"` 时，不传 `state=` 参数（使用 sc.exe 默认行为，即只返回运行中的服务）：
+```python
+if state == "running":
+    # sc.exe default (no state= arg) returns only active/running services
+    result = _run_sc("queryex", "type=", "service")
+elif state == "stopped":
+    result = _run_sc("queryex", "type=", "service", "state=", "inactive")
+else:
+    result = _run_sc("queryex", "type=", "service", "state=", "all")
+```
+
+---
+
+### BUG-012: `learn interaction` 教程多处命令语法错误（P2 - DOC） → ✅ Verified
 **发现日期**: 2026-03-22 (Round 6)
 **修复日期**: 2026-03-22 (commit cb4cb2e)
+**验证日期**: 2026-03-22 (Round 7)
 **类型**: 文档不一致
 
 **问题**: `naturo learn interaction` 显示的命令示例与实际 CLI 不符：
@@ -57,9 +88,15 @@ Error: Got unexpected extra argument (5)
 - `scroll up 5` → `scroll up --amount 5`
 - 新增 `click "Submit"` 文本点击示例
 
+**Round 7 验证**: ✅ 通过 — 所有修正后的命令语法在编译机上验证：
+- `naturo click --coords 500 300 --json` → 接受（COM error 是 SSH 预期行为）
+- `naturo scroll up --amount 5 --json` → 接受
+- `naturo move --coords 500 300 --json` → 接受
+- `naturo drag --from-coords 100 200 --to-coords 400 500 --json` → 接受
+
 ---
 
-### BUG-011: `learn capture` 引用不存在的 `--region` 参数（P2 - DOC） → 🟢 Fixed (未部署)
+### BUG-011: `learn capture` 引用不存在的 `--region` 参数（P2 - DOC） → ✅ Verified
 **发现日期**: 2026-03-22 (Round 5)
 **修复日期**: 2026-03-22 (commit 71a1217)
 **类型**: 文档不一致
@@ -67,7 +104,7 @@ Error: Got unexpected extra argument (5)
 **根因**: learn capture 教程引用了 `--region` 参数，但 `capture live` 实际支持的是 `--app`、`--window-title`、`--hwnd`、`--screen`。
 **修复**: 将 `--region 0,0,800,600` 示例替换为 `--app "Notepad"`，将 tip 中的 `--region` 替换为 `--app` / `--window-title`。
 
-**Round 6 验证**: ❌ 未通过 — 编译机仍为 commit a32c33c，修复 commit 71a1217 未部署。learn capture 仍显示 `--region`。需要部署最新代码后重新验证。
+**Round 7 验证**: ✅ 通过 — 编译机已更新到 7301bf1。`learn capture` 不再引用 `--region`，改为 `--app "Notepad"` 和 `--app` / `--window-title` tips。
 
 ---
 
