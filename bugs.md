@@ -32,35 +32,20 @@ Error: Virtual desktop support requires pyvda. Install: pip install pyvda
 2. 如果是可选功能，应该在 README 中说明
 3. 错误提示已经很清楚，但用户期望 `pip install naturo` 后所有功能开箱即用
 
-### BUG-007: `electron list` 命令挂起不返回（P1）
+### BUG-007: `electron list` 命令挂起不返回（P1） → 🟢 Fixed
 **发现日期**: 2026-03-22 (Round 3)
+**修复日期**: 2026-03-22 (commit bfe0509)
 **影响**: 用户执行 `naturo electron list` 后命令永不退出，必须 Ctrl+C
 
-**复现步骤**:
-```bash
-naturo electron list --json
-# 等待 >30 秒无任何输出
-```
+**根因**: `list_electron_apps()` 对每个 PID 分别调 `wmic`（2 次 × 5s 超时），进程多时累积延迟达分钟级。
+**修复**: 新增 `_bulk_get_process_info()` 单次 `wmic` 调用批量获取所有进程的 CommandLine 和 ExecutablePath（CSV 格式，15s 总超时）。`_is_electron_process()` 和 `_find_debug_port_from_cmdline()` 支持接收预取数据，避免逐个 subprocess。
 
-**预期**: 应在合理时间内（<5 秒）返回结果，即使没有发现 Electron app
-**对比**: `naturo electron detect msedge` 正常返回（~2 秒）
-
-**分析**: 可能是在扫描大量进程时对每个进程进行 CDP 端口探测导致超时累积。需要加总超时或并发控制。
-
-### BUG-008: `learn <topic>` 只返回一句话描述，无实际教程内容（P2 - UX）
+### BUG-008: `learn <topic>` 只返回一句话描述，无实际教程内容（P2 - UX） → 🟢 Fixed
 **发现日期**: 2026-03-22 (Round 3)
+**修复日期**: 2026-03-22 (commit bfe0509)
 **影响**: 用户期望 `naturo learn capture` 返回详细用法指导，实际只返回一句话
 
-**复现**:
-```bash
-$ naturo learn capture
-capture: Capture screenshots, video, or watch for changes.
-$ naturo learn interaction  
-interaction: Click, type, press, hotkey, scroll, drag, move, paste.
-```
-
-**预期**: 每个 topic 应包含：常用命令示例、参数说明、使用场景
-**现实**: 只有命令组的一句描述，和 `--help` 的 description 完全一样
+**修复**: 每个 topic 现在包含分类命令示例、使用模式和 Tips。6 个 topic 共计 ~150 行实用内容。
 
 ---
 

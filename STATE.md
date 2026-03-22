@@ -1,8 +1,8 @@
 # Naturo 项目状态
 
-**最后更新**: 2026-03-22 18:10  
+**最后更新**: 2026-03-22 18:17  
 **版本**: 0.1.1 (编译机已部署)  
-**状态**: 🟡 **接近可发布** — 核心功能稳定，文档修复已验证
+**状态**: 🟡 **接近可发布** — BUG-007/008 已修复，仅剩 BUG-003 待决策
 
 ---
 
@@ -24,8 +24,8 @@ Phase 1: 核心功能实现（进展中）
 
 ## 待修复问题
 
-### 🔴 BUG-007: `electron list` 命令挂起不返回 (P1)
-### 🔴 BUG-008: `learn <topic>` 内容空洞，只有一句话 (P2)
+### 🟢 BUG-007: `electron list` 挂起 → 已修复 (bfe0509)
+### 🟢 BUG-008: `learn <topic>` 内容空洞 → 已修复 (bfe0509)
 ### 🔴 BUG-003: pyvda 依赖缺失 (P2，需产品决策)
 
 ---
@@ -61,8 +61,8 @@ Phase 1: 核心功能实现（进展中）
 ## 不可用/有问题功能
 
 - ❌ `naturo desktop *` — pyvda 未安装 (BUG-003)
-- ❌ `naturo electron list` — 命令挂起 (BUG-007)
-- ⚠️ `naturo learn <topic>` — 只返回一句话 (BUG-008)
+- ✅ `naturo electron list` — 已修复挂起问题 (BUG-007, bfe0509)
+- ✅ `naturo learn <topic>` — 已充实教程内容 (BUG-008, bfe0509)
 
 ---
 
@@ -105,14 +105,14 @@ Phase 1: 核心功能实现（进展中）
 - ✅ 错误信息结构化且友好
 
 **发布前必须**:
-- 🔲 BUG-007 (electron list 挂起) 修复
+- ✅ BUG-007 (electron list 挂起) 已修复
 - 🔲 核心命令桌面 session 验证
 - 🔲 pyvda 依赖策略确定
 
 **下一步**:
-1. Dev 修复 electron list 超时问题
+1. ~~Dev 修复 electron list 超时问题~~ ✅ 已修复
 2. 在有桌面的环境下做 UI 操作完整测试
-3. 充实 learn 教程内容
+3. ~~充实 learn 教程内容~~ ✅ 已修复
 4. 决策 pyvda 依赖策略
 
 ---
