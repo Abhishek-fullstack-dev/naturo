@@ -454,6 +454,66 @@ def create_server(host: str = "localhost", port: int = 3100) -> FastMCP:
         backend.focus_window(hwnd=target.handle)
         return {"success": True, "action": "switch", "app": name, "window_title": target.title, "handle": target.handle}
 
+    @server.tool()
+    @_safe_tool
+    def app_inspect(
+        name: Optional[str] = None,
+        pid: Optional[int] = None,
+        quick: bool = False,
+    ) -> dict:
+        """Probe an application to detect its UI framework and available interaction methods.
+
+        Detects which UI framework the app uses (Electron, WPF, Qt, Java, etc.)
+        and which interaction methods are available (CDP, UIA, MSAA, JAB, IA2, Vision).
+        Returns a recommended interaction method.
+
+        Args:
+            name: Application name (partial match). Either name or pid required.
+            pid: Process ID to inspect directly.
+            quick: If True, stop probing at first available method (faster).
+
+        Returns:
+            Detection result with frameworks, methods, and recommendation.
+        """
+        from naturo.detect import detect
+
+        target_pid = pid
+        target_exe = ""
+        target_name = name or ""
+
+        if name and not pid:
+            from naturo.process import find_process
+            proc = find_process(name=name)
+            if not proc:
+                return {
+                    "success": False,
+                    "error": {
+                        "code": "PROCESS_NOT_FOUND",
+                        "message": f"No running process found matching '{name}'",
+                    },
+                }
+            target_pid = proc.pid
+            target_exe = proc.path or ""
+            target_name = proc.name or name
+
+        if target_pid is None:
+            return {
+                "success": False,
+                "error": {
+                    "code": "INVALID_INPUT",
+                    "message": "Specify application name or pid",
+                },
+            }
+
+        result = detect(
+            pid=target_pid,
+            exe=target_exe,
+            app_name=target_name,
+            use_cache=True,
+            quick=quick,
+        )
+        return {"success": True, **result.to_dict()}
+
     # ── UI Inspection ───────────────────────────
 
     @server.tool()
