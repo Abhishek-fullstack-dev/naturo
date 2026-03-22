@@ -18,6 +18,16 @@
 
 ## 🔴 Open
 
+### BUG-011: `learn capture` 引用不存在的 `--region` 参数（P2 - DOC） → 🟢 Fixed
+**发现日期**: 2026-03-22 (Round 5)
+**修复日期**: 2026-03-22 (commit 71a1217)
+**类型**: 文档不一致
+
+**根因**: learn capture 教程引用了 `--region` 参数，但 `capture live` 实际支持的是 `--app`、`--window-title`、`--hwnd`、`--screen`。
+**修复**: 将 `--region 0,0,800,600` 示例替换为 `--app "Notepad"`，将 tip 中的 `--region` 替换为 `--app` / `--window-title`。
+
+---
+
 ### BUG-003: 缺少 pyvda 依赖导致虚拟桌面功能不可用（P2 — 需产品决策）
 **发现日期**: 2026-03-22
 **影响**: Virtual Desktop 命令全部报错
@@ -32,7 +42,7 @@ Error: Virtual desktop support requires pyvda. Install: pip install pyvda
 2. 如果是可选功能，应该在 README 中说明
 3. 错误提示已经很清楚，但用户期望 `pip install naturo` 后所有功能开箱即用
 
-### BUG-009: taskbar/tray 全部命令报 `'NaturoCore' object has no attribute 'get_ui_tree'`（P1） → 🟢 Fixed
+### BUG-009: taskbar/tray 全部命令报 `'NaturoCore' object has no attribute 'get_ui_tree'`（P1） → ✅ Verified
 **发现日期**: 2026-03-22 (Round 4)
 **修复日期**: 2026-03-22 (commit 6a189b3)
 **影响**: taskbar list/click、tray list/click 全部不可用
@@ -41,7 +51,13 @@ Error: Virtual desktop support requires pyvda. Install: pip install pyvda
 **根因**: 代码调用了不存在的 `core.get_ui_tree()` 方法。NaturoCore 只有 `get_element_tree(hwnd, depth)`。
 **修复**: 使用 `FindWindowW("Shell_TrayWnd")` 定位 taskbar 窗口句柄，再调 `get_element_tree(hwnd, depth)` 获取 UIA 树。Tray 额外检查 `NotifyIconOverflowWindow`。集合方法从 dict 访问改为 ElementInfo dataclass 属性访问。
 
-### BUG-010: `learn` 教程引用不存在的命令/参数（P2 - DOC） → 🟢 Fixed
+**验证日期**: 2026-03-22 (Round 5)
+**验证结果**: ✅ 通过
+- `naturo taskbar list --json` → 返回合法 JSON `{"success": true, "items": [], "count": 0}`（SSH 下空结果是预期行为）
+- `naturo tray list --json` → 返回合法 JSON `{"success": true, "icons": [], "count": 0}`
+- 不再报 `get_ui_tree` 错误
+
+### BUG-010: `learn` 教程引用不存在的命令/参数（P2 - DOC） → ✅ Verified (部分遗漏见 BUG-011)
 **发现日期**: 2026-03-22 (Round 4)
 **修复日期**: 2026-03-22 (commit 6a189b3)
 **类型**: 文档不一致
@@ -55,6 +71,15 @@ Error: Virtual desktop support requires pyvda. Install: pip install pyvda
 | `naturo diff --path before.png` | `naturo diff --snapshot ID1 --snapshot ID2` / `--window` |
 | `naturo java list` / `naturo sap list` | 改为"planned"说明文字，不再列出假命令 |
 | MCP config `"args": ["mcp", "serve"]` | `"args": ["mcp", "start"]` |
+
+**验证日期**: 2026-03-22 (Round 5)
+**验证结果**: ✅ 主要修复通过
+- `learn capture` → 引用 `capture live --path snap.png` ✅
+- `learn capture` → `diff --snapshot ID1 --snapshot ID2` ✅
+- `learn ai` → MCP config `"args": ["mcp", "start"]` ✅
+- `learn ai` → `naturo agent "..."` ✅
+- `learn extensions` → java/sap 标为 "planned" ✅
+- ⚠️ `learn capture` 仍引用 `--region` 参数（实际不存在），见 BUG-011
 
 ### BUG-007: `electron list` 命令挂起不返回（P1） → ✅ Verified
 **发现日期**: 2026-03-22 (Round 3)
