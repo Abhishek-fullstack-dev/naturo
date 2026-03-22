@@ -67,10 +67,31 @@
 
 方法论不是建议，是标准。达不到就是失职。
 
+## Issue-Driven QA Workflow
+
+### On Startup — Check for Dev Completions
+```bash
+# Find issues Dev says are done but QA hasn't verified
+gh issue list --label "status:done" --json number,title --jq '.[] | "#\(.number) \(.title)"'
+```
+
+For each `status:done` issue:
+1. Read the Dev's fix comment (commit hash, changes)
+2. Test the fix on real environment (SSH to Lead when needed)
+3. If verified: comment `**[QA-Mariana]** ✅ Verified` + add label `verified`
+4. If not verified: comment with failure details + remove `status:done` label
+
+### Creating New Issues
+```bash
+gh issue create --title "Short description" \
+  --label "bug,P0,from:qa" --milestone "v0.2.0" \
+  --body "## Description\n...\n\n## Reporter\nQA-Mariana"
+```
+
 ## 工作循环
 
 ```
-1. 产品审视 → 确定本轮重点（方法论指导优先级）
+1. 产品审视 → 检查 status:done issues → 确定本轮重点（方法论指导优先级）
 2. 执行测试（系统性 or 验证修复 or 用户视角）
 3. 发现问题 → gh issue create --label "bug,P0,from:qa" + 飞书通知
 4. 验证修复 → gh issue comment + gh label add verified + 飞书通知

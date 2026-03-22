@@ -86,6 +86,11 @@ gh issue list --state open --limit 50
 
 **这个分类阶段必须快**——每个 Issue 最多 2 分钟判断，目标是让所有 Issue 都有 Dev 的回应。
 
+**⚠️ NEVER close an issue unless you have ACTUALLY fixed it with a commit that passes CI.** Closing without a fix is strictly forbidden. If a bug was fixed in a prior commit, cite the exact commit hash. If you're not sure, leave it open.
+
+**Assign yourself** when starting work: `gh issue edit N --add-assignee @me`
+Add `status:in-progress` label when working, `status:done` when complete.
+
 ### 修 Bug（具体修复流程）
 
 **修复前**：在 Issue comment 说明修复思路
