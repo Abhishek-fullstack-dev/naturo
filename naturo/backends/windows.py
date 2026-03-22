@@ -1707,88 +1707,65 @@ class WindowsBackend(Backend):
 
     # === Taskbar (Phase 4.5.4) ===
 
-    def _find_taskbar(self) -> Optional[BaseElementInfo]:
-        """Find the Windows taskbar UIA element.
+    @staticmethod
+    def _find_taskbar_hwnd() -> int:
+        """Find the Windows taskbar window handle via FindWindowW.
 
         Returns:
-            ElementInfo for the taskbar, or None if not found.
+            HWND of the taskbar (Shell_TrayWnd), or 0 if not found.
         """
-        core = self._ensure_core()
-        # The desktop root contains the taskbar as a direct child
-        root = core.get_ui_tree(depth=2)
-        if root is None:
-            return None
-
-        for child in (root.get("children") or []):
-            class_name = (child.get("class_name") or child.get("properties", {}).get("class_name", "")).lower()
-            name = (child.get("name") or "").lower()
-            if "shell_traywnd" in class_name or "taskbar" in name:
-                return child
-
-        return None
+        import ctypes
+        return ctypes.windll.user32.FindWindowW("Shell_TrayWnd", None) or 0
 
     def taskbar_list(self) -> list[dict]:
         """List items on the Windows taskbar.
 
-        Enumerates taskbar buttons using UIAutomation. Each button
-        represents a running application or pinned shortcut.
+        Finds the taskbar window by its well-known class name
+        (Shell_TrayWnd), inspects its UIA element tree, and collects
+        all Button elements — these correspond to running applications
+        and pinned shortcuts.
 
         Returns:
             List of dicts with keys: name, hwnd, is_active, is_pinned, x, y,
             width, height.
         """
         core = self._ensure_core()
-        # Use UIA to find the taskbar running apps area
-        tree = core.get_ui_tree(depth=5)
+        hwnd = self._find_taskbar_hwnd()
+        if hwnd == 0:
+            return []
+
+        tree = core.get_element_tree(hwnd=hwnd, depth=5)
         if tree is None:
             return []
 
-        items = []
+        items: list[dict] = []
         self._collect_taskbar_buttons(tree, items)
         return items
 
-    def _collect_taskbar_buttons(self, element: dict, items: list) -> None:
-        """Recursively collect taskbar button elements.
+    def _collect_taskbar_buttons(self, element: BaseElementInfo, items: list) -> None:
+        """Recursively collect taskbar button elements from ElementInfo tree.
 
         Args:
-            element: UIA element dict.
+            element: ElementInfo node from get_element_tree.
             items: Accumulator list.
         """
-        class_name = (
-            element.get("class_name")
-            or element.get("properties", {}).get("class_name", "")
-        ).lower()
-        role = (element.get("role") or "").lower()
-        name = element.get("name") or ""
+        role = (element.role or "").lower()
+        name = element.name or ""
 
-        # MSTaskListWClass or MSTaskSwWClass is the task list
-        is_task_area = "mstasklistwclass" in class_name or "mstaskswwclass" in class_name
-
+        # Taskbar buttons are Button elements with a non-empty name
         if role == "button" and name:
-            # Check if inside a taskbar area
-            props = element.get("properties", {})
-            parent_class = (props.get("parent_class", "")).lower()
-            bounds = element.get("bounds") or {}
+            items.append({
+                "name": name,
+                "hwnd": 0,
+                "is_active": False,
+                "is_pinned": False,
+                "x": element.x,
+                "y": element.y,
+                "width": element.width,
+                "height": element.height,
+            })
 
-            # Taskbar buttons have specific class patterns
-            if (
-                "mstasklistwclass" in parent_class
-                or "mstaskswwclass" in parent_class
-                or "taskbar" in class_name
-                or is_task_area
-            ):
-                items.append({
-                    "name": name,
-                    "hwnd": element.get("hwnd", 0),
-                    "is_active": bool(props.get("is_focused", False)),
-                    "is_pinned": False,  # Cannot reliably determine from UIA alone
-                    "x": bounds.get("x", 0),
-                    "y": bounds.get("y", 0),
-                    "width": bounds.get("width", 0),
-                    "height": bounds.get("height", 0),
-                })
-
-        for child in (element.get("children") or []):
+        for child in element.children:
             self._collect_taskbar_buttons(child, items)
 
     def taskbar_click(self, name: str) -> dict:
@@ -1840,58 +1817,60 @@ class WindowsBackend(Backend):
     def tray_list(self) -> list[dict]:
         """List system tray (notification area) icons.
 
-        Enumerates tray icons using UIAutomation on the notification area
-        and overflow panel.
+        Finds the taskbar window (Shell_TrayWnd) and inspects its UIA
+        element tree at depth 6 to locate notification area icons.
+        Also checks the overflow panel (NotifyIconOverflowWindow).
 
         Returns:
             List of dicts with keys: name, tooltip, is_visible, x, y, width,
             height.
         """
-        core = self._ensure_core()
-        tree = core.get_ui_tree(depth=6)
-        if tree is None:
-            return []
+        import ctypes
 
-        icons = []
-        self._collect_tray_icons(tree, icons)
+        core = self._ensure_core()
+        icons: list[dict] = []
+
+        # Primary notification area is inside the taskbar
+        taskbar_hwnd = self._find_taskbar_hwnd()
+        if taskbar_hwnd:
+            tree = core.get_element_tree(hwnd=taskbar_hwnd, depth=6)
+            if tree is not None:
+                self._collect_tray_icons(tree, icons)
+
+        # Overflow panel is a separate top-level window
+        overflow_hwnd = ctypes.windll.user32.FindWindowW(
+            "NotifyIconOverflowWindow", None
+        ) or 0
+        if overflow_hwnd:
+            overflow_tree = core.get_element_tree(hwnd=overflow_hwnd, depth=4)
+            if overflow_tree is not None:
+                self._collect_tray_icons(overflow_tree, icons)
+
         return icons
 
-    def _collect_tray_icons(self, element: dict, icons: list) -> None:
-        """Recursively collect system tray icon elements.
+    def _collect_tray_icons(self, element: BaseElementInfo, icons: list) -> None:
+        """Recursively collect system tray icon elements from ElementInfo tree.
 
         Args:
-            element: UIA element dict.
+            element: ElementInfo node from get_element_tree.
             icons: Accumulator list.
         """
-        class_name = (
-            element.get("class_name")
-            or element.get("properties", {}).get("class_name", "")
-        ).lower()
-        role = (element.get("role") or "").lower()
-        name = element.get("name") or ""
+        role = (element.role or "").lower()
+        name = element.name or ""
 
-        # Notification area class names
-        is_tray_area = (
-            "toolbarwindow32" in class_name
-            or "shelltraywnd" in class_name
-            or "notifyiconoverflowwindow" in class_name
-            or "systray_notifyiconarea" in class_name
-        )
-
-        if role == "button" and name and is_tray_area:
-            props = element.get("properties", {})
-            bounds = element.get("bounds") or {}
+        # Tray icons appear as Button elements with a name
+        if role == "button" and name:
             icons.append({
                 "name": name,
-                "tooltip": props.get("help_text", name),
-                "is_visible": bool(bounds.get("width", 0) > 0),
-                "x": bounds.get("x", 0),
-                "y": bounds.get("y", 0),
-                "width": bounds.get("width", 0),
-                "height": bounds.get("height", 0),
+                "tooltip": name,
+                "is_visible": bool(element.width > 0),
+                "x": element.x,
+                "y": element.y,
+                "width": element.width,
+                "height": element.height,
             })
 
-        for child in (element.get("children") or []):
+        for child in element.children:
             self._collect_tray_icons(child, icons)
 
     def tray_click(

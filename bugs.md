@@ -32,20 +32,60 @@ Error: Virtual desktop support requires pyvda. Install: pip install pyvda
 2. 如果是可选功能，应该在 README 中说明
 3. 错误提示已经很清楚，但用户期望 `pip install naturo` 后所有功能开箱即用
 
-### BUG-007: `electron list` 命令挂起不返回（P1） → 🟢 Fixed
+### BUG-009: taskbar/tray 全部命令报 `'NaturoCore' object has no attribute 'get_ui_tree'`（P1）
+**发现日期**: 2026-03-22 (Round 4)
+**影响**: taskbar list/click、tray list/click 全部不可用
+**类型**: 功能缺陷
+
+**复现**:
+```
+naturo taskbar list --json → {"success": false, "error": {"code": "UNKNOWN_ERROR", "message": "'NaturoCore' object has no attribute 'get_ui_tree'"}}
+naturo tray list --json → 同上
+naturo taskbar click Chrome --json → 同上
+naturo tray click Volume --json → 同上
+```
+
+**分析**: NaturoCore 类缺少 `get_ui_tree` 方法，说明 DLL 没有导出这个函数或 Python 绑定未映射。taskbar/tray 功能的底层实现依赖 UIAutomation 树遍历，该方法未完成。
+
+**建议**: 
+1. 在 NaturoCore 中实现 get_ui_tree 或映射 DLL 导出
+2. 若功能未完成，taskbar/tray 命令应标注"coming soon"或给出更清晰的错误消息
+3. README Quick Start 不应列出不可用的命令
+
+### BUG-010: `learn` 教程引用不存在的命令/参数（P2 - DOC）
+**发现日期**: 2026-03-22 (Round 4)
+**类型**: 文档不一致
+
+**不一致列表**:
+| learn 教程内容 | 实际情况 |
+|---------------|---------|
+| `naturo snapshot take --path snap.png` | ❌ 无 `snapshot take` 命令，只有 list/clean |
+| `naturo mcp serve` | ❌ 应为 `naturo mcp start` |
+| `naturo agent run "..."` | ❌ 应为 `naturo agent "..."` (无 run 子命令) |
+| `naturo diff --path before.png` | ❌ diff 无 `--path` 参数 (有 --snapshot/--window) |
+| `naturo java list` / `naturo sap list` | ⚠️ 标了 "coming soon" 但命令完全不存在 |
+
+**建议**: learn 内容应与实际 CLI 100% 一致，这是用户学习路径的入口。建议从代码中的 --help 自动生成 learn 内容，避免手工维护的不一致。
+
+### BUG-007: `electron list` 命令挂起不返回（P1） → ✅ Verified
 **发现日期**: 2026-03-22 (Round 3)
 **修复日期**: 2026-03-22 (commit bfe0509)
-**影响**: 用户执行 `naturo electron list` 后命令永不退出，必须 Ctrl+C
+**验证日期**: 2026-03-22 (Round 4)
 
-**根因**: `list_electron_apps()` 对每个 PID 分别调 `wmic`（2 次 × 5s 超时），进程多时累积延迟达分钟级。
-**修复**: 新增 `_bulk_get_process_info()` 单次 `wmic` 调用批量获取所有进程的 CommandLine 和 ExecutablePath（CSV 格式，15s 总超时）。`_is_electron_process()` 和 `_find_debug_port_from_cmdline()` 支持接收预取数据，避免逐个 subprocess。
+**验证结果**: ✅ 通过
+- `naturo electron list --json` → 几秒内返回合法 JSON，发现 3 个 Electron 应用 (msedge, naturo, msedgewebview2)
+- 不再挂起
 
-### BUG-008: `learn <topic>` 只返回一句话描述，无实际教程内容（P2 - UX） → 🟢 Fixed
+### BUG-008: `learn <topic>` 只返回一句话描述，无实际教程内容（P2 - UX） → ✅ Verified
 **发现日期**: 2026-03-22 (Round 3)
 **修复日期**: 2026-03-22 (commit bfe0509)
-**影响**: 用户期望 `naturo learn capture` 返回详细用法指导，实际只返回一句话
+**验证日期**: 2026-03-22 (Round 4)
 
-**修复**: 每个 topic 现在包含分类命令示例、使用模式和 Tips。6 个 topic 共计 ~150 行实用内容。
+**验证结果**: ✅ 通过
+- 6 个 topic 全部验证：capture、interaction、system、windows、extensions、ai
+- 每个 topic 包含分类命令示例、使用模式和 Tips
+- 内容丰富实用（capture ~25 行，interaction ~20 行，system ~25 行）
+- ⚠️ 但发现部分命令引用不正确（见 BUG-010）
 
 ---
 

@@ -1,8 +1,8 @@
 # Naturo 项目状态
 
-**最后更新**: 2026-03-22 18:17  
+**最后更新**: 2026-03-22 18:35  
 **版本**: 0.1.1 (编译机已部署)  
-**状态**: 🟡 **接近可发布** — BUG-007/008 已修复，仅剩 BUG-003 待决策
+**状态**: 🟡 **接近可发布** — BUG-007/008 已验证通过，新发现 BUG-009(P1)/010(P2)
 
 ---
 
@@ -19,13 +19,15 @@ Phase 1: 核心功能实现（进展中）
 ### ✅ BUG-004: README `press "ctrl+s"` → `hotkey ctrl+s` → 已修复验证 (v0.1.1)
 ### ✅ BUG-005: `app quit` 支持位置参数 → 已修复验证 (v0.1.1)
 ### ✅ BUG-006: scroll 支持位置参数 → 已修复验证 (v0.1.1)
+### ✅ BUG-007: `electron list` 挂起 → 已验证通过 (Round 4)
+### ✅ BUG-008: `learn <topic>` 内容空洞 → 已验证通过 (Round 4)
 
 ---
 
 ## 待修复问题
 
-### 🟢 BUG-007: `electron list` 挂起 → 已修复 (bfe0509)
-### 🟢 BUG-008: `learn <topic>` 内容空洞 → 已修复 (bfe0509)
+### 🔴 BUG-009: taskbar/tray 全部命令报错 `get_ui_tree` 缺失 (P1)
+### 🔴 BUG-010: learn 教程引用 5 个不存在的命令/参数 (P2 - DOC)
 ### 🔴 BUG-003: pyvda 依赖缺失 (P2，需产品决策)
 
 ---
@@ -61,8 +63,9 @@ Phase 1: 核心功能实现（进展中）
 ## 不可用/有问题功能
 
 - ❌ `naturo desktop *` — pyvda 未安装 (BUG-003)
-- ✅ `naturo electron list` — 已修复挂起问题 (BUG-007, bfe0509)
-- ✅ `naturo learn <topic>` — 已充实教程内容 (BUG-008, bfe0509)
+- ❌ `naturo taskbar *` / `naturo tray *` — get_ui_tree 未实现 (BUG-009)
+- ✅ `naturo electron list` — 已验证修复 (BUG-007)
+- ✅ `naturo learn <topic>` — 内容已充实，但有引用错误 (BUG-008/010)
 
 ---
 
@@ -87,9 +90,9 @@ Phase 1: 核心功能实现（进展中）
 
 ## 测试覆盖
 
-**已验证命令**: ~25/76 (33%)
-**通过率**: 22/25 (88%)
-**失败**: electron list 挂起、learn 内容空、desktop 缺依赖
+**已验证命令**: ~30/76 (39%)
+**通过率**: 25/30 (83%)
+**失败**: taskbar/tray 4 命令 get_ui_tree 缺失、desktop 缺依赖
 
 ---
 
@@ -110,11 +113,12 @@ Phase 1: 核心功能实现（进展中）
 - 🔲 pyvda 依赖策略确定
 
 **下一步**:
-1. ~~Dev 修复 electron list 超时问题~~ ✅ 已修复
-2. 在有桌面的环境下做 UI 操作完整测试
-3. ~~充实 learn 教程内容~~ ✅ 已修复
-4. 决策 pyvda 依赖策略
+1. ~~Dev 修复 electron list 超时问题~~ ✅ 已验证
+2. Dev 修复 taskbar/tray get_ui_tree 缺失 (BUG-009)
+3. Dev 修复 learn 教程引用错误 (BUG-010)
+4. 在有桌面的环境下做 UI 操作完整测试
+5. 决策 pyvda 依赖策略
 
 ---
 
-最后更新: 2026-03-22 18:10 by QA Agent (Round 3)
+最后更新: 2026-03-22 18:35 by QA Agent (Round 4)
