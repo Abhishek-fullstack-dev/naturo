@@ -18,33 +18,16 @@
 
 ## 🔴 Open
 
-### BUG-013: `service list --state running` 返回 0 结果（P1 - 功能缺陷） 🔴 Open
+(No open bugs)
+
+---
+
+### BUG-013: `service list --state running` 返回 0 结果（P1 - 功能缺陷） → 🟢 Fixed
 **发现日期**: 2026-03-22 (Round 7)
+**修复日期**: 2026-03-22 (commit ed454c2)
 **类型**: 功能缺陷
 
-**问题**: `naturo service list --state running` 返回空结果，而实际有 141 个活跃服务。`--state stopped` 和默认（无过滤）都正常。
-
-**根因**: `naturo/service.py` 第 165 行，当 `state == "running"` 时设置 `sc_state = "active"`，但 `sc.exe queryex` 不接受 `state= active`（error 87: 无效字段）。`sc.exe` 的有效 state 值只有 `all` 和 `inactive`。默认不传 state 参数即返回活跃服务。
-
-**复现**:
-```
-> naturo service list --state running
-No running services found.
-
-> naturo service list --state running --json
-{"success": true, "services": [], "count": 0}
-```
-
-**修复建议**: 当 `state == "running"` 时，不传 `state=` 参数（使用 sc.exe 默认行为，即只返回运行中的服务）：
-```python
-if state == "running":
-    # sc.exe default (no state= arg) returns only active/running services
-    result = _run_sc("queryex", "type=", "service")
-elif state == "stopped":
-    result = _run_sc("queryex", "type=", "service", "state=", "inactive")
-else:
-    result = _run_sc("queryex", "type=", "service", "state=", "all")
-```
+**修复**: 当 `state == "running"` 时不传 `state=` 参数，使用 sc.exe 默认行为返回运行中的服务。待 QA 验证。
 
 ---
 

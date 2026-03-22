@@ -1,8 +1,8 @@
 # Naturo 项目状态
 
-**最后更新**: 2026-03-22 19:15  
-**版本**: 0.1.1 (编译机已同步至 commit 7301bf1)  
-**状态**: 🟡 **接近可发布** — BUG-011/012 已验证，新发现 BUG-013 (service list --state running)
+**最后更新**: 2026-03-22 19:25 (Dev Round 8)  
+**版本**: 0.1.1 (编译机已同步至 commit 860c4a1)  
+**状态**: 🟡 **接近可发布** — DPI 修复已提交，GitHub Issues 清理完成
 
 ---
 
@@ -26,8 +26,9 @@ Phase 1: 核心功能实现（进展中）
 
 ## 待修复问题
 
-### 🔴 BUG-013: `service list --state running` 返回 0 结果 (P1，sc.exe state= 参数错误)
-### 🔴 BUG-003: pyvda 依赖缺失 (P2，需产品决策)
+### 🟢 BUG-013: `service list --state running` → 已修复 (commit ed454c2)
+### ⏸️ BUG-003: pyvda 依赖缺失 (P2，需产品决策)
+### 🟢 BUG-073: DPI 感知修复 — SetThreadDpiAwarenessContext (commit d8a60a8, fixes #16)
 
 ## 已验证修复 (Round 7)
 
