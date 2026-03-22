@@ -956,7 +956,7 @@ def learn(topic):
   -----------
     naturo capture live --path screenshot.png   Save a screenshot
     naturo capture live --json                  Screenshot with metadata (JSON)
-    naturo capture live --region 0,0,800,600    Capture a specific region
+    naturo capture live --app "Notepad"         Capture a specific app window
 
   Snapshots (element-annotated screenshots)
   -----------------------------------------
@@ -978,7 +978,7 @@ def learn(topic):
   Tips
   ----
     • Add --json to any command for structured output
-    • Use --region x,y,w,h to capture a portion of the screen
+    • Use --app or --window-title to capture a specific window
     • Snapshots annotate UI elements for AI-assisted automation""",
         },
         "interaction": {
