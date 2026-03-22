@@ -174,12 +174,7 @@ naturo type --paste --file data.txt        # Read file → paste
 | `desktop create` | Create a new virtual desktop | 0.1.0 |
 | `desktop close` | Close a virtual desktop | 0.1.0 |
 | `desktop move-window` | Move window to another desktop | 0.1.0 |
-| `chrome tabs` | List open Chrome tabs | 0.1.0 |
-| `chrome screenshot` | Capture Chrome tab screenshot | 0.1.0 |
-| `chrome navigate` | Navigate tab to URL | 0.1.0 |
-| `chrome eval` | Evaluate JavaScript in tab | 0.1.0 |
-| `chrome click` | Click DOM element by selector | 0.1.0 |
-| `chrome type` | Type into DOM element | 0.1.0 |
+
 | `chrome title` | Get page title | 0.1.0 |
 | `chrome html` | Get page/element HTML | 0.1.0 |
 | `chrome version` | Show Chrome version info | 0.1.0 |
@@ -201,10 +196,7 @@ naturo type --paste --file data.txt        # Read file → paste
 | `excel list-sheets` | List worksheets in workbook | 0.1.1 |
 | `excel run-macro` | Execute VBA macro | 0.1.1 |
 | `excel info` | Show workbook metadata | 0.1.1 |
-| `electron detect` | Detect if app is Electron-based | 0.1.0 |
-| `electron list` | List running Electron apps | 0.1.0 |
-| `electron connect` | Connect to Electron app via CDP | 0.1.0 |
-| `electron launch` | Launch Electron app with debugging | 0.1.0 |
+
 
 ## Snapshot System
 
