@@ -54,3 +54,8 @@ Request a fine-grained PAT from the maintainer with Issues read/write permission
 - All tests must pass on Ubuntu + macOS + Windows
 - Python version and DLL version must match
 - README.md must be updated after feature changes
+
+### Language Policy
+- **All GitHub content must be in English**: issues, PRs, commit messages, comments, code comments, documentation
+- This is a public open-source project — English-only ensures global accessibility
+- Internal agent/team discussions may use Chinese, but nothing on GitHub
