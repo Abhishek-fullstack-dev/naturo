@@ -140,7 +140,7 @@ gh issue comment N --body "**[Dev-Sirius]** ✅ Fixed in commit abc1234. Ready f
 4. `git checkout -b fix/issue-N-short-desc` → `git add [相关文件]` → `git commit -m "fix: [BUG-XXX] 简述 (fixes #N)"` → `git push origin fix/issue-N-short-desc`
 5. `gh pr create --title "fix: 简述 (fixes #N)" --body "..."` → 等 CI 通过 → squash merge
 6. **⚠️ 禁止直接 push main。所有代码必须走 PR + CI。违反此规则视为严重事故。**
-7. SCP 同步到编译机: `sshpass -p 'compile@123' scp [文件] Naturobot@100.113.29.45:"C:/Users/Naturobot/naturo/[路径]"`
+7. 编译机验证: `sshpass -p 'compile@123' ssh Naturobot@100.113.29.45 "cd C:\Users\Naturobot\naturo && git pull && naturo [命令]"`
 
 **修复后**：在 Issue comment 写清楚结果
 ```
