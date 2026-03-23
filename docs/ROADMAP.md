@@ -107,25 +107,23 @@ see, find, capture, list, wait, diff, menu-inspect, click, type, press, hotkey, 
 
 ## 0.3.0 — Unified App Model + Selector Foundation
 
-## 0.3.0 — Unified App Model + Selector Foundation
-
 Auto-detect application frameworks and route interactions through the optimal channel. Users don't need to know if it's Electron, Java, or WPF.
 
 See [design doc](design/UNIFIED_APP_MODEL.md).
 
-- [ ] Framework detection chain (CDP → UIA → MSAA → JAB → IA2 → Vision)
-- [ ] `naturo app inspect` — probe app and report available interaction methods
-- [ ] `naturo app inspect --all` — scan all visible windows
-- [ ] Per-PID detection cache with TTL
-- [ ] Auto-routing for action commands (click/type/press/find)
-- [ ] `--method` override flag for explicit channel selection
-- [ ] `--quick` mode for fast probe (skip slow checks)
-- [ ] MCP tools for app inspect
-- [ ] Integration tests across framework types
-- [ ] Element ref caching system (temporary eN → coordinates cache with TTL)
+- [x] Framework detection chain (CDP → UIA → MSAA → JAB → IA2 → Vision)
+- [x] `naturo app inspect` — probe app and report available interaction methods
+- [x] `naturo app inspect --all` — scan all visible windows
+- [x] Per-PID detection cache with TTL
+- [x] Auto-routing for action commands (click/type/press/find)
+- [x] `--method` override flag for explicit channel selection
+- [x] `--quick` mode for fast probe (skip slow checks)
+- [x] MCP tools for app inspect
+- [x] Integration tests across framework types
+- [x] Element ref caching system (temporary eN → coordinates cache with TTL)
 - [ ] Unified Selector format specification ([design doc](design/UNIFIED_SELECTOR.md))
 
-## 0.3.0 — Unified Selector Engine + Enterprise Features
+## 0.4.0 — Unified Selector Engine + Enterprise Features
 
 Unified Selector system and deep enterprise automation capabilities from Naturobot engine.
 
