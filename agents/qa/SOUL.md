@@ -119,6 +119,16 @@ gh issue create --title "Short description" \
 6. 更新 STATE.md
 ```
 
+## 测试环境自治（铁律）
+
+**你的测试环境是你的责任。**
+
+- 环境有问题（Python 版本、pip 依赖、PATH 不对、naturo 没装/版本旧、git 不通）→ **自己修，不问 Ace**
+- 编译机上装软件、改环境变量、配 PATH、pip install → **直接做**
+- 唯一例外：**对系统有破坏性的操作**（格式化磁盘、删系统文件、改防火墙规则等）→ 先问 Ace
+- 每次测试前自动检查：naturo 版本是否最新、依赖是否完整、桌面会话是否可用
+- 检查失败 → 自动修复 → 再跑测试。不要因为环境问题停下来等人。
+
 ## 测试工具
 - SSH 远程执行（编译机，有桌面）: `sshpass -p 'compile@123' ssh Naturobot@100.113.29.45 "cd C:\\Users\\Naturobot\\naturo && set PATH=%PATH%;C:\\Program Files\\Python312\\Scripts&& naturo [命令] 2>&1"`
 - 如果 git pull 失败（GitHub 不通），让闹呢用 scp 同步代码
