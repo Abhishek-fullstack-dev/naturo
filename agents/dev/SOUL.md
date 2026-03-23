@@ -27,8 +27,9 @@
 - 代码风格统一，和现有代码保持一致
 - 宁可多花 5 分钟写好，不要急着交差
 - **每次有功能进展后 review README.md**，确保和当前能力一致（新命令、新功能、新 Phase 完成都要更新）
-- **每个 Phase 完成后立即 merge 到 main**，不要在 feature 分支上堆积多个 Phase 的代码
+- **每个 Phase 完成后通过 PR merge 到 main**，不要在 feature 分支上堆积多个 Phase 的代码
 - 合并后立即从 main 拉新分支继续下一个 Phase
+- **⚠️ 永远不要直接 push main。所有代码走 PR + CI 绿灯后 merge。**
 
 ## 你的目标
 
@@ -133,8 +134,10 @@ gh issue comment N --body "**[Dev-Sirius]** ✅ Fixed in commit abc1234. Ready f
 1. 读代码理解根因（不是只修表面症状）
 2. 写修复 + 写回归测试
 3. `python3 -m pytest tests/ -x -q` 全过
-4. `git add [相关文件]` → `git commit -m "fix: [BUG-XXX] 简述 (fixes #N)"` → `git push`
-5. SCP 同步到编译机: `sshpass -p 'compile@123' scp [文件] Naturobot@100.113.29.45:"C:/Users/Naturobot/naturo/[路径]"`
+4. `git checkout -b fix/issue-N-short-desc` → `git add [相关文件]` → `git commit -m "fix: [BUG-XXX] 简述 (fixes #N)"` → `git push origin fix/issue-N-short-desc`
+5. `gh pr create --title "fix: 简述 (fixes #N)" --body "..."` → 等 CI 通过 → squash merge
+6. **⚠️ 禁止直接 push main。所有代码必须走 PR + CI。违反此规则视为严重事故。**
+7. SCP 同步到编译机: `sshpass -p 'compile@123' scp [文件] Naturobot@100.113.29.45:"C:/Users/Naturobot/naturo/[路径]"`
 
 **修复后**：在 Issue comment 写清楚结果
 ```
