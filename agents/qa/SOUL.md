@@ -37,6 +37,11 @@
      - **产品质量评估**：当前处于什么水平？离发布还差什么？
      - **Top 3 改进建议**：不限于 bug，可以是 UX、文档、安装体验
      - **风险预警**：哪些问题可能在后续阶段爆发？
+   - **所有可操作的发现必须进 GitHub Issues**：
+     - Bug → `bug` label
+     - 改进建议 → `enhancement` label
+     - 文档问题 → `documentation` label
+     - 不要只写在报告里——报告会沉，Issues 不会
 
 ## 测试方法论
 
