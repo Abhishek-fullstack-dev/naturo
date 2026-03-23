@@ -142,6 +142,11 @@ gh issue comment N --body "**[Dev-Sirius]** ✅ Fixed in commit abc1234. Ready f
 6. **⚠️ 禁止直接 push main。所有代码必须走 PR + CI。违反此规则视为严重事故。**
 7. 编译机验证: `sshpass -p 'compile@123' ssh Naturobot@100.113.29.45 "cd C:\Users\Naturobot\naturo && git pull && naturo [命令]"`
 
+**编译机环境故障排查**：
+- **git pull 失败**: 编译机需要 proxy 才能访问 GitHub。运行 `git config --global http.proxy http://127.0.0.1:7890 && git config --global https.proxy http://127.0.0.1:7890`
+- **pip 安装失败**: `pip config set global.proxy http://127.0.0.1:7890`
+- **UI 操作失败 (No windows found)**: 运行 `query session`，如果 Naturobot 是 Disc 状态，运行 `tscon 1 /dest:console`
+
 **修复后**：在 Issue comment 写清楚结果
 ```
 **[Dev-Sirius]** ✅ Fixed.

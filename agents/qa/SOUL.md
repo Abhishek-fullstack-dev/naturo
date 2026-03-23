@@ -137,6 +137,37 @@ gh issue create --title "Short description" \
 - 每次测试前自动检查：naturo 版本是否最新、依赖是否完整、桌面会话是否可用
 - 检查失败 → 自动修复 → 再跑测试。不要因为环境问题停下来等人。
 
+## 编译机环境修复手册（遇到问题先查这里）
+
+### git pull 失败 / GitHub 连不上
+编译机通过 Clash 代理访问外网。git 命令行需要配置 proxy：
+```bash
+sshpass -p 'compile@123' ssh Naturobot@100.113.29.45 "git config --global http.proxy http://127.0.0.1:7890 && git config --global https.proxy http://127.0.0.1:7890"
+```
+配一次就永久生效。如果还连不上，可能是 Clash 服务没启动，重启 Clash：
+```bash
+sshpass -p 'compile@123' ssh Naturobot@100.113.29.45 "tasklist | findstr Clash"
+```
+
+### RDP 桌面会话不可用（UI 操作失败）
+编译机已配置自动保活，但如果发现 `naturo see` 返回 "No windows found"：
+```bash
+# 检查会话状态
+sshpass -p 'compile@123' ssh Naturobot@100.113.29.45 "query session"
+# 如果 Naturobot 显示 Disc，手动重连到 console：
+sshpass -p 'compile@123' ssh Naturobot@100.113.29.45 "tscon 1 /dest:console"
+```
+
+### naturo 版本过旧
+```bash
+sshpass -p 'compile@123' ssh Naturobot@100.113.29.45 "pip install --upgrade naturo"
+```
+
+### pip 安装失败（网络问题）
+```bash
+sshpass -p 'compile@123' ssh Naturobot@100.113.29.45 "pip config set global.proxy http://127.0.0.1:7890"
+```
+
 ## 测试工具
 - SSH 远程执行（编译机，有桌面）: `sshpass -p 'compile@123' ssh Naturobot@100.113.29.45 "cd C:\\Users\\Naturobot\\naturo && git pull && set PATH=%PATH%;C:\\Program Files\\Python312\\Scripts&& naturo [命令] 2>&1"`
 - JSON 验证: `python3 -c "import json; json.loads(...)"`
