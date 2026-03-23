@@ -42,10 +42,13 @@ Request a fine-grained PAT from the maintainer with Issues read/write permission
 
 ### Bug Fix Workflow
 1. Pick an issue from GitHub Issues (P0 first)
-2. Create a fix
+2. Create a branch: `fix/issue-<number>-short-description` (e.g. `fix/issue-12-dpi-awareness`)
 3. One bug = one commit, reference the issue: `fix: [BUG-073] DPI awareness (fixes #12)`
-4. Push to main, CI will run automatically
-5. Comment on the issue with fix details: `**[Dev]** Fixed in commit abc1234`
+4. Push branch and open a PR — CI runs automatically
+5. CI green + review passed → squash merge to main
+6. Comment on the issue with fix details: `**[Dev]** Fixed in PR #XX`
+
+> **Never push directly to main.** All changes go through PR + CI.
 
 ### Code Standards
 - All tests must pass on Ubuntu + macOS + Windows
