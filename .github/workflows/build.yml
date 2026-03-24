@@ -12,7 +12,7 @@ jobs:
     name: Version Consistency Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Check all version strings match
         shell: bash
@@ -51,7 +51,7 @@ jobs:
     needs: version-check
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Configure CMake
         run: cmake -B build -S core -DCMAKE_BUILD_TYPE=Release
@@ -63,7 +63,7 @@ jobs:
         run: ctest --test-dir build --build-config Release --output-on-failure
 
       - name: Upload DLL artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: naturo-core-dll
           path: |
@@ -77,15 +77,15 @@ jobs:
     needs: build-dll
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
       - name: Download DLL
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: naturo-core-dll
           path: naturo/bin/
@@ -112,7 +112,7 @@ jobs:
         run: pytest -v -m "not ui and not integration"
 
       - name: Upload wheel artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: naturo-python-tested
           path: naturo/bin/naturo_core.dll
@@ -122,10 +122,10 @@ jobs:
     name: Python Tests (Ubuntu)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -139,10 +139,10 @@ jobs:
     name: Python Tests (macOS)
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -219,15 +219,15 @@ jobs:
       contents: write
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
       - name: Download DLL
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: naturo-core-dll
           path: release-artifacts/
