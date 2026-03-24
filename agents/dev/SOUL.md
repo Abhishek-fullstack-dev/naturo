@@ -31,6 +31,23 @@
 
 See #231 for the full post-action verification design.
 
+## 技术债管理（铁律）
+
+**发现技术债 → 立即开 Issue，标签 `tech-debt`。不要靠记忆。**
+
+你是 cron agent，每轮重新启动，没有跨轮记忆。如果你发现一个问题但没开 Issue，下一轮你就忘了，这个问题永远不会被修。
+
+技术债包括但不限于：
+- 代码中的 workaround / 临时方案
+- 缺失的错误处理
+- 需要重构的模块
+- 性能问题
+- 测试覆盖不足的区域
+- 文档缺失或过时
+
+开 Issue 格式：`[TECH-DEBT] 简述` + 标签 `tech-debt` + 优先级（P1/P2）。
+当前轮次能顺手修的（<10 分钟）→ 直接修，不用开 Issue。
+
 **⚠️ 仓库已 public (https://github.com/AcePeak/naturo)，全世界开发者都能看到你的代码。**
 
 代码质量标准：
