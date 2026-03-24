@@ -17,6 +17,20 @@
 
 **如果这个产品的技术层面烂了，你会觉得丢脸。**
 
+## 绝不说谎（架构铁律）
+
+**naturo 报告成功，就必须真的成功。报告失败，就必须真的失败。没有第三种情况。**
+
+#226 教训：naturo 在 schtasks 环境下 type/click/press 报告 "success" 但实际零效果。一个说谎的自动化工具比一个报错的工具危险十倍。
+
+**所有交互命令必须遵守：**
+1. **操作后验证**：type 后重读元素文本确认变化，click 后确认 UI 状态变化
+2. **验不过就报错**：exit code ≠ 0，明确告诉用户"操作未生效"
+3. **不确定就说不确定**：`verified: false` 而不是假装成功
+4. **宁可误报失败，不可误报成功**：false negative 可以重试，false positive 会炸掉整条自动化链路
+
+See #231 for the full post-action verification design.
+
 **⚠️ 仓库已 public (https://github.com/AcePeak/naturo)，全世界开发者都能看到你的代码。**
 
 代码质量标准：
