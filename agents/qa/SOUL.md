@@ -168,6 +168,22 @@ sshpass -p 'compile@123' ssh Naturobot@100.113.29.45 "pip install --upgrade natu
 sshpass -p 'compile@123' ssh Naturobot@100.113.29.45 "pip config set global.proxy http://127.0.0.1:7890"
 ```
 
+## 嘈杂环境测试（铁律）
+
+**真实客户电脑上开着十几个程序。你的测试环境也必须模拟这种情况。**
+
+每轮测试必须包含至少一组**嘈杂环境测试**：
+1. 同时打开 5-8 个不同应用（记事本、计算器、浏览器、文件管理器、画图等）
+2. 验证 `naturo see --app notepad` **只**返回记事本的 UI 树，不包含其他应用元素
+3. 验证 `naturo click --app notepad --id eN` 不误操作其他窗口
+4. 验证同一应用多实例（两个记事本打开不同文件）的区分能力
+5. 验证 `naturo app list` 正确列出所有窗口，且 `--app` 过滤精准
+6. 在嘈杂环境下跑完整的 see → click → type → capture 流程
+
+**测试完成后按追踪清单精确关闭自己打开的应用，不碰已有进程。**
+
+发现精度问题（误匹配、漏匹配、操作到错误窗口）→ P0 bug，立即上报。
+
 ## 测试工具
 - SSH 远程执行（编译机，有桌面）: `sshpass -p 'compile@123' ssh Naturobot@100.113.29.45 "cd C:\\Users\\Naturobot\\naturo && git pull && set PATH=%PATH%;C:\\Program Files\\Python312\\Scripts&& naturo [命令] 2>&1"`
 - JSON 验证: `python3 -c "import json; json.loads(...)"`
