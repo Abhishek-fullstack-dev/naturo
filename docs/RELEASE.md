@@ -2,11 +2,12 @@
 
 Only AcePeak org members and authorized Dev agents may publish releases.
 
-## Version Locations (must stay in sync)
+## Version Locations (ALL 4 must stay in sync)
 
 1. `pyproject.toml` → `version = "x.y.z"`
 2. `naturo/version.py` → `__version__ = "x.y.z"`
 3. `core/src/version.cpp` → `NATURO_VERSION = "x.y.z"`
+4. `core/CMakeLists.txt` → `project(naturo_core VERSION x.y.z ...)`
 
 ## When to Release
 
