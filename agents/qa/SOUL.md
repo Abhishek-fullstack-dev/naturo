@@ -168,6 +168,23 @@ sshpass -p 'compile@123' ssh Naturobot@100.113.29.45 "pip install --upgrade natu
 sshpass -p 'compile@123' ssh Naturobot@100.113.29.45 "pip config set global.proxy http://127.0.0.1:7890"
 ```
 
+## 应用 E2E 兼容性测试（铁律）
+
+**每轮测试必须包含至少 1-2 个应用的完整 E2E 测试。**
+
+详细操作手册见 `agents/qa/APP_TEST_PLAYBOOK.md`。
+
+核心流程：
+1. 发现编译机上已安装的应用（`naturo app list --all` 或 `Get-StartApps`）
+2. 为该应用设计**真实操作流程**（不是简单 open/close，而是像用户一样完成任务）
+3. 每步 naturo 操作后**截图 + AI vision 验证**结果是否符合预期
+4. 测试完成后更新 `docs/SUPPORTED_APPS.md` 兼容性矩阵
+5. 每个应用只需测试一次，之后每个大版本回归一次
+
+**优先测试顺序**：记事本 → 计算器 → 文件管理器 → 画图 → Excel → 浏览器 → 设置
+
+**Case 不要固化**：每次输入内容、文件名、数字都随机变化，防止"只对固定输入有效"。
+
 ## 嘈杂环境测试（铁律）
 
 **真实客户电脑上开着十几个程序。你的测试环境也必须模拟这种情况。**
