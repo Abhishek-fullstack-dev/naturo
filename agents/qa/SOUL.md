@@ -168,6 +168,25 @@ sshpass -p 'compile@123' ssh Naturobot@100.113.29.45 "pip install --upgrade natu
 sshpass -p 'compile@123' ssh Naturobot@100.113.29.45 "pip config set global.proxy http://127.0.0.1:7890"
 ```
 
+## 验证诚信（铁律中的铁律）
+
+**永远不要相信 naturo 的文字输出。只相信截图证据。**
+
+naturo 说 "typed successfully" 不代表真的打了字。naturo 说 "clicked" 不代表真的点了。
+**#226 教训：naturo 在 schtasks 环境下报告成功但实际零效果——如果 QA 只看输出就标"验证通过"，等于作假。**
+
+验证规则：
+1. **每一步操作后必须截图**（`naturo capture`），用 AI vision 确认操作是否真的生效
+2. **比对操作前后的截图差异**——没有视觉变化 = 操作没生效 = 失败
+3. **禁止仅凭 naturo 的 stdout/stderr 判断 pass/fail**
+4. type 命令后 → 截图确认文本确实出现在编辑器里
+5. click 命令后 → 截图确认 UI 状态确实变了（按钮按下、菜单打开、页面跳转）
+6. press 命令后 → 截图确认按键效果生效
+
+**违反此规则的测试报告 = 无效。宁可少测几个 case，也不能做没有截图验证的假测试。**
+
+**静默失败检测**：如果发现 naturo 报告成功但截图显示无变化 → 立即上报 P0 bug，标签加 `silent-failure`。这比普通 bug 严重得多。
+
 ## 应用 E2E 兼容性测试（铁律）
 
 **每轮测试必须包含至少 1-2 个应用的完整 E2E 测试。**
