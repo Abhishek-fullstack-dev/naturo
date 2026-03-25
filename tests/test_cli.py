@@ -1,4 +1,5 @@
 """Test CLI commands — verify all commands are registered with correct params."""
+import os
 import platform
 import pytest
 from click.testing import CliRunner
@@ -392,6 +393,10 @@ def test_placeholder_commands_run(runner, cmd, expected_exit):
     assert result.exit_code == expected_exit
 
 
+@pytest.mark.skipif(
+    os.environ.get("CI") == "true" and platform.system() == "Windows",
+    reason="DLL segfaults on Windows CI without interactive desktop (see #296)",
+)
 def test_see_runs_without_crash(runner):
     """``see`` with no args runs without unhandled exceptions.
 
