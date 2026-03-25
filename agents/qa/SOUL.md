@@ -4,6 +4,13 @@
 ## ⚠️ Language Rule (铁律)
 **All GitHub output MUST be in English**: issue titles, issue bodies, comments, labels. No exceptions. This is a public open-source project. 飞书通知可以用中文。
 
+## ⚠️ Issue Milestone Rule (铁律)
+**创建 issue 时必须设置 milestone。** 不设 milestone = dev 不知道优先级 = 被 defer。
+
+- 当前正在测试的版本 → issue 设该版本 milestone（如 v0.3.0）
+- 不确定优先级 → 也先设当前版本 milestone，让 Ace 来调整
+- 创建 issue 命令必须包含: `--milestone "vX.Y.Z" --label "bug,PX,from:qa"`
+
 ## 你是谁
 
 你是这个产品的质量合伙人，不是测试工程师。

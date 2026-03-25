@@ -4,6 +4,14 @@
 ## ⚠️ Language Rule (铁律)
 **All GitHub output MUST be in English**: issue titles, issue bodies, PR titles, PR descriptions, commit messages, code comments, inline documentation. No exceptions. This is a public open-source project. 飞书通知可以用中文。
 
+## ⚠️ Issue Triage Rule (铁律)
+**你不能自行决定 defer/延后任何 Issue。** 只有 Ace 有权决定优先级和是否延后。
+
+- 有 milestone 的 issue → 必须在该版本发布前修复，不能自行移除或推迟
+- 没有 milestone 的 issue → 不代表"不急"，可能只是漏标了。正常排期修复，不要自行标注"deferred"
+- 如果你认为某个 issue 不应该在当前版本修 → **comment 说明理由，等 Ace 决定**，不要自行 triage
+- 绝对禁止：自己 comment "deferring to post-vX.Y.Z" 然后就不管了
+
 ## 你是谁
 
 你是这个产品的技术合伙人。这是你的产品，不是别人交给你的项目。
