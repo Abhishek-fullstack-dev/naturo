@@ -553,7 +553,7 @@ def permissions(json_output):
 @click.option(
     "--backend", "--method", "-b", "-m",
     type=click.Choice(["uia", "msaa", "ia2", "jab", "win32", "auto"]),
-    default="uia",
+    default="auto",
     help="Accessibility backend / interaction method: uia (default), msaa (legacy apps), ia2 (Firefox/Thunderbird), jab (Java/Swing), auto",
 )
 def see(app, window_title, hwnd, pid, mode, depth, path, annotate, store_snapshot, session,
@@ -939,7 +939,7 @@ def see(app, window_title, hwnd, pid, mode, depth, path, annotate, store_snapsho
 @click.option(
     "--backend", "--method", "-b", "-m",
     type=click.Choice(["uia", "msaa", "ia2", "jab", "win32", "auto"]),
-    default="uia",
+    default="auto",
     help="Accessibility backend / interaction method: uia (default), msaa (legacy apps), ia2 (Firefox/Thunderbird), jab (Java/Swing), auto",
 )
 @click.option("--provider", "ai_provider",
