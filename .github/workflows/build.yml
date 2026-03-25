@@ -172,11 +172,12 @@ jobs:
               sys.exit(1)
           "
           python -c "
-          from naturo.core import dll
-          if dll._dll:
-              print(f'DLL loaded: {dll._dll_path}, version: {dll.version()}')
-          else:
-              print('WARNING: DLL not loaded (tests requiring DLL will be skipped)')
+          from naturo.bridge import NaturoCore
+          try:
+              core = NaturoCore()
+              print(f'DLL loaded, version: {core.version()}')
+          except Exception as e:
+              print(f'WARNING: DLL not loaded ({e}) — tests requiring DLL will be skipped')
           "
 
       - name: Collect tests (dry run)
