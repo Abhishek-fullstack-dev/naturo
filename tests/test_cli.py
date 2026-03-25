@@ -409,6 +409,7 @@ def test_see_runs_without_crash(runner):
         assert result.exit_code == 1
 
 
+@pytest.mark.desktop
 def test_scroll_no_args_runs(runner):
     """scroll with no args uses defaults (down, 3 notches) — may fail on non-Windows
     backends, but must not crash with an unhandled exception."""
