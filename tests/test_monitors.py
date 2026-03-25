@@ -250,7 +250,7 @@ class TestCaptureScreenValidation:
         mock_platform.system.return_value = "Windows"
         from naturo.cli.core import capture
         runner = CliRunner()
-        result = runner.invoke(capture, ["live", "--screen", "-1", "--json"])
+        result = runner.invoke(capture, [ "--screen", "-1", "--json"])
         assert result.exit_code == 1
         data = json.loads(result.output)
         assert data["success"] is False
@@ -262,7 +262,7 @@ class TestCaptureScreenValidation:
         mock_platform.system.return_value = "Windows"
         from naturo.cli.core import capture
         runner = CliRunner()
-        result = runner.invoke(capture, ["live", "--screen", "-1"])
+        result = runner.invoke(capture, [ "--screen", "-1"])
         assert result.exit_code == 1
         assert "--screen must be >= 0" in result.output
 
@@ -276,7 +276,7 @@ class TestCaptureScreenValidation:
 
         from naturo.cli.core import capture
         runner = CliRunner()
-        result = runner.invoke(capture, ["live", "--screen", "5", "--json"])
+        result = runner.invoke(capture, [ "--screen", "5", "--json"])
         assert result.exit_code == 1
         data = json.loads(result.output)
         assert data["success"] is False
@@ -293,7 +293,7 @@ class TestCaptureScreenValidation:
 
         from naturo.cli.core import capture
         runner = CliRunner()
-        result = runner.invoke(capture, ["live", "--screen", "3"])
+        result = runner.invoke(capture, [ "--screen", "3"])
         assert result.exit_code == 1
         assert "out of range" in result.output.lower()
 

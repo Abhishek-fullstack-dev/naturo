@@ -52,13 +52,17 @@ def test_cli_global_flags(runner):
 def test_capture_help(runner):
     result = runner.invoke(main, ["capture", "--help"])
     assert result.exit_code == 0
-    assert "live" in result.output
-    assert "video" in result.output
-    assert "watch" in result.output
+    assert "--app" in result.output
+    assert "--window" in result.output
+    assert "--hwnd" in result.output
+    assert "--path" in result.output
+    assert "--element" in result.output
+    assert "--region" in result.output
 
 
+@pytest.mark.skip(reason="capture live subcommand removed in PR #325")
 def test_capture_live_help(runner):
-    result = runner.invoke(main, ["capture", "live", "--help"])
+    result = runner.invoke(main, ["capture", "--help"])
     assert result.exit_code == 0
     assert "--app" in result.output
     assert "--window" in result.output
@@ -387,7 +391,7 @@ def _has_desktop_session() -> bool:
 @pytest.mark.desktop
 @pytest.mark.desktop
 @pytest.mark.parametrize("cmd,expected_exit", [
-    pytest.param(["capture", "live"], 0, marks=pytest.mark.skipif(platform.system() != "Windows", reason="capture live needs desktop session")),
+    pytest.param(["capture"], 0, marks=pytest.mark.skipif(platform.system() != "Windows", reason="capture live needs desktop session")),
 ])
 def test_placeholder_commands_run(runner, cmd, expected_exit):
     """Commands with no required args should run and show placeholder message."""

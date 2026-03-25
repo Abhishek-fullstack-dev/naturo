@@ -22,14 +22,14 @@ def runner():
 
 def test_capture_live_has_screen_option(runner):
     """capture live should have --screen option."""
-    result = runner.invoke(main, ["capture", "live", "--help"])
+    result = runner.invoke(main, ["capture", "--help"])
     assert result.exit_code == 0
     assert "--screen" in result.output
 
 
 def test_capture_live_has_format_option(runner):
     """capture live should have --format option."""
-    result = runner.invoke(main, ["capture", "live", "--help"])
+    result = runner.invoke(main, ["capture", "--help"])
     assert result.exit_code == 0
     assert "--format" in result.output
 
@@ -94,7 +94,7 @@ class TestCLIFunctionalWindows:
             path = f.name
 
         try:
-            result = runner.invoke(main, ["capture", "live", "--path", path])
+            result = runner.invoke(main, ["capture", "--path", path])
             assert result.exit_code == 0
             assert os.path.exists(path)
         finally:

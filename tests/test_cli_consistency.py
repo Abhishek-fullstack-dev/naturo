@@ -17,7 +17,7 @@ NOT_IMPLEMENTED_RE = re.compile(r"Not implemented yet", re.IGNORECASE)
 _DESKTOP_REQUIRED_COMMANDS = {
     ("see",),
     ("scroll",),
-    ("capture", "live"),
+    ("capture"),
     ("app", "list"),
     ("app", "focus"),
     ("app", "close"),
@@ -117,8 +117,8 @@ def test_hidden_stubs_return_error_exit_code():
         # ["list", "screens"],  # Implemented in Phase 5A
         # ["list", "apps"],  # Now delegates to app list (#114)
         ["list", "permissions"],
-        ["capture", "video"],
-        ["capture", "watch"],
+        # ["capture", "video"],  # Removed in PR #325 (capture is now flat)
+        # ["capture", "watch"],  # Removed in PR #325
     ]
     for args in hidden_stubs:
         # Plain mode: exit code must be non-zero
