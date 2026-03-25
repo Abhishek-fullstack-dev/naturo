@@ -161,6 +161,156 @@ _WIN32_CLASS_ROLE_MAP = {
 }
 
 
+def highlight_elements(hwnd: int, depth: int = 10, duration: float = 5.0,
+                       refs: Optional[list] = None) -> None:
+    """Draw colored borders and labels on Win32 child windows for visual identification.
+
+    Uses Win32 GDI to draw directly on screen. Each element gets a colored
+    rectangle border with its ref (eN) and name/class label.
+
+    Args:
+        hwnd: Parent window handle.
+        depth: Max depth for enumeration.
+        duration: How long to show highlights (seconds).
+        refs: Optional list of specific refs to highlight (e.g. ['e5', 'e10']).
+              If None, highlights all elements.
+    """
+    import ctypes
+    from ctypes import wintypes
+    import platform
+    import time
+    import threading
+
+    if platform.system() != "Windows":
+        return
+
+    user32 = ctypes.windll.user32
+    gdi32 = ctypes.windll.gdi32
+
+    # Collect all child windows with their info
+    def _get_direct_children(parent):
+        children = []
+        child = user32.FindWindowExW(parent, None, None, None)
+        while child:
+            children.append(child)
+            child = user32.FindWindowExW(parent, child, None, None)
+        return children
+
+    elements = []  # list of (ref, hwnd, title, class_name, rect)
+    counter = [1]
+
+    def _collect(h, current_depth):
+        if current_depth > depth:
+            return
+        for child_hwnd in _get_direct_children(h):
+            ref = f"e{counter[0]}"
+            counter[0] += 1
+
+            title_buf = ctypes.create_unicode_buffer(256)
+            user32.GetWindowTextW(child_hwnd, title_buf, 256)
+            title = title_buf.value or ""
+
+            cls_buf = ctypes.create_unicode_buffer(256)
+            user32.GetClassNameW(child_hwnd, cls_buf, 256)
+            cls_name = cls_buf.value or ""
+
+            rect = wintypes.RECT()
+            user32.GetWindowRect(child_hwnd, ctypes.byref(rect))
+
+            # Skip invisible/zero-size windows
+            w = rect.right - rect.left
+            h_size = rect.bottom - rect.top
+            if w <= 0 or h_size <= 0:
+                continue
+            # Skip off-screen windows
+            if rect.left < -10000 or rect.top < -10000:
+                continue
+
+            if refs is None or ref in refs:
+                # Build display label
+                short_cls = cls_name.split(".")[-1] if "." in cls_name else cls_name
+                label = title if title else short_cls
+                if len(label) > 20:
+                    label = label[:18] + ".."
+                elements.append((ref, child_hwnd, label, cls_name, rect))
+
+            _collect(child_hwnd, current_depth + 1)
+
+    _collect(hwnd, 0)
+
+    if not elements:
+        return
+
+    # Colors for cycling (RGB)
+    COLORS = [
+        0x0000FF,  # Red
+        0x00FF00,  # Green
+        0xFF0000,  # Blue
+        0x00FFFF,  # Yellow
+        0xFF00FF,  # Magenta
+        0xFFFF00,  # Cyan
+    ]
+
+    # Get screen DC
+    hdc = user32.GetDC(None)
+
+    # Create font for labels
+    font = gdi32.CreateFontW(
+        14, 0, 0, 0, 700,  # height, width, escapement, orientation, weight (bold)
+        0, 0, 0,  # italic, underline, strikeout
+        0, 0, 0, 0, 0,  # charset, precision, clip, quality, pitch
+        "Consolas"
+    )
+
+    try:
+        # Flash 3 times
+        for flash in range(3):
+            # Draw borders and labels
+            for i, (ref, child_hwnd, label, cls_name, rect) in enumerate(elements):
+                color = COLORS[i % len(COLORS)]
+                pen = gdi32.CreatePen(0, 2, color)  # PS_SOLID, width=2
+                old_pen = gdi32.SelectObject(hdc, pen)
+                old_brush = gdi32.SelectObject(hdc, gdi32.GetStockObject(5))  # NULL_BRUSH
+
+                # Draw rectangle
+                gdi32.Rectangle(hdc, rect.left, rect.top, rect.right, rect.bottom)
+
+                # Draw label background
+                gdi32.SelectObject(hdc, old_brush)
+                label_text = f" {ref}: {label} "
+
+                # Set text properties
+                gdi32.SetBkColor(hdc, color)
+                gdi32.SetTextColor(hdc, 0xFFFFFF)  # White text
+                old_font = gdi32.SelectObject(hdc, font)
+
+                # Draw label at top-left of element
+                text_bytes = label_text.encode("utf-16-le") + b"\x00\x00"
+                text_buf = ctypes.create_unicode_buffer(label_text)
+                gdi32.TextOutW(hdc, rect.left + 1, rect.top + 1, text_buf, len(label_text))
+
+                gdi32.SelectObject(hdc, old_font)
+                gdi32.SelectObject(hdc, old_pen)
+                gdi32.DeleteObject(pen)
+
+            time.sleep(0.8)
+
+            # Force redraw to clear (invalidate screen regions)
+            for _, child_hwnd, _, _, rect in elements:
+                r = wintypes.RECT(rect.left - 3, rect.top - 3,
+                                  rect.right + 3, rect.bottom + 3)
+                user32.InvalidateRect(None, ctypes.byref(r), True)
+            user32.UpdateWindow(user32.GetDesktopWindow())
+
+            time.sleep(0.4)
+
+    finally:
+        gdi32.DeleteObject(font)
+        user32.ReleaseDC(None, hdc)
+        # Final cleanup: redraw everything
+        user32.InvalidateRect(None, None, True)
+
+
 def enumerate_child_windows(hwnd: int, depth: int = 10) -> Optional[ElementInfo]:
     """Enumerate child windows using Win32 FindWindowEx as UIA fallback.
 

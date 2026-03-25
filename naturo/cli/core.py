@@ -1537,6 +1537,40 @@ def learn(topic):
 # ── tools ───────────────────────────────────────
 
 
+@click.command()
+@click.option("--app", "-a", help="Application name (partial match)")
+@click.option("--hwnd", type=int, help="Direct window handle")
+@click.option("--depth", "-d", type=int, default=30, help="Tree depth for element discovery")
+@click.option("--ref", "-r", multiple=True, help="Specific refs to highlight (e.g. -r e5 -r e10). Omit for all.")
+@click.option("--duration", type=float, default=5.0, help="Highlight duration in seconds")
+def highlight(app, hwnd, depth, ref, duration):
+    """Highlight UI elements on screen with colored borders and labels.
+
+    Draws colored rectangles around Win32 child windows with their
+    ref ID (eN) and name. Useful for identifying which element to target.
+
+    Uses Win32 HWND enumeration — works on VB6/ActiveX apps where UIA fails.
+
+    Examples:
+
+        naturo highlight --app EnterprisePortal          # Highlight all elements
+        naturo highlight --hwnd 10697004 -r e69 -r e77   # Highlight specific refs
+        naturo highlight --app notepad --duration 10      # Show for 10 seconds
+    """
+    be, _ = _get_backend()
+    handle = be._resolve_hwnd(app=app, hwnd=hwnd)
+
+    from naturo.bridge import highlight_elements
+    refs_list = list(ref) if ref else None
+    click.echo(f"Highlighting elements for {duration}s... (switch to the target window)")
+
+    import time
+    time.sleep(1.5)  # Give user time to switch windows
+
+    highlight_elements(hwnd=handle, depth=depth, duration=duration, refs=refs_list)
+    click.echo("Done.")
+
+
 @click.command(hidden=True)
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 def tools(json_output):
