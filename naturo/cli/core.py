@@ -566,7 +566,7 @@ def permissions(json_output):
     default="full",
     help="Analysis mode: full (all elements), interactive (clickable only), fast (quick scan)",
 )
-@click.option("--depth", "-d", type=int, default=7, help="Maximum tree depth (1-10)")
+@click.option("--depth", "-d", type=int, default=7, help="Maximum tree depth (1-50)")
 @click.option("--path", "-p", help="Save screenshot to path")
 @click.option("--annotate", is_flag=True, help="Annotate screenshot with element labels")
 @click.option("--snapshot/--no-snapshot", "store_snapshot", default=True, help="Store result in snapshot (default: on)")
@@ -613,8 +613,8 @@ def see(app, window_title, hwnd, pid, mode, depth, path, annotate, store_snapsho
         naturo see --app feishu --backend auto         # Try all A11y backends
     """
     # BUG-028: Validate --depth range (before platform check — input validation first)
-    if depth < 1 or depth > 10:
-        msg = f"--depth must be between 1 and 10, got {depth}"
+    if depth < 1 or depth > 50:
+        msg = f"--depth must be between 1 and 50, got {depth}"
         if json_output:
             click.echo(_json_error_str("INVALID_INPUT", msg))
         else:
