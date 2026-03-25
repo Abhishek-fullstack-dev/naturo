@@ -1557,7 +1557,7 @@ def highlight(app, hwnd, depth, ref, duration):
         naturo highlight --hwnd 10697004 -r e69 -r e77   # Highlight specific refs
         naturo highlight --app notepad --duration 10      # Show for 10 seconds
     """
-    be, _ = _get_backend()
+    be = _get_backend()
     handle = be._resolve_hwnd(app=app, hwnd=hwnd)
 
     from naturo.bridge import highlight_elements
