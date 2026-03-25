@@ -228,10 +228,15 @@ def enumerate_child_windows(hwnd: int, depth: int = 10) -> Optional[ElementInfo]
         if current_depth == 0:
             role = _WIN32_CLASS_ROLE_MAP.get(cls_name, "Window")
 
+        # Include class name in display for debugging and identification
+        display_name = title
+        if cls_name and cls_name not in (title, ""):
+            display_name = f"{title} [{cls_name}]" if title else f"[{cls_name}]"
+
         elem = ElementInfo(
             id=f"e{counter[0]}",
             role=role,
-            name=title,
+            name=display_name,
             value=None,
             x=rect.left,
             y=rect.top,
