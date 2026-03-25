@@ -107,17 +107,27 @@ jobs:
         timeout-minutes: 5
         run: |
           echo "::group::pip install"
-          pip install -e ".[dev,mcp,annotate]" pywin32 2>&1
+          pip install -e ".[dev,mcp,annotate,windows]" 2>&1
           echo "::endgroup::"
           echo "::group::pywin32 postinstall"
           # pywin32 postinstall registers COM DLLs.  The module may live
           # under Scripts/ on some runner images.  Try multiple locations.
           python -c "
-          import importlib, sys, os, glob
+          import importlib, inspect, sys, os, glob
+
+          def run_install(mod):
+              '''Call install() with or without lib_dir depending on signature.'''
+              sig = inspect.signature(mod.install)
+              if 'lib_dir' in sig.parameters:
+                  lib_dir = os.path.join(sys.prefix, 'Lib', 'site-packages')
+                  mod.install(lib_dir)
+              else:
+                  mod.install()
+
           # Attempt direct import first
           try:
               import pywin32_postinstall
-              pywin32_postinstall.install()
+              run_install(pywin32_postinstall)
               print('pywin32 postinstall OK (direct import)')
               sys.exit(0)
           except ImportError:
@@ -132,7 +142,7 @@ jobs:
                   spec = importlib.util.spec_from_file_location('pywin32_postinstall', matches[0])
                   mod = importlib.util.module_from_spec(spec)
                   spec.loader.exec_module(mod)
-                  mod.install()
+                  run_install(mod)
                   print(f'pywin32 postinstall OK (from {matches[0]})')
                   sys.exit(0)
           print('WARNING: pywin32_postinstall not found, skipping')
@@ -162,11 +172,12 @@ jobs:
               sys.exit(1)
           "
           python -c "
-          from naturo.core import dll
-          if dll._dll:
-              print(f'DLL loaded: {dll._dll_path}, version: {dll.version()}')
-          else:
-              print('WARNING: DLL not loaded (tests requiring DLL will be skipped)')
+          from naturo.bridge import NaturoCore
+          try:
+              core = NaturoCore()
+              print(f'DLL loaded, version: {core.version()}')
+          except Exception as e:
+              print(f'WARNING: DLL not loaded ({e}) — tests requiring DLL will be skipped')
           "
 
       - name: Collect tests (dry run)

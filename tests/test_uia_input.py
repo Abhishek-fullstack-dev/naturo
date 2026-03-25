@@ -14,12 +14,9 @@ pytestmark = pytest.mark.skipif(
     reason="UIA input methods are Windows-only",
 )
 
-# Check if comtypes is available (not installed in CI)
-try:
-    import comtypes  # noqa: F401
-    _has_comtypes = True
-except ImportError:
-    _has_comtypes = False
+# Check if comtypes is available without triggering COM initialization
+import importlib.util
+_has_comtypes = importlib.util.find_spec("comtypes") is not None
 
 
 @pytest.fixture
