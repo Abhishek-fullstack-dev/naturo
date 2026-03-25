@@ -111,3 +111,15 @@ This is Naturo's core differentiator vs Peekaboo and other automation tools.
 **Decision**: Three-tier CI — Windows (full), Ubuntu (Python), macOS (Python) now; expand later.
 
 **Rationale**: Windows is the primary target with C++ build. Ubuntu and macOS run Python-only tests to verify cross-platform compatibility of the API layer. Full UI tests on Linux (xvfb) and macOS (Peekaboo) will be added when those backends are implemented.
+
+## GitHub Actions Windows Runner — No Desktop Guarantee (2026-03-25)
+
+**Discovery**: `windows-latest` runners do NOT always have an interactive desktop session. This caused 30% CI cancellation rate — DLL UIA calls segfault (page fault) on headless runners.
+
+**Solution**:
+- CI detects desktop via `explorer.exe` check
+- `@pytest.mark.desktop` marker for tests needing UIA/DLL
+- Headless CI skips desktop tests; QA runs full suite on robot-compile (has desktop)
+- `_DESKTOP_REQUIRED_COMMANDS` set in `test_cli_consistency.py` for commands that invoke DLL
+
+**Key fact**: This is NOT random — no desktop = deterministic crash. DLL loads fine, but UIA API calls trigger page fault without a desktop session.
