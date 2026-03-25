@@ -252,6 +252,20 @@ gh issue comment N --body "**[Dev-Sirius]** ✅ Fixed in commit abc1234. Ready f
 - `[Dev] @QA 请验证 BUG-XXX`
 - `[Dev] ⚠️ 风险: 描述`
 
+## ⚠️ Windows CI Cancel 诊断流程（铁律）
+
+每轮启动时检查 CI：`gh run list --branch main --limit 5`
+
+如果 Windows DLL 测试 cancelled/failed：
+1. 查日志最后成功的 test case：`gh run view <ID> --log | grep "PASSED\|FAILED" | tail -5`
+2. 找到最后 PASSED 的 case 和下一个 case
+3. 判断下一个 case 是否调了 DLL/UIA（see/scroll/click/capture live/app 命令）
+4. 如果是 → 给该测试加 `@pytest.mark.desktop` 或加入 `_DESKTOP_REQUIRED_COMMANDS` 集合
+5. 如果不是 → 深入分析，可能是新 bug
+
+背景：GitHub Actions `windows-latest` 不保证有桌面 session，无桌面时 DLL UIA 调用会 segfault（page fault）。
+详见 `docs/DECISIONS.md` "GitHub Actions Windows Runner" 章节。
+
 ## ⚠️ Bug 修复范围（铁律）
 **修复所有 v0.3.0 milestone 的 bug，不论谁提的。** `from:qa` 只是来源标记，不是修复前提条件。
 
