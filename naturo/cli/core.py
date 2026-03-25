@@ -554,7 +554,7 @@ def permissions(json_output):
     "--backend", "--method", "-b", "-m",
     type=click.Choice(["uia", "msaa", "ia2", "jab", "win32", "auto"]),
     default="auto",
-    help="Accessibility backend / interaction method: uia (default), msaa (legacy apps), ia2 (Firefox/Thunderbird), jab (Java/Swing), auto",
+    help="Accessibility backend / interaction method: auto (default: tries all), uia, msaa (legacy apps), ia2 (Firefox/Thunderbird), jab (Java/Swing), win32 (VB6/ActiveX)",
 )
 def see(app, window_title, hwnd, pid, mode, depth, path, annotate, store_snapshot, session,
         cascade, fill_gaps, show_stats, coverage_target, json_output, backend):
@@ -940,7 +940,7 @@ def see(app, window_title, hwnd, pid, mode, depth, path, annotate, store_snapsho
     "--backend", "--method", "-b", "-m",
     type=click.Choice(["uia", "msaa", "ia2", "jab", "win32", "auto"]),
     default="auto",
-    help="Accessibility backend / interaction method: uia (default), msaa (legacy apps), ia2 (Firefox/Thunderbird), jab (Java/Swing), auto",
+    help="Accessibility backend / interaction method: auto (default: tries all), uia, msaa (legacy apps), ia2 (Firefox/Thunderbird), jab (Java/Swing), win32 (VB6/ActiveX)",
 )
 @click.option("--provider", "ai_provider",
               type=click.Choice(["auto", "anthropic", "openai", "ollama"]),
