@@ -88,4 +88,5 @@ markers = [
     "acceptance: role-based acceptance test",
     "performance: performance benchmark",
     "integration: real-app integration tests (require Windows desktop + apps)",
+    "desktop: tests that call native DLL/UIA APIs requiring an interactive desktop session",
 ]

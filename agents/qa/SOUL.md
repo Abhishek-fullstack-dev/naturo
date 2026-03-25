@@ -126,13 +126,21 @@ gh issue create --title "Short description" \
 ## 工作循环
 
 ```
-1. 产品审视 → 检查 status:done issues → 确定本轮重点（方法论指导优先级）
-2. 执行测试（系统性 or 验证修复 or 用户视角）
-3. 发现问题 → gh issue create --label "bug,P0,from:qa" + 飞书通知
-4. 验证修复 → gh issue comment + gh label add verified + 飞书通知
-5. 输出：测试报告 + 质量评估 + 改进建议
-6. 更新 STATE.md
+0. 更新代码：cd C:\Users\Naturobot\naturo && git pull origin main && pip install -e .
+1. 跑完整 CI tests（含 desktop 标记的测试）：
+   pytest -v --timeout=30 --timeout-method=thread -x --tb=short --junit-xml=ci-results.xml
+   这步必须全绿才继续。有 FAIL → 立即开 issue。
+2. 产品审视 → 检查 status:done issues → 确定本轮重点
+3. 执行场景测试（真实 app E2E + 嘈杂环境）
+4. 发现问题 → gh issue create --milestone "v0.3.0" --label "bug,P0,from:qa"
+5. 验证修复 → gh issue comment + gh label add verified
+6. 输出：测试报告 + 质量评估
 ```
+
+### 为什么 QA 要先跑 CI tests？
+GitHub CI 的 Windows runner 没有桌面 session，所以 `@pytest.mark.desktop` 标记的测试在 CI 里被跳过。
+**QA 在 robot-compile 上有桌面 session**，是唯一能跑完整测试的地方。
+这步是 CI 的补充，不是重复——CI 跑的是无桌面部分，QA 跑的是含桌面的全量。
 
 ## 测试环境自治（铁律）
 

@@ -145,11 +145,42 @@ jobs:
           echo "Collecting tests to detect import-phase hangs..."
           pytest --collect-only -q -m "not ui and not integration" 2>&1 | tail -5
 
+      - name: Detect desktop session
+        id: desktop
+        shell: bash
+        run: |
+          # Check if an interactive desktop session exists
+          if python -c "
+          import ctypes
+          hwnd = ctypes.windll.user32.GetDesktopWindow()
+          print(f'Desktop HWND: {hwnd}')
+          # Also check if explorer.exe is running (indicates interactive session)
+          import subprocess
+          result = subprocess.run(['tasklist', '/FI', 'IMAGENAME eq explorer.exe'], capture_output=True, text=True)
+          has_explorer = 'explorer.exe' in result.stdout
+          print(f'Explorer running: {has_explorer}')
+          exit(0 if has_explorer else 1)
+          " 2>/dev/null; then
+            echo "has_desktop=true" >> $GITHUB_OUTPUT
+            echo "✅ Interactive desktop session detected"
+          else
+            echo "has_desktop=false" >> $GITHUB_OUTPUT
+            echo "⚠️ No interactive desktop session — UI tests will be skipped"
+          fi
+
       - name: Run all tests
         shell: bash
         timeout-minutes: 5
         run: |
-          pytest -v -m "not ui and not integration" \
+          MARKERS="not ui and not integration"
+          if [ "${{ steps.desktop.outputs.has_desktop }}" != "true" ]; then
+            # No desktop: also skip tests that call DLL UIA APIs directly
+            MARKERS="$MARKERS and not desktop"
+            echo "⚠️ Skipping desktop-dependent tests (no interactive session)"
+          else
+            echo "✅ Running full test suite including desktop tests"
+          fi
+          pytest -v -m "$MARKERS" \
             --timeout=30 --timeout-method=thread \
             -x --tb=short \
             --junit-xml=pytest-results.xml \
