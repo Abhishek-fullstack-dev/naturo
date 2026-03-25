@@ -1,5 +1,9 @@
 """Test that every exposed CLI command works (no "Not implemented" stubs visible)."""
+import os
+import platform
 import re
+
+import pytest
 from click.testing import CliRunner
 from naturo.cli import main
 
@@ -7,6 +11,43 @@ from naturo.cli import main
 runner = CliRunner()
 
 NOT_IMPLEMENTED_RE = re.compile(r"Not implemented yet", re.IGNORECASE)
+
+# Commands that call DLL/UIA directly when invoked with no args — will segfault
+# on Windows without an interactive desktop session.
+_DESKTOP_REQUIRED_COMMANDS = {
+    ("see",),
+    ("scroll",),
+    ("capture", "live"),
+    ("app", "list"),
+    ("app", "focus"),
+    ("app", "close"),
+    ("app", "minimize"),
+    ("app", "maximize"),
+    ("app", "restore"),
+    ("app", "switch"),
+    ("app", "inspect"),
+    ("app", "windows"),
+    ("app", "launch"),
+    ("app", "quit"),
+    ("app", "relaunch"),
+    ("find",),
+    ("get",),
+    ("click",),
+    ("type",),
+    ("press",),
+    ("drag",),
+    ("tray",),
+    ("taskbar",),
+    ("menu-inspect",),
+    ("dialog",),
+    ("list", "apps"),
+    ("list", "screens"),
+}
+
+_NO_DESKTOP = (
+    os.environ.get("CI") == "true"
+    and platform.system() == "Windows"
+)
 
 
 def _visible_subcommands(group, parent_args=None):
@@ -48,11 +89,16 @@ def test_no_visible_command_prints_not_implemented():
     """Invoking any visible leaf command (with no args) must not print 'Not implemented'."""
     # Long-running server commands that take over stdio — skip bare invocation
     SKIP_BARE_INVOKE = {("mcp", "start")}
+    skipped = []
     for args, cmd in _visible_subcommands(main):
         # Skip groups — they just show help when invoked bare
         if hasattr(cmd, "commands"):
             continue
         if tuple(args) in SKIP_BARE_INVOKE:
+            continue
+        # Skip desktop-dependent commands on headless CI to avoid DLL segfault (#296)
+        if _NO_DESKTOP and tuple(args) in _DESKTOP_REQUIRED_COMMANDS:
+            skipped.append(args)
             continue
         result = runner.invoke(main, args)
         # Some commands legitimately fail due to missing args or Windows-only —
@@ -60,6 +106,8 @@ def test_no_visible_command_prints_not_implemented():
         assert not NOT_IMPLEMENTED_RE.search(result.output), (
             f"naturo {' '.join(args)} returned stub text:\n{result.output}"
         )
+    if skipped:
+        pytest.skip(f"Skipped {len(skipped)} desktop-dependent commands on headless CI")
 
 
 def test_hidden_stubs_return_error_exit_code():
