@@ -75,7 +75,7 @@ jobs:
     name: Python Tests with DLL (Windows)
     runs-on: windows-latest
     needs: build-dll
-    timeout-minutes: 20
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
 
@@ -109,7 +109,9 @@ jobs:
           python -c "import pywin32_postinstall; pywin32_postinstall.install()" 2>/dev/null || true
 
       - name: Run all tests
-        run: pytest -v -m "not ui and not integration"
+        run: pytest -v -m "not ui and not integration" --timeout=30 --timeout-method=thread -x
+        env:
+          PYTEST_TIMEOUT: "30"
 
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v5
@@ -156,23 +158,47 @@ jobs:
     name: Feishu Notification
     runs-on: ubuntu-latest
     needs: [build-dll, build-python, lint-and-test-python, test-python-macos]
-    if: always()
+    if: ${{ always() && !cancelled() }}
     steps:
       - name: Determine overall status
         id: status
         run: |
-          if [[ "${{ needs.build-dll.result }}" == "success" && \
-                "${{ needs.build-python.result }}" == "success" && \
-                "${{ needs.lint-and-test-python.result }}" == "success" && \
-                "${{ needs.test-python-macos.result }}" == "success" ]]; then
+          # Check each job result - skip notification if any job is still pending
+          BUILD_DLL="${{ needs.build-dll.result }}"
+          BUILD_PY="${{ needs.build-python.result }}"
+          LINT="${{ needs.lint-and-test-python.result }}"
+          MACOS="${{ needs.test-python-macos.result }}"
+
+          echo "build-dll: $BUILD_DLL"
+          echo "build-python: $BUILD_PY"
+          echo "lint-and-test-python: $LINT"
+          echo "test-python-macos: $MACOS"
+
+          # If any result is empty or "pending", something went wrong - skip notification
+          if [[ -z "$BUILD_DLL" || -z "$BUILD_PY" || -z "$LINT" || -z "$MACOS" ]]; then
+            echo "::warning::Some jobs have not completed yet, skipping notification"
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          if [[ "$BUILD_DLL" == "success" && \
+                "$BUILD_PY" == "success" && \
+                "$LINT" == "success" && \
+                "$MACOS" == "success" ]]; then
             echo "result=success" >> $GITHUB_OUTPUT
             echo "emoji=✅" >> $GITHUB_OUTPUT
+          elif [[ "$BUILD_DLL" == "cancelled" || "$BUILD_PY" == "cancelled" || \
+                  "$LINT" == "cancelled" || "$MACOS" == "cancelled" ]]; then
+            echo "result=cancelled" >> $GITHUB_OUTPUT
+            echo "emoji=⏹️" >> $GITHUB_OUTPUT
           else
             echo "result=failure" >> $GITHUB_OUTPUT
             echo "emoji=❌" >> $GITHUB_OUTPUT
           fi
+          echo "skip=false" >> $GITHUB_OUTPUT
 
       - name: Send Feishu notification
+        if: ${{ steps.status.outputs.skip != 'true' }}
         env:
           FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
           CI_STATUS: ${{ steps.status.outputs.result }}
