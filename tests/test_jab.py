@@ -71,7 +71,8 @@ class TestJABBackend:
 
     @patch("naturo.backends.windows.WindowsBackend._ensure_core")
     @patch("naturo.backends.windows.WindowsBackend._resolve_hwnd", return_value=0)
-    def test_auto_fallback_includes_jab(self, mock_resolve, mock_core_fn):
+    @patch("naturo.bridge.enumerate_child_windows", return_value=None)
+    def test_auto_fallback_includes_jab(self, mock_enum, mock_resolve, mock_core_fn):
         """auto mode tries UIA → IA2 → JAB → MSAA."""
         from naturo.backends.windows import WindowsBackend
         from naturo.bridge import ElementInfo
