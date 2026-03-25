@@ -148,17 +148,27 @@ jobs:
       - name: Run all tests
         shell: bash
         timeout-minutes: 5
-        run: pytest -v -m "not ui and not integration" --timeout=30 --timeout-method=thread -x --tb=short 2>&1 | tee pytest-output.txt
+        run: |
+          pytest -v -m "not ui and not integration" \
+            --timeout=30 --timeout-method=thread \
+            -x --tb=short \
+            --junit-xml=pytest-results.xml \
+            -p no:cacheprovider \
+            2>&1 | tee pytest-output.txt
+          echo "EXIT_CODE=$?" >> pytest-output.txt
         env:
           PYTEST_TIMEOUT: "30"
 
-      - name: Upload test log on failure
-        if: failure() || cancelled()
+      - name: Upload test artifacts
+        if: always()
         uses: actions/upload-artifact@v5
         with:
-          name: pytest-output
-          path: pytest-output.txt
+          name: pytest-logs
+          path: |
+            pytest-output.txt
+            pytest-results.xml
           retention-days: 7
+          if-no-files-found: ignore
 
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v5
