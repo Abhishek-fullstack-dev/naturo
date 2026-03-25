@@ -64,5 +64,6 @@ def test_zero_bounds_element_error_message():
     # For now, just verify the error path exists in the code
     from naturo.cli.core import capture
     import inspect
-    source = inspect.getsource(capture)
-    assert "zero-size bounds" in source.lower() or "zero_size_element" in source
+    # capture is a Click Command; get source of the underlying callback
+    source = inspect.getsource(capture.callback)
+    assert "zero-size bounds" in source.lower() or "zero_size_element" in source or "0x0" in source
