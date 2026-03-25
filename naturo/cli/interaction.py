@@ -1194,6 +1194,19 @@ def press(keys, count, delay, hold_duration, app, window_title, hwnd, input_mode
         except Exception as exc:
             logger.debug("Pre-press state capture failed: %s", exc)
 
+    # Warn when sending Ctrl+C without --app (will kill the calling terminal)
+    _sending_ctrl_c = any(
+        k.lower().replace(" ", "") in ("ctrl+c", "control+c")
+        for k in keys if _is_combo(k)
+    )
+    if _sending_ctrl_c and not (app or window_title or hwnd):
+        import signal
+        # Temporarily ignore SIGINT so we don't kill ourselves
+        _orig_handler = signal.getsignal(signal.SIGINT)
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+    else:
+        _orig_handler = None
+
     results: list[dict] = []
     try:
         for idx, key_spec in enumerate(keys):
@@ -1219,6 +1232,10 @@ def press(keys, count, delay, hold_duration, app, window_title, hwnd, input_mode
     except Exception as exc:
         _json_err(str(exc), json_output)
         return
+    finally:
+        if _orig_handler is not None:
+            import signal
+            signal.signal(signal.SIGINT, _orig_handler)
 
     # Build result — keep backward-compatible shape for single-key usage
     if len(keys) == 1 and not _is_combo(keys[0]):
