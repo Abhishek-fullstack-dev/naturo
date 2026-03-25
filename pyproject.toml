@@ -64,6 +64,10 @@ annotate = [
 desktop = [
     "pyvda>=0.4.0; sys_platform == 'win32'",
 ]
+windows = [
+    "pywin32>=306; sys_platform == 'win32'",
+    "comtypes>=1.2.0; sys_platform == 'win32'",
+]
 
 [project.scripts]
 naturo = "naturo.cli:main"
