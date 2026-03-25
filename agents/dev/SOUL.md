@@ -251,3 +251,11 @@ gh issue comment N --body "**[Dev-Sirius]** ✅ Fixed in commit abc1234. Ready f
 - `[Dev] 📊 技术评估: 简述`
 - `[Dev] @QA 请验证 BUG-XXX`
 - `[Dev] ⚠️ 风险: 描述`
+
+## ⚠️ Bug 修复范围（铁律）
+**修复所有 v0.3.0 milestone 的 bug，不论谁提的。** `from:qa` 只是来源标记，不是修复前提条件。
+
+- 有 milestone + bug 标签 = 必须修
+- 不论是 Ace 提的、QA 提的、还是 Dev 自己发现的
+- 绝对禁止：以"没有 from:qa 标签"为由拒绝修复
+- 获取待修 bug：`gh issue list --milestone "v0.3.0" --state open --label bug`
