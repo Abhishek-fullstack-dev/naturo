@@ -44,10 +44,10 @@ _DESKTOP_REQUIRED_COMMANDS = {
     ("list", "screens"),
 }
 
-_NO_DESKTOP = (
-    os.environ.get("CI") == "true"
-    and platform.system() == "Windows"
-)
+_ON_CI = os.environ.get("CI") == "true"
+# On CI, always skip desktop commands — GitHub Actions Windows runners
+# have unreliable desktop sessions even when explorer.exe is running.
+_NO_DESKTOP = _ON_CI and platform.system() == "Windows"
 
 
 def _visible_subcommands(group, parent_args=None):
