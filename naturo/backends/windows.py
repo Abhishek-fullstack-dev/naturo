@@ -536,9 +536,35 @@ class WindowsBackend(Backend):
             from naturo.errors import WindowNotFoundError
             raise WindowNotFoundError(title or "foreground")
         SW_RESTORE = 9
+        SW_SHOW = 5
         if self._is_iconic(handle):
             ctypes.windll.user32.ShowWindow(handle, SW_RESTORE)
-        ctypes.windll.user32.SetForegroundWindow(handle)
+
+        # SetForegroundWindow fails silently when caller is not the foreground
+        # process. Use AttachThreadInput trick to work around this Windows
+        # restriction: attach to the target window's thread, set foreground,
+        # then detach.
+        foreground_hwnd = ctypes.windll.user32.GetForegroundWindow()
+        current_tid = ctypes.windll.kernel32.GetCurrentThreadId()
+        target_tid = ctypes.windll.user32.GetWindowThreadProcessId(handle, None)
+        fg_tid = ctypes.windll.user32.GetWindowThreadProcessId(foreground_hwnd, None)
+
+        attached_target = False
+        attached_fg = False
+        try:
+            if current_tid != target_tid:
+                attached_target = bool(ctypes.windll.user32.AttachThreadInput(current_tid, target_tid, True))
+            if current_tid != fg_tid and fg_tid != target_tid:
+                attached_fg = bool(ctypes.windll.user32.AttachThreadInput(current_tid, fg_tid, True))
+
+            ctypes.windll.user32.ShowWindow(handle, SW_SHOW)
+            ctypes.windll.user32.BringWindowToTop(handle)
+            ctypes.windll.user32.SetForegroundWindow(handle)
+        finally:
+            if attached_target:
+                ctypes.windll.user32.AttachThreadInput(current_tid, target_tid, False)
+            if attached_fg:
+                ctypes.windll.user32.AttachThreadInput(current_tid, fg_tid, False)
 
     def close_window(self, title: Optional[str] = None, hwnd: Optional[int] = None,
                      force: bool = False) -> None:
