@@ -22,10 +22,16 @@ naturo select e71 "增值税专用发票"
 
 ## 设计规则
 
-### 1. 引擎透明
+### 1. 引擎透明 + 逐层混合
 - 用户不需要知道 UIA / MSAA / Win32 / AI Vision 的区别
 - `--backend auto` 是默认值（不是 `uia`）
-- auto 模式自动 cascade：UIA → MSAA → Win32 HWND → AI Vision
+- **逐层引擎选择**（参考自然机器人 selector 架构）：
+  - 元素树的每一层独立选择最佳引擎
+  - 外层容器用 Win32 HWND 枚举（穿透 VB6/ActiveX）
+  - 到达可交互控件后切 UIA（获取内部 Row/Cell）
+  - UIA 也拿不到的用 AI Vision
+  - 示例：Window[HWND] → Pane[HWND] → ThunderRT6[HWND] → VSFlexGrid[HWND] → Row[UIA] → Cell[UIA]
+- 每个 ElementInfo 记录自己的来源引擎（hwnd/uia/msaa/ai）
 - 结果合并去重，用户只看到统一的元素树
 
 ### 2. --app 即全部
