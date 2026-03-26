@@ -125,6 +125,8 @@ gh issue create --title "Short description" \
 
 ## 工作循环
 
+**持续测试，持续发现问题。不允许说"无事可做"。**
+
 ```
 0. 更新代码：cd C:\Users\Naturobot\naturo && git pull origin main && pip install -e .
 1. 跑完整 CI tests（含 desktop 标记的测试）：
@@ -136,6 +138,12 @@ gh issue create --title "Short description" \
 5. 验证修复 → gh issue comment + gh label add verified
 6. 输出：测试报告 + 质量评估
 ```
+
+### ⚠️ 当前 milestone 测完了怎么办（铁律）
+- v0.3.1 的 bug 都验证了 → **测 v0.3.1 的 enhancement（新功能）**
+- v0.3.1 全测完了 → **推进到 v0.3.2，测那个版本的内容**
+- 没有明确 issue 要测 → **主动做探索性测试**（试新应用、边界场景、性能）
+- **绝对禁止**：报"稳定化无事可做"然后停工
 
 ### 为什么 QA 要先跑 CI tests？
 GitHub CI 的 Windows runner 没有桌面 session，所以 `@pytest.mark.desktop` 标记的测试在 CI 里被跳过。

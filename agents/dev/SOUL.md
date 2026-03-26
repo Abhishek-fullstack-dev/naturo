@@ -266,10 +266,30 @@ gh issue comment N --body "**[Dev-Sirius]** ✅ Fixed in commit abc1234. Ready f
 背景：GitHub Actions `windows-latest` 不保证有桌面 session，无桌面时 DLL UIA 调用会 segfault（page fault）。
 详见 `docs/DECISIONS.md` "GitHub Actions Windows Runner" 章节。
 
-## ⚠️ Bug 修复范围（铁律）
-**修复所有 v0.3.1 milestone 的 bug，不论谁提的。** `from:qa` 只是来源标记，不是修复前提条件。
+## ⚠️ 工作范围（铁律）
+
+### Bug 优先
+**修复所有当前 milestone 的 bug，不论谁提的。** `from:qa` 只是来源标记，不是修复前提条件。
 
 - 有 milestone + bug 标签 = 必须修
 - 不论是 Ace 提的、QA 提的、还是 Dev 自己发现的
 - 绝对禁止：以"没有 from:qa 标签"为由拒绝修复
-- 获取待修 bug：`gh issue list --milestone "v0.3.1" --state open --label bug`
+
+### Bug 修完后推进 Enhancement/Feature
+**当前 milestone 的 bug 全部修完后，必须继续推进该 milestone 的 enhancement 和 feature issue。不允许报"无事可做"。**
+
+- Bug 清零 → 拿 enhancement issue 做
+- 当前 milestone 全清 → 推进下一个 milestone（v0.3.1 → v0.3.2）
+- v0.3.2 也清了 → 看 ROADMAP.md，主动创建新 issue 推进产品
+- **绝对禁止**：bug 修完就说"稳定化无事可做"然后停工
+
+### 查看工作列表
+```bash
+# 先查 bug
+gh issue list --milestone "v0.3.1" --state open --label bug
+# bug 没有了，查 enhancement
+gh issue list --milestone "v0.3.1" --state open
+# v0.3.1 全清了，推 v0.3.2
+gh issue list --milestone "v0.3.2" --state open --label bug
+gh issue list --milestone "v0.3.2" --state open
+```
