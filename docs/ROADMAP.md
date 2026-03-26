@@ -78,7 +78,7 @@ First release. Full Windows automation with AI integration and cross-platform fo
 - [x] CI: macOS runner integration tests
 - [x] Fallback: pyobjc for Peekaboo-free environments
 
-## 0.2.0 — Eyes + Hands Focus (Breaking)
+## 0.2.0 ✅ — Eyes + Hands Focus (Breaking)
 
 Refocused on core "Eyes + Hands" for AI agents. Removed 12 non-core CLI commands.
 
@@ -105,7 +105,7 @@ see, find, capture, list, wait, diff, menu-inspect, click, type, press, hotkey, 
 - `naturo open <url>` → Use agent's browser tool or system commands
 - `naturo chrome ...` → Use Playwright or browser automation skill
 
-## 0.3.0 — Unified App Model + Selector Foundation
+## 0.3.0 ✅ — Unified App Model + Selector Foundation
 
 Auto-detect application frameworks and route interactions through the optimal channel. Users don't need to know if it's Electron, Java, or WPF.
 
