@@ -879,14 +879,11 @@ def see(app, window_title, hwnd, pid, mode, depth, path, annotate, store_snapsho
                 # Keep deprecated "parent_id" as alias for backward compat
                 if parent_ref:
                     d["parent_id"] = parent_ref
+                props = getattr(el, "properties", {})
                 if props.get("keyboard_shortcut"):
                     d["keyboard_shortcut"] = props["keyboard_shortcut"]
                 if props.get("source"):
                     d["source"] = props["source"]
-                # (#372) Text preview for Document/Edit elements
-                if el.role and el.role.lower() in ("document", "edit", "text") and el.value:
-                    d["value_preview"] = el.value[:100]
-                    d["value_length"] = len(el.value)
                 return d
             out = to_dict(tree)
             if snapshot_id:
