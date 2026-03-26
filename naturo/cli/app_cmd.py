@@ -325,28 +325,47 @@ def app_list(ctx, show_all, json_output):
             result["total_count"] = len(windows) + len(background_apps)
         click.echo(json.dumps(result, indent=2))
     else:
+        from naturo.cli.table import print_table
+
         if not windows and not background_apps:
             click.echo("No running applications with visible windows found")
         else:
-            # Format: PID  HWND  process_name  title
-            # Align with window list output for consistency
+            headers = ["PID", "HWND", "Process", "Title"]
+            rows = []
             for w in windows:
-                _safe_echo(f"  {w.pid:>8}  {w.handle:>10}  {w.process_name:<20}  {w.title}")
+                title = w.title[:40] if len(w.title) > 40 else w.title
+                rows.append([str(w.pid), str(w.handle), w.process_name, title])
+
             if background_apps:
-                click.echo(f"\n  --- Background processes (no visible windows) ---")
                 for a in background_apps:
-                    _safe_echo(f"  {a.pid:>8}  {'':>10}  {a.name}")
-            total = len(windows) + len(background_apps)
-            click.echo(f"\n{len(windows)} applications, {len(background_apps)} background processes" if show_all else f"\n{len(windows)} applications")
+                    rows.append([str(a.pid), "", a.name, "(background)"])
+
+            count_label = (
+                f"{len(windows)} applications, {len(background_apps)} background processes"
+                if show_all
+                else f"{len(windows)} applications"
+            )
+            print_table(headers, rows, count_label=count_label)
 
 
 @click.command("hide", hidden=True)
-@click.argument("name")
+@click.argument("name", required=False, default=None)
+@click.option("--app", "app_name", default=None, help="Application name (alternative to positional NAME)")
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 @click.pass_context
-def app_hide(ctx, name, json_output):
+def app_hide(ctx, name, app_name, json_output):
     """Hide (minimize) all windows of an application. Alias for minimize."""
     json_output = json_output or (ctx.obj or {}).get("json", False)
+    if not name and app_name:
+        name = app_name
+    if not name:
+        msg = "Specify application name"
+        if json_output:
+            click.echo(_json_error_str("INVALID_INPUT", msg))
+        else:
+            click.echo(f"Error: {msg}", err=True)
+        sys.exit(1)
+        return
     from naturo.backends.base import get_backend
     from naturo.errors import NaturoError
 
@@ -378,12 +397,23 @@ def app_hide(ctx, name, json_output):
 
 
 @click.command("unhide", hidden=True)
-@click.argument("name")
+@click.argument("name", required=False, default=None)
+@click.option("--app", "app_name", default=None, help="Application name (alternative to positional NAME)")
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 @click.pass_context
-def app_unhide(ctx, name, json_output):
+def app_unhide(ctx, name, app_name, json_output):
     """Unhide (restore) all windows of an application. Alias for restore."""
     json_output = json_output or (ctx.obj or {}).get("json", False)
+    if not name and app_name:
+        name = app_name
+    if not name:
+        msg = "Specify application name"
+        if json_output:
+            click.echo(_json_error_str("INVALID_INPUT", msg))
+        else:
+            click.echo(f"Error: {msg}", err=True)
+        sys.exit(1)
+        return
     from naturo.backends.base import get_backend
     from naturo.errors import NaturoError
 
@@ -415,12 +445,15 @@ def app_unhide(ctx, name, json_output):
 
 
 @click.command("switch", hidden=True)
-@click.argument("name")
+@click.argument("name", required=False, default=None)
+@click.option("--app", "app_name", default=None, help="Application name (alternative to positional NAME)")
 @click.option("--json", "-j", "json_output", is_flag=True, help="JSON output")
 @click.pass_context
-def app_switch(ctx, name, json_output):
+def app_switch(ctx, name, app_name, json_output):
     """Switch to (focus) the most recent window of an application. Alias for focus."""
     json_output = json_output or (ctx.obj or {}).get("json", False)
+    if not name and app_name:
+        name = app_name
     from naturo.backends.base import get_backend
     from naturo.errors import NaturoError
 
@@ -824,9 +857,11 @@ def app_focus(ctx, name, app_name, window_title, hwnd, json_output):
       naturo app focus feishu
       naturo app focus --app feishu
       naturo app focus feishu --window "群聊"
+      naturo app focus --app feishu
       naturo app focus --hwnd 12345
     """
     json_output = json_output or (ctx.obj or {}).get("json", False)
+    # --app flag overrides positional NAME when both absent
     if not name and app_name:
         name = app_name
     from naturo.errors import NaturoError
