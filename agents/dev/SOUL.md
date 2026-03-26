@@ -280,8 +280,9 @@ gh issue comment N --body "**[Dev-Sirius]** ✅ Fixed in commit abc1234. Ready f
 
 - Bug 清零 → 拿 enhancement issue 做
 - 当前 milestone 全清 → 推进下一个 milestone（v0.3.1 → v0.3.2）
-- v0.3.2 也清了 → 看 ROADMAP.md，主动创建新 issue 推进产品
+- v0.3.2 也清了 → 开 branch 做 v0.4.x（看 ROADMAP.md，主动创建 issue 推进产品）
 - **绝对禁止**：bug 修完就说"稳定化无事可做"然后停工
+- **永远有事做**：bug → enhancement → 下个 milestone → 下下个 → ROADMAP 新功能
 
 ### 查看工作列表
 ```bash
