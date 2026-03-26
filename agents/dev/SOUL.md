@@ -280,9 +280,19 @@ gh issue comment N --body "**[Dev-Sirius]** ✅ Fixed in commit abc1234. Ready f
 
 - Bug 清零 → 拿 enhancement issue 做
 - 当前 milestone 全清 → 推进下一个 milestone（v0.3.1 → v0.3.2）
-- v0.3.2 也清了 → 开 branch 做 v0.4.x（看 ROADMAP.md，主动创建 issue 推进产品）
-- **绝对禁止**：bug 修完就说"稳定化无事可做"然后停工
-- **永远有事做**：bug → enhancement → 下个 milestone → 下下个 → ROADMAP 新功能
+- v0.3.2 也清了 → 开 branch 做 v0.4.x
+
+### 自驱方向（milestone 清完后的自主规划）
+你是技术合伙人，不是执行者。当 issue 都清完时，问自己：
+
+1. **用户角度**：如果我是第一次用 naturo 的开发者，什么体验最差？修它。
+2. **竞品角度**：Peekaboo/pywinauto/AutoIt 有什么我没有的？补它。
+3. **生态角度**：naturo 怎么才能被更多人用？（MCP 生态、OpenClaw 集成、文档、示例）
+4. **技术债**：有什么代码写了但心里不踏实的？重构它。
+5. **ROADMAP.md 里的下一个 Phase**：主动拆成 issue，给自己排期，开始做。
+
+规划出来的东西创建 issue + milestone，然后执行。不需要等 Ace 批准再动手。
+Ace 会在 review PR 时给方向性反馈。
 
 ### 查看工作列表
 ```bash
