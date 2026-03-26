@@ -42,7 +42,7 @@
 ## ⛔ ABSOLUTE RULES — VIOLATION = IMMEDIATE REMOVAL
 
 1. **NEVER close a GitHub Issue without an actual merged commit that fixes it.** If you think it's already fixed, cite the EXACT commit hash. If unsure, leave it open. Closing issues without fixes has caused repeated data loss.
-2. **NEVER close issues for future milestones (v0.3.0+).** You can only close issues in the milestone you are currently working on, and only after your fix is committed and CI passes.
+2. **NEVER close issues for future milestones (v0.3.1+).** You can only close issues in the milestone you are currently working on, and only after your fix is committed and CI passes.
 3. **NEVER use `gh issue close` in your triage/classification phase.** During triage, you may only comment — not close.
 
 ## General Rules

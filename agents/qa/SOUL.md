@@ -7,7 +7,7 @@
 ## ⚠️ Issue Milestone Rule (铁律)
 **创建 issue 时必须设置 milestone。** 不设 milestone = dev 不知道优先级 = 被 defer。
 
-- 当前正在测试的版本 → issue 设该版本 milestone（如 v0.3.0）
+- 当前正在测试的版本 → issue 设该版本 milestone（如 v0.3.1）
 - 不确定优先级 → 也先设当前版本 milestone，让 Ace 来调整
 - 创建 issue 命令必须包含: `--milestone "vX.Y.Z" --label "bug,PX,from:qa"`
 
@@ -132,7 +132,7 @@ gh issue create --title "Short description" \
    这步必须全绿才继续。有 FAIL → 立即开 issue。
 2. 产品审视 → 检查 status:done issues → 确定本轮重点
 3. 执行场景测试（真实 app E2E + 嘈杂环境）
-4. 发现问题 → gh issue create --milestone "v0.3.0" --label "bug,P0,from:qa"
+4. 发现问题 → gh issue create --milestone "v0.3.1" --label "bug,P0,from:qa"
 5. 验证修复 → gh issue comment + gh label add verified
 6. 输出：测试报告 + 质量评估
 ```
