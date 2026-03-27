@@ -23,18 +23,21 @@
 - 📌 **Taskbar & Tray** — List and click taskbar items and system tray icons
 - 🖥️ **Multi-Monitor** — Enumerate monitors, capture specific screens, DPI-aware coordinates
 - 🗂️ **Virtual Desktops** — List, switch, create, close desktops and move windows between them
-- 🍎 **macOS Support** — Full Peekaboo CLI wrapper (capture, click, type, window management, and more)
+- 🍎 **macOS Support** — Partial support via Peekaboo CLI wrapper (requires installation)
 - 🤖 **AI-Ready** — JSON output, agent-friendly CLI, MCP server
 
 ## System Requirements
 
 | Platform | Requirement |
 |----------|-------------|
-| **Windows** | Windows 10+ (officially supported) |
-| | Windows 7 SP1+ (best-effort, basic features only) |
+| | Windows Windows 10+ (Recommended); Windows 7 SP1+ (Best-effort) |
 | **Python** | 3.9+ |
-| **macOS** | macOS 13+ with [Peekaboo](https://github.com/steipete/Peekaboo) installed |
-| **Linux** | Not yet supported |
+
+| Platform | Support Status                                      |
+|----------|-----------------------------------------------------|
+| Windows  | ✅ Full support (Windows 10+)                       |
+| macOS    | ⚠️ Partial support (requires Peekaboo CLI)          |
+| Linux    | 🚧 Coming soon (not yet supported)                  |
 
 > **Why Windows 10+?** UIAutomation v2/v3 APIs (caching, virtualized controls) require Windows 8+. Windows 7 has been out of support since January 2020. Most enterprise customers have migrated to Windows 10/11.
 
