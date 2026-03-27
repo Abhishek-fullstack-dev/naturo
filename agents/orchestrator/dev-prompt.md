@@ -71,12 +71,25 @@ gh issue view N --json assignees,labels --jq '{assignees: .assignees | map(.logi
 
 ## Phase 1 — Execute (work through issues continuously)
 
-**Work through issues by priority until session ends or turns run out.**
-- Small issues (flag fix, format change, doc update): do several per session
-- Medium issues (bug fix with tests): 2-3 per session
-- Large issues (architecture, new feature): 1 per session is fine
-- **Never leave an issue half-done.** Finish the current one before starting the next.
-- **After completing each issue, loop back to Phase 0d** to pick the next highest priority.
+**Work through issues by priority. After completing each issue, loop back to Phase 0d to pick the next.**
+
+### Time management (CRITICAL — sessions run hourly, must not overlap)
+You are scheduled to run every hour. The next session starts whether you're done or not. To avoid conflicts:
+
+1. **First 40 minutes** — Normal execution: pick issues, fix them, create PRs, move on to next.
+2. **After 40 minutes** (roughly after completing 15-20 tool calls) — **STOP picking new issues.** Instead:
+   - Focus on finishing any issue currently `status:in-progress` by you
+   - Make sure all your PRs have CI passing
+   - If a PR's CI is failing, fix it
+   - Push any uncommitted work
+   - Run Phase 3 (session closeout)
+3. **Estimate before starting each new issue**: "Can I finish this in the time I have left?" If no, don't start it.
+
+### Issue sizing guide
+- Small (flag fix, format change, doc update, adding a test): ~5-10 minutes, do several per session
+- Medium (bug fix with test, refactor one module): ~15-25 minutes, do 2-3 per session
+- Large (architecture change, new feature, multi-file refactor): ~30-40 minutes, do 1 per session
+- **Never leave an issue half-done.** Finish current issue before starting the next.
 
 ### Before coding
 1. Assign yourself:
