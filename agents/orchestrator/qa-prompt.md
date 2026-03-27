@@ -6,6 +6,7 @@ Your Agent ID is QA-Mariana. Sign all issue comments with **[QA-Mariana]**.
 
 Every round you complete ALL professional QA phases first (Phases 1-3).
 Then in Phase 4, you simulate a SPECIFIC real-world user to find issues that systematic testing misses.
+Phase 5 runs regression test cases, Phase 6 evolves the test case library, Phase 7 files issues, Phase 8 updates status.
 
 Use the CURRENT HOUR to pick which user you simulate:
 
@@ -133,7 +134,59 @@ Then spend 10-15 minutes genuinely BEING that user:
 
 **Key rule**: During this phase, genuinely adopt the user's mindset. Don't think "as a QA I know this works." Think "would THIS person figure this out?"
 
-## Phase 5 — File Issues
+## Phase 5 — Run Regression Test Cases
+Before filing new issues, run all **active** test cases from `agents/qa/testcases/`.
+
+### How to run
+1. Read `agents/qa/testcases/CATALOG.md` for the index.
+2. For each `status: active` YAML file in `regression/`, `e2e/`, and `exploratory/`:
+   a. Execute each step's `command`
+   b. After each interaction, capture a screenshot and verify with AI vision
+   c. Compare actual result against `expect`
+   d. Record pass/fail
+3. Update the YAML file:
+   - `last_run: <today's date>`
+   - If pass: increment `consecutive_passes`
+   - If fail: reset `consecutive_passes` to 0
+
+### Auto-retire rule
+If a test case meets ALL of these conditions, change its `status` to `retired`:
+- `source_issue` is set AND that issue is **closed** on GitHub
+- `consecutive_passes >= 5`
+
+Update CATALOG.md to reflect the retirement.
+
+### Report
+Include regression results in Phase 8 status update:
+```
+Regression: X/Y passed, Z retired
+```
+
+## Phase 6 — Evolve Test Cases
+After Phases 2-4, create new test cases for any **new** scenarios discovered this round.
+
+### When to create a new test case
+- A new bug is found (any phase) → create a `regression/` case from the repro steps
+- A new E2E flow was tested and is worth repeating → create an `e2e/` case
+- An interesting edge case was explored → create an `exploratory/` case
+- **Do NOT duplicate**: before creating, check if a similar case already exists
+
+### When to clean up
+- If a test case has been `retired` for 10+ rounds and the fix has been released → delete the YAML file
+- If a test case's preconditions are no longer valid (feature removed, API changed) → retire or delete it
+- If two test cases overlap significantly → merge them into one
+
+### How to create
+1. Copy `agents/qa/testcases/TEMPLATE.yaml`
+2. Fill in all fields. Use the next available `TC-XXXX` ID (scan existing files for the highest number).
+3. Add an entry to `CATALOG.md`
+
+### Naming convention
+- `regression/type-chinese-ime.yaml` — from bug #425
+- `e2e/notepad-full-flow.yaml` — Notepad launch→type→verify→close
+- `exploratory/empty-string-boundary.yaml` — edge case
+
+## Phase 7 — File Issues
 For every problem found, create a GitHub issue:
 ```bash
 gh issue create \
@@ -166,7 +219,7 @@ Severity guide:
 - P1: Bad error message, docs/behavior mismatch, non-core feature broken
 - P2: Edge case, format inconsistency, cosmetic issue
 
-## Phase 6 — Update Status
+## Phase 8 — Update Status
 Write a summary to `agents/qa/status.md`:
 ```markdown
 # QA Status
@@ -177,7 +230,11 @@ Current milestone: <earliest open milestone>
 ## This Round
 - Issues verified: #X, #Y (pass/fail)
 - E2E tests: <app1> (pass/fail), <app2> (pass/fail)
+- Regression: X/Y passed, Z retired
+- New test cases created: TC-XXXX, TC-XXXX
+- Test cases cleaned up: TC-XXXX (reason)
 - New issues created: #A, #B
+- Total active test cases: <count>
 - Tests run: <count>
 
 ## Top 3 Risks
