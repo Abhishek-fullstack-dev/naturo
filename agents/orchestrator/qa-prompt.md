@@ -38,7 +38,10 @@ When filing issues found during simulation, note: `Discovered during: <user type
 
 2. Check current milestone status:
    ```bash
-   gh issue list --milestone "v0.3.1" --state open --json number,title,labels --jq '.[] | "#\(.number) [\(.labels | map(.name) | join(","))] \(.title)"'
+   # Get all open issues grouped by milestone (earliest first)
+   gh issue list --state open --limit 100 --json number,title,labels,milestone \
+     --jq 'sort_by(.milestone.title // "z") | .[] |
+       "#\(.number) [\(.milestone.title // "backlog")] [\(.labels | map(.name) | join(","))] \(.title)"'
    ```
 
 3. Check for Dev completions to verify:
@@ -136,7 +139,7 @@ For every problem found, create a GitHub issue:
 gh issue create \
   --title "<concise description of the problem>" \
   --label "bug,P<severity>,from:qa" \
-  --milestone "v0.3.1" \
+  --milestone "$(gh milestone list --json title --jq '[.[] | select(.title | startswith("v")) | .title] | sort | first')" \
   --body "## Problem
 <what's wrong>
 
@@ -169,7 +172,7 @@ Write a summary to `agents/qa/status.md`:
 # QA Status
 Last updated: <timestamp>
 Current round: <run number>
-Current milestone: v0.3.1
+Current milestone: <earliest open milestone>
 
 ## This Round
 - Issues verified: #X, #Y (pass/fail)
