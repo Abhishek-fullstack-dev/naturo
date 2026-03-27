@@ -76,13 +76,21 @@ Naturo is a Python + C++ desktop automation engine positioned as "Peekaboo for W
 - **Launch/Growth**: ~14 issues — PyPI (#51), npm (#52), repo public (#54), announcements (#55), videos (#61), etc.
 
 ### Critical Observations
-1. **P0 #367 (Hybrid tree)** is the most architecturally ambitious issue — per-node backend selection. This is what differentiates naturo from all competitors. Should be the #1 technical priority.
-2. **Launch tasks (#44-#57) are scattered** — no clear milestone assignment. Risk: launch preparation gets deprioritized by feature work.
-3. **No "good first issue" labels** — impossible for external contributors to participate.
-4. **#21 is a mega-issue** referencing "Naturobot engine-level capabilities" — too broad, needs decomposition into actionable sub-issues.
+1. **⚠️ NONE of the 48 open issues have GitHub milestones assigned.** `agents/STATE.md` references v0.3.1/v0.3.2 milestones, but the actual issues on GitHub have `milestone: null`. This means `gh issue list --milestone "v0.3.1"` returns nothing — the Dev/QA agent workflow described in SOUL.md is broken. **This is the #1 process gap to fix immediately.**
+2. **P0 #367 (Hybrid tree)** is the most architecturally ambitious issue — per-node backend selection. This is what differentiates naturo from all competitors. Should be the #1 technical priority.
+3. **Launch tasks (#44-#57) are scattered** — no clear milestone assignment. Risk: launch preparation gets deprioritized by feature work.
+4. **No "good first issue" labels** — impossible for external contributors to participate.
+5. **#21 is a mega-issue** referencing "Naturobot engine-level capabilities" — too broad, needs decomposition into actionable sub-issues.
+6. **Zero open bugs labeled `bug`** — all 48 issues are `enhancement` or `task`. Either bug tracking happens elsewhere or bugs are being closed very efficiently.
 
 ### Recommendations
-1. **[P0] Create a dedicated "v0.4.0-launch" milestone** grouping all launch preparation tasks (#44-#57). Separate from feature milestones.
+1. **[P0] Assign GitHub milestones to all 48 issues NOW.** Without milestones, the Dev/QA agent SOUL.md workflow (`gh issue list --milestone`) is non-functional. Suggested grouping:
+   - **v0.3.1**: #367, #312, #382, #313, #361 (current sprint per STATE.md)
+   - **v0.3.2**: #102-106, #38-40, #43, #168 (selector + enterprise)
+   - **v0.4.0-launch**: #44-57, #61 (open source launch tasks)
+   - **v0.5.0**: #66-77, #84 (Linux backend)
+   - **v0.6.0**: #87-91 (National OS + enterprise)
+   - **v1.0.0**: #92-96, #106 (stable release + ecosystem)
 2. **[P0] Decompose #21** into specific, actionable issues with clear acceptance criteria.
 3. **[P1] Add "good first issue" labels** to at least 5 issues (#49 README badges, #45 CONTRIBUTING.md, #47 README GIF, #61 demo videos, #46 issue templates).
 4. **[P1] Prioritize #367 (hybrid tree)** as the next major feature — this is the technical moat.
