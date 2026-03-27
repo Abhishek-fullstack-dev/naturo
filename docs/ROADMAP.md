@@ -155,17 +155,17 @@ Go public with maximum impact, plus user-facing selector management.
 
 ### Pre-launch
 - [ ] Branch protection (require PR + CI)
-- [ ] CONTRIBUTING.md + CODE_OF_CONDUCT.md
-- [ ] Issue/PR templates
+- [x] CONTRIBUTING.md + CODE_OF_CONDUCT.md
+- [x] Issue/PR templates
 - [ ] README hero GIF (Notepad E2E demo)
 - [ ] README badges
 - [ ] Code signing certificate + CI integration
-- [ ] First PyPI release (`pip install naturo`)
+- [x] First PyPI release (`pip install naturo`)
 - [ ] npm package (`npx naturo mcp`)
 - [ ] OpenClaw skill published to ClawHub
 
 ### Launch
-- [ ] Flip repo to public
+- [x] Flip repo to public
 - [ ] Announcements: LinkedIn / Reddit / Twitter / HN / Discord
 - [ ] "How Naturo Works" blog post
 - [ ] Submit to awesome-python, awesome-automation
