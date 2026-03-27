@@ -148,7 +148,7 @@ Naturo is a Python + C++ desktop automation engine positioned as "Peekaboo for W
 | **pywinauto** | ❌ | Partial (UIA+Win32) | ❌ | ✅ | ❌ | ❌ | 4K+ |
 | **AutoIt** | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | N/A |
 | **WinAppDriver** | ❌ | ✅ (UIA) | ❌ | ✅ | ❌ | ❌ | 3K+ |
-| **Naturo** | ✅ | ✅ (UIA+MSAA+JAB+IA2+CDP+Vision) | ✅ | ✅ | Partial | Stub | ~0 |
+| **Naturo** | ✅ | ✅ (UIA+MSAA+JAB+IA2+CDP+Vision) | ✅ | ✅ | Partial | Stub | 3 |
 
 ### Naturo's Unique Advantages
 1. **Only tool with MCP server + multi-framework detection** on Windows
@@ -157,13 +157,13 @@ Naturo is a Python + C++ desktop automation engine positioned as "Peekaboo for W
 4. **Naturobot commercial engine heritage** — enterprise RPA know-how
 
 ### Key Gaps to Fill
-1. **No community presence** — repo appears to be private or new, zero stars
+1. **Minimal community presence** — repo is public but only 3 stars, 0 forks
 2. **No brand recognition** — "Peekaboo for Windows" is the right positioning but needs to be shouted
 3. **Linux stub** means "cross-platform" claim is misleading in README
 4. **No PyPI download metrics visible** — unclear adoption
 
 ### Strategic Recommendations
-1. **[P0] Go public ASAP** with the hero GIF and polished README. Every day of delay is wasted potential.
+1. **[P0] Launch announcements ASAP** — repo is already public (3 stars) but has zero promotional presence. Hero GIF + HN/Reddit post is the critical next step.
 2. **[P0] Establish the Peekaboo partnership** before someone else does (#93).
 3. **[P1] Target the AI agent community first** — MCP/OpenClaw/Claude users. This is a blue ocean, not a crowded RPA market.
 4. **[P2] Don't overinvest in Linux** until Windows is bulletproof. The "Peekaboo for Windows" narrative is cleaner without half-baked Linux support.
@@ -227,7 +227,7 @@ See Section 9 (Continuous Agent System Design) for the full redesign.
 | # | Priority | Issue/Task | Rationale |
 |---|----------|-----------|-----------|
 | 1 | **P0** | Hero GIF for README (#47) | #1 star conversion factor |
-| 2 | **P0** | Go public (#54) | Can't grow without visibility |
+| 2 | **P0** | Launch announcements (#55) | Repo is public but nobody knows — need HN/Reddit/Twitter push |
 | 3 | **P0** | Ruff + mypy in CI | Professional quality gate |
 | 4 | **P0** | Hybrid tree (#367) | Technical moat, key differentiator |
 | 5 | **P1** | Self-hosted Windows CI runner (#89) | Can't test desktop automation without desktop |
