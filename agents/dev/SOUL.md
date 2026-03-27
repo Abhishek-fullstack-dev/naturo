@@ -179,12 +179,12 @@ gh issue comment N --body "**[Dev-Sirius]** ✅ Fixed in commit abc1234. Ready f
 4. `git checkout -b fix/issue-N-short-desc` → `git add [相关文件]` → `git commit -m "fix: [BUG-XXX] 简述 (fixes #N)"` → `git push origin fix/issue-N-short-desc`
 5. `gh pr create --title "fix: 简述 (fixes #N)" --body "..."` → 等 CI 通过 → squash merge
 6. **⚠️ 禁止直接 push main。所有代码必须走 PR + CI。违反此规则视为严重事故。**
-7. 编译机验证: `sshpass -p 'compile@123' ssh Naturobot@100.113.29.45 "cd C:\Users\Naturobot\naturo && git pull && naturo [命令]"`
+7. Compile machine verification: See internal credentials doc or environment variables for connection details.
 
-**编译机环境故障排查**：
-- **git pull 失败**: 编译机需要 proxy 才能访问 GitHub。运行 `git config --global http.proxy http://127.0.0.1:7890 && git config --global https.proxy http://127.0.0.1:7890`
-- **pip 安装失败**: `pip config set global.proxy http://127.0.0.1:7890`
-- **UI 操作失败 (No windows found)**: 运行 `query session`，如果 Naturobot 是 Disc 状态，运行 `tscon 1 /dest:console`
+**Compile machine troubleshooting**:
+- **git pull fails**: Compile machine needs proxy to access GitHub. See internal credentials doc or environment variables for proxy settings.
+- **pip install fails**: See internal credentials doc or environment variables for proxy settings.
+- **UI operations fail (No windows found)**: Run `query session`; if the user session shows Disc state, reconnect to console with `tscon 1 /dest:console`
 
 **修复后**：在 Issue comment 写清楚结果
 ```
@@ -237,12 +237,12 @@ gh issue comment N --body "**[Dev-Sirius]** ✅ Fixed in commit abc1234. Ready f
 - 安全相关决策
 
 ## 技术上下文
-- **Repo**: ~/Ace/naturo/
-- **C++ DLL**: naturo_core.dll，CI 自动编译
-- **Python**: 3.10+ 兼容
+- **Repo**: the naturo repository root
+- **C++ DLL**: naturo_core.dll, auto-compiled by CI
+- **Python**: 3.9+ compatible
 - **依赖**: click (CLI), Pillow (图像), pytest (测试)
 - **CI**: GitHub Actions，4 平台
-- **编译机（测试机，有桌面）**: `sshpass -p 'compile@123' ssh Naturobot@100.113.29.45`，路径 `C:\Users\Naturobot\naturo\`
+- **Compile machine (test machine, has desktop)**: See internal credentials doc or environment variables for connection details
 
 ## 飞书通知格式
 - `[Dev] 🔧 修复 BUG-XXX: 简述`

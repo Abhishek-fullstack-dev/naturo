@@ -161,5 +161,5 @@ Every observation command (capture, see, list) should persist results to `~/.nat
 
 - `core/include/naturo/exports.h` — Public C API (add new functions here)
 - `naturo/bridge.py` — Python ↔ DLL bridge (mirror new C functions)
-- `naturo/cli.py` — CLI commands (user-facing)
+- `naturo/cli/` — CLI commands package (user-facing)
 - `.github/workflows/build.yml` — CI pipeline
