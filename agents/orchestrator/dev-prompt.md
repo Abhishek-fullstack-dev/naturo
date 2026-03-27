@@ -31,7 +31,8 @@ gh pr list --author @me --state all --limit 5
 gh pr list --author @me --state open --json number,title,reviewDecision --jq '.[] | "#\(.number) \(.title) [\(.reviewDecision)]"'
 ```
 **If you have an open PR with review comments → address those FIRST before starting new work.**
-**If you have an open PR that's approved → merge it first.**
+**If you have an open PR that's approved but not merged → it should auto-merge when CI passes. Check CI status.**
+**If you have an open PR stuck (CI failing) → fix the CI issue in that branch, push again.**
 
 ### 0c. CI health check
 ```bash
@@ -101,10 +102,12 @@ gh issue view N --json assignees,labels --jq '{assignees: .assignees | map(.logi
    git commit -m "<type>: <description> (fixes #N)"
    ```
    Types: `fix:` (bug), `feat:` (feature), `refactor:` (restructure), `test:` (tests), `docs:` (documentation)
-2. Push and create PR:
+2. Push, create PR, and enable auto-merge:
    ```bash
    git push origin <branch>
    gh pr create --title "<type>: <description> (fixes #N)" --body "## Changes\n- <what changed>\n\n## Testing\n- <how you tested>\n\n**[Dev-Sirius]**"
+   # Enable auto-merge — PR will merge automatically when CI passes
+   gh pr merge --auto --squash
    ```
 3. Comment on the issue:
    ```bash
