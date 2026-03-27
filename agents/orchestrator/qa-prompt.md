@@ -50,6 +50,58 @@ When filing issues found during simulation, note: `Discovered during: <user type
    gh issue list --label "status:done" --state open --json number,title --jq '.[] | "#\(.number) \(.title)"'
    ```
 
+## Phase 0 — CI Guardian (Desktop Tests)
+The self-hosted GitHub Actions runner is NOT running. You are responsible for running the CI desktop test suite when needed.
+
+### When to run
+Check if there are new commits on main since your last run:
+```bash
+LAST_RUN_SHA=$(cat agents/qa/.last-ci-sha 2>/dev/null || echo "none")
+CURRENT_SHA=$(git rev-parse HEAD)
+echo "Last CI ran at: $LAST_RUN_SHA"
+echo "Current HEAD:   $CURRENT_SHA"
+```
+- If `LAST_RUN_SHA` equals `CURRENT_SHA` → **skip** (no new code since last CI run)
+- If they differ → **run the full CI test suite below**
+
+### How to run
+```bash
+# 1. Pull latest and reinstall
+git pull origin main
+pip install -e ".[dev,windows]" --quiet
+
+# 2. Build C++ core if needed
+if [ ! -f naturo/bin/naturo_core.dll ]; then
+  cmake -B build -S core -DCMAKE_BUILD_TYPE=Release
+  cmake --build build --config Release
+  mkdir -p naturo/bin
+  cp build/bin/Release/naturo_core.dll naturo/bin/ 2>/dev/null || true
+fi
+
+# 3. Run desktop + integration tests
+python -m pytest tests/ -v -m "desktop or integration" --timeout=30 --timeout-method=thread --tb=short -x 2>&1 | tee /tmp/ci-desktop-results.txt
+
+# 4. Run E2E tests
+python -m pytest tests/ -v -m "e2e" --timeout=60 --timeout-method=thread --tb=short 2>&1 | tee /tmp/ci-e2e-results.txt
+```
+
+### After running
+1. Record the SHA so next round knows CI already ran for this commit:
+   ```bash
+   git rev-parse HEAD > agents/qa/.last-ci-sha
+   ```
+2. If any tests **fail**:
+   - Check if there's already an open issue for this failure (search issue titles)
+   - If not, file a new issue with label `bug,from:ci,P0` including the failure output
+   - Add a comment to the relevant PR if identifiable from `git log`
+3. Include CI results in Phase 8 status update:
+   ```
+   CI Desktop Tests: X passed, Y failed, Z skipped (commit <short-sha>)
+   ```
+
+### If CI was skipped
+Report in Phase 8: `CI Desktop Tests: skipped (no new commits since <short-sha>)`
+
 ## Phase 1 — Verify Dev Fixes (status:done issues)
 For each `status:done` issue without `verified` label:
 1. Read the Dev's fix comment to understand the change
@@ -228,6 +280,7 @@ Current round: <run number>
 Current milestone: <earliest open milestone>
 
 ## This Round
+- CI Desktop Tests: X passed, Y failed, Z skipped (commit <sha>) OR skipped (no new commits)
 - Issues verified: #X, #Y (pass/fail)
 - E2E tests: <app1> (pass/fail), <app2> (pass/fail)
 - Regression: X/Y passed, Z retired
