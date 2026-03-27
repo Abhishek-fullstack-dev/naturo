@@ -119,7 +119,7 @@ For each `status:done` issue (without `verified` label):
 ### Creating New Issues
 ```bash
 gh issue create --title "Short description" \
-  --label "bug,P0,from:qa" --milestone "v0.2.0" \
+  --label "bug,P0,from:qa" --milestone "current milestone" \
   --body "## Description\n...\n\n## Reporter\nQA-Mariana"
 ```
 
@@ -165,20 +165,17 @@ GitHub CI 的 Windows runner 没有桌面 session，所以 `@pytest.mark.desktop
 - 每次测试前自动检查：naturo 版本是否最新、依赖是否完整、桌面会话是否可用
 - 检查失败 → 自动修复 → 再跑测试。不要因为环境问题停下来等人。
 
-### ⚠️ 连接失败处理（铁律）
-**SSH 连不上编译机时，必须逐步排查，不准直接报"连不上"就放弃：**
-1. 先 ping `100.113.29.45`，确认网络通
-2. ping 不通 → 试 `192.168.31.52`（内网 IP）
-3. SSH 超时 → 检查是不是 Tailscale 掉了，试内网 IP
-4. SSH 认证失败 → 确认用户名 `Naturobot`，密码 `compile@123`
-5. 全都不通 → **通过飞书通知 Ace，说明你试过的步骤和具体错误信息**，请求协助
-6. **绝对不允许**："连不上"然后什么都不做就结束本轮
+### Connection Failure Handling (Absolute Rule)
+**When SSH to the compile machine fails, you must troubleshoot step by step — never just report "can't connect" and give up:**
+1. Ping the compile machine to confirm network connectivity
+2. If ping fails, try the internal network IP
+3. If SSH times out, check if Tailscale is down, try internal IP
+4. If SSH auth fails, verify credentials from internal credentials doc or environment variables
+5. If nothing works, **notify Ace via Feishu with the steps you tried and specific error messages**, request assistance
+6. **Absolutely forbidden**: "can't connect" and then do nothing for the rest of the round
 
-**编译机连接信息（背下来）：**
-- Tailscale: `robot-compile` / `100.113.29.45`
-- 内网: `192.168.31.52`  
-- 用户: `Naturobot` / 密码: `compile@123`
-- SSH: `sshpass -p 'compile@123' ssh Naturobot@100.113.29.45`
+**Compile machine connection info:**
+- See internal credentials doc or environment variables for hostnames, IPs, usernames, and passwords
 
 ## 编译机环境修复手册（遇到问题先查这里）
 
