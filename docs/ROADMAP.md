@@ -124,9 +124,9 @@ See [design doc](design/UNIFIED_APP_MODEL.md).
 - [x] Unified Selector format specification ([design doc](design/UNIFIED_SELECTOR.md))
 - [x] Post-action verification engine (`--verify/--no-verify` on type/click/press, #231)
 
-## 0.4.0 — Unified Selector Engine + Enterprise Features
+## 0.4.0 — Unified Selector Engine + Enterprise Features + Open Source Polish
 
-Unified Selector system and deep enterprise automation capabilities from Naturobot engine.
+Unified Selector system, deep enterprise automation capabilities from Naturobot engine, and continued open source launch efforts.
 
 See [Unified Selector design doc](design/UNIFIED_SELECTOR.md).
 
@@ -135,6 +135,7 @@ See [Unified Selector design doc](design/UNIFIED_SELECTOR.md).
 - [ ] `see` outputs selectors alongside eN IDs
 - [ ] `click --selector` accepts unified selector format
 - [ ] Built-in selector templates for Top 20 Windows apps
+- [ ] User selector management (`naturo selector save/load/list/export`)
 
 ### Enterprise
 - [ ] Excel COM automation (read/write cells, run macros, create charts)
@@ -142,18 +143,9 @@ See [Unified Selector design doc](design/UNIFIED_SELECTOR.md).
 - [ ] MinHook injection (function hooks, intercept/modify Win32 API calls)
 - [ ] Embedded Python 3.12 runtime (~40MB bundled)
 - [ ] `naturo run my_script.py` — execute user scripts with bundled Python
-- [ ] Standalone executable (Nuitka/PyInstaller → naturo.exe)
+- [ ] Standalone executable (Nuitka/PyInstaller -> naturo.exe)
 
-## 0.4.0 — Open Source Launch + Selector Management
-
-Go public with maximum impact, plus user-facing selector management.
-
-### Selector Management
-- [ ] User selector management (`naturo selector save/load/list/export`)
-
-### Open Source Launch
-
-### Pre-launch
+### Open Source Polish
 - [ ] Branch protection (require PR + CI)
 - [x] CONTRIBUTING.md + CODE_OF_CONDUCT.md
 - [x] Issue/PR templates
@@ -163,8 +155,6 @@ Go public with maximum impact, plus user-facing selector management.
 - [x] First PyPI release (`pip install naturo`)
 - [ ] npm package (`npx naturo mcp`)
 - [ ] OpenClaw skill published to ClawHub
-
-### Launch
 - [x] Flip repo to public
 - [ ] Announcements: LinkedIn / Reddit / Twitter / HN / Discord
 - [ ] "How Naturo Works" blog post
