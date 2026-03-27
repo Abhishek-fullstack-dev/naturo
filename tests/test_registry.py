@@ -1,4 +1,3 @@
-import pytest
 """Tests for Windows Registry CLI commands and backend.
 
 Tests use mocked winreg module to work on all platforms.

@@ -1,35 +1,35 @@
 # Naturo Project Status
 
 > Agents: read this on every startup.
-> **Bug tracking**: GitHub Issues only → https://github.com/AcePeak/naturo/issues
+> **Bug tracking**: GitHub Issues only -> https://github.com/AcePeak/naturo/issues
 
 ## Current State
 
-**v0.3.0 已发布** (PyPI + GitHub Release)。当前工作重心是 v0.3.1 和 v0.3.2。
+**v0.3.0 released** (PyPI + GitHub Release). Current focus is v0.3.1 and v0.3.2.
 
 ## Active Milestones
 
-### v0.3.1 — 当前最高优先级
-- #405 P0 回归 bug: type/press 在 Win11 Notepad 失效
-- #367 P0: Hybrid 逐节点混合识别引擎
-- #312 P1: Win32+UIA 混合模式
-- #382 P2: get --all 多元素返回
-- #313 P2: highlight 全元素同时显示
+### v0.3.1 — Current highest priority
+- #405 P0 regression: type/press fails on Win11 Notepad
+- #367 P0: Hybrid per-node recognition engine
+- #312 P1: Win32+UIA hybrid mode
+- #382 P2: get --all multi-element return
+- #313 P2: highlight all elements simultaneously
 
-### v0.3.2 — 下一步
-- Unified Selector 引擎 (#102, #103, #104, #105)
-- 稳定 ID 系统 (#361)
+### v0.3.2 — Next
+- Unified Selector engine (#102, #103, #104, #105)
+- Stable ID system (#361)
 - Enterprise: Excel (#38), SAP (#39), MinHook (#40)
-- 开源准备: README GIF (#47), CONTRIBUTING (#45), 公开 repo (#54)
-- npm 发布 (#52), standalone exe (#43)
+- Open source prep: README GIF (#47), CONTRIBUTING (#45), public repo (#54)
+- npm publish (#52), standalone exe (#43)
 
-## 获取工作列表
+## Getting your work list
 
 ```bash
-# 当前应该做什么
-gh issue list --milestone "v0.3.1" --state open --label bug     # 先修 bug
-gh issue list --milestone "v0.3.1" --state open                 # 再做 enhancement
-gh issue list --milestone "v0.3.2" --state open                 # v0.3.1 清完推这个
+# What should I work on now?
+gh issue list --milestone "v0.3.1" --state open --label bug     # Fix bugs first
+gh issue list --milestone "v0.3.1" --state open                 # Then enhancements
+gh issue list --milestone "v0.3.2" --state open                 # After v0.3.1 is clear
 ```
 
 ## Completed Releases
@@ -42,8 +42,8 @@ gh issue list --milestone "v0.3.2" --state open                 # v0.3.1 清完�
 
 ## Agent Roles
 
-- **Dev-Sirius**: Fix bugs, push features, maintain code quality. Bug 清完做 enhancement，milestone 清完推下一个。
-- **QA-Mariana**: 跟着 Dev 进度测试，Dev 做到哪测到哪。阶段性全量回归。
+- **Dev-Sirius**: Fix bugs, push features, maintain code quality. Clear bugs first, then enhancements; when milestone is clear, move to the next.
+- **QA-Mariana**: Test alongside Dev progress. Periodic full regression testing.
 
 ## Rules
 
@@ -51,5 +51,5 @@ gh issue list --milestone "v0.3.2" --state open                 # v0.3.1 清完�
 - One bug = one commit, reference issue: `fixes #N`
 - All issue comments must include Agent ID
 - Code quality must survive public scrutiny
-- Only operate within `~/Ace/naturo/`
-- **v0.3.0 已发布，不要再看 v0.3.0 milestone**
+- Only operate within the naturo repository root
+- **v0.3.0 is released — do not look at v0.3.0 milestone anymore**
