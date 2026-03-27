@@ -1,21 +1,19 @@
 # Dev Status
-Last updated: 2026-03-27T10:30Z
-Session: Add ruff linting + mypy type checking to CI pipeline (#407)
+Last updated: 2026-03-27T18:30Z
+Session: Fix click/press exit code 2 on successful operations (#426)
 
 ## This Session
-- Issue worked on: #407 — PR #424 created, marked status:done
-- Tests: 1787 passed, 517 skipped, 0 failed (verified on final branch)
-- PRs: #424 created (feat: ruff + mypy CI)
-- Bugs found & fixed: 14 MCP tool functions missing `backend = _get_backend()`
-  (dialog_detect/accept/dismiss/click_button/type, taskbar_list/click,
-  tray_list/click, virtual_desktop_list/switch/create/close/move_window)
+- Issue worked on: #426 — PR #429 created, marked status:done
+- Tests: 1767 passed, 362 skipped, 0 failed
+- PRs: #429 created (fix: click/press/type return exit 0 for inconclusive verification)
+- Root cause: `sys.exit(2)` for UNKNOWN verification status made exit code 2 the common case for successful click/press operations
 
 ## Current State
-- Earliest open milestone: v0.3.1 (issue #407 pending merge via PR #424)
-- CI: green (pre-push); lint job added, awaiting first CI run
-- Open PRs by me: #424
+- Earliest open milestone: v0.3.1 (2 issues: #425 P0 Chinese IME, #426 P1 exit code — #426 fixed in PR #429)
+- CI: green (local)
+- Open PRs by me: #429
 
 ## Next Session Should
-- Check if PR #424 has review feedback — address it
-- If merged, pick next P0 issue (#367 hybrid tree or #21 Naturobot engine)
-- Check P1 CI issues (#408, #409, #410) if P0s need Ace input
+- Check if PR #429 has review feedback — address it
+- If merged, tackle #425 (P0: type silent failure on Chinese IME) — needs IME detection + fallback strategy
+- If #425 needs Windows testing, pick from P1 backlog: #410 (CI marker filtering), #408 (duplicate PyPI publishing)
