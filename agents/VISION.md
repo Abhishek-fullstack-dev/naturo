@@ -1,55 +1,27 @@
 # Naturo — Team Vision
 
 ## Ultimate Goal
+
 **Become the best UI automation Skill in the OpenClaw ecosystem, 1K+ GitHub Stars, most-used tool.**
 
-## Stage Goals & Role Evolution
+## Stage Goals
 
 ### Stage 1: Quality Gate — COMPLETE
-**Goal**: Zero bugs, E2E acceptance passed, trustworthy code
-
-| Role | Responsibility |
-|------|----------------|
-| **Dev** | Fix all open bugs, write regression tests |
-| **QA** | Verify fixes, full regression testing, E2E acceptance |
-
-**Completion criteria**: All bugs verified, E2E acceptance report passed
+**Goal**: Zero bugs, E2E acceptance passed, trustworthy code.
 **Status**: v0.3.0 released. All bugs verified. PyPI published. Repo is public.
 
-### Stage 2: AI Integration (Phase 4)
-**Goal**: MCP Server usable, AI Agent can drive Windows applications end-to-end
+### Stage 2: AI Integration
+**Goal**: MCP Server usable, AI Agent can drive Windows applications end-to-end.
+**Completion criteria**: AI Agent can autonomously complete "open Notepad, type, save, close" full flow.
 
-| Role | Responsibility |
-|------|----------------|
-| **Core Dev** | MCP Server implementation, AI Vision pipeline |
-| **Integration Dev** | OpenClaw Skill polish, Agent workflow testing |
-| **DX Engineer** (evolved from QA) | Installation experience, first-use smoothness, error message readability, documentation accuracy |
+### Stage 3: Open Source Launch — PARTIALLY COMPLETE
+**Goal**: Launch impact, 200+ Stars in first week.
+**Completion criteria**: Repo public, PyPI installable, ClawHub installable, launch post published.
+**Status**: PyPI release done. Repo flipped to public. Launch post and marketing still pending.
 
-**Completion criteria**: AI Agent can autonomously complete "open Notepad -> type -> save -> close" full flow
-
-### Stage 3: Open Source Launch (Phase 5.1) — COMPLETE
-**Goal**: Launch impact, 200+ Stars in first week
-
-| Role | Responsibility |
-|------|----------------|
-| **Core Dev** | PyPI publishing, standalone binary packaging, code signing |
-| **DocWriter** | README hero GIF, tutorials, comparison docs (vs PyAutoGUI/pywinauto) |
-| **Growth** | HN/Reddit/Twitter/LinkedIn launch posts, demo videos |
-| **Community** | Issue response (<24h), PR review, Discussion management |
-
-**Completion criteria**: Repo public, PyPI installable, ClawHub installable, launch post published
-**Status**: PyPI release done. Repo flipped to public.
-
-### Stage 4: Ecosystem Expansion (Phase 5-9)
-**Goal**: 1K Stars, become the de facto standard
-
-| Role | Responsibility |
-|------|----------------|
-| **Core Dev** | macOS/Linux backends, enterprise features |
-| **Ecosystem Dev** | Automation template library (Excel, SAP, enterprise apps) |
-| **Growth** | Tech blog posts, conference talks, awesome-list inclusion |
-| **Community** | Community PR mentoring, contributor cultivation |
-| **Outreach** | Official Peekaboo/OpenClaw collaboration, cross-community promotion |
+### Stage 4: Ecosystem Expansion
+**Goal**: 1K Stars, become the de facto standard.
+**Scope**: macOS/Linux backends, enterprise features, automation template library, tech blog posts, conference talks, community PR mentoring.
 
 ## Key Levers for 1K Stars
 
@@ -60,7 +32,7 @@
 5. **Cross-platform** — Windows + macOS + Linux, one tool to unify desktop automation
 
 ## Principles
-- Each stage's roles serve that stage's goals — not earlier, not later
-- Roles can be held by the same agent or split across agents
+
 - Quality always takes priority over speed
 - Never build features without user value
+- Each stage's work serves that stage's goals — not earlier, not later
