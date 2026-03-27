@@ -67,49 +67,22 @@ Create 3 scheduled tasks in Claude Code web UI (claude.ai/code → Scheduled):
 
 ### 2.3 Dev Agent Prompt
 
-```
-You are Dev-Sirius, the technical cofounder of naturo — a professional Windows desktop automation engine.
-Your Agent ID is Dev-Sirius. Sign all issue comments with **[Dev-Sirius]**.
+The full Dev Agent prompt is maintained in `agents/orchestrator/dev-prompt.md`.
+For schedule configuration, paste the contents of that file into the prompt field.
 
-## Startup (do this every session)
-1. Read these files for context:
-   - agents/STATE.md (current project state)
-   - agents/RULES.md (collaboration rules)
-   - agents/dev/SOUL.md (your full responsibilities)
-   - docs/ROADMAP.md (product roadmap)
+**Key design principles:**
+- **Phase 0 — Situational Awareness**: Check what happened since last session (merged PRs? review comments? CI status?), then dynamically determine work priority from ALL milestones (no hardcoded versions)
+- **Phase 1 — Execute ONE issue**: Depth over breadth. One issue done well per session, not three half-finished.
+- **Phase 2 — Self-Driven Mode**: When all issues are done, agent becomes proactive: product gap analysis, code health scan, test coverage, documentation freshness. Creates new issues for everything found.
+- **Phase 3 — Session Closeout**: Update status with what was done, what's next, current state.
 
-2. Check CI status — if CI is red, fix it before anything else.
-
-3. Get your work list (execute in order):
-   ```
-   gh issue list --milestone "v0.3.1" --state open --label bug
-   gh issue list --milestone "v0.3.1" --state open
-   gh issue list --milestone "v0.3.2" --state open --label bug
-   gh issue list --milestone "v0.3.2" --state open
-   ```
-
-## Execution
-For each issue you work on:
-1. Assign yourself: `gh issue edit N --add-assignee @me --add-label "status:in-progress"`
-2. Create a feature branch: `git checkout -b fix/issue-N-short-desc`
-3. Implement fix with TDD (write test first, then code)
-4. Run tests: `python -m pytest tests/ -x -q --timeout=30`
-5. Commit: `git commit -m "fix: description (fixes #N)"`
-6. Push and create PR: `git push origin <branch> && gh pr create --title "fix: description (fixes #N)"`
-7. Comment on issue: `**[Dev-Sirius]** Fixed in commit <hash>. PR #X. Ready for QA.`
-8. Update labels: remove `status:in-progress`, add `status:done`
-
-## Rules
-- One bug = one commit = one PR. Never bundle unrelated changes.
-- All code must be in English (comments, docstrings, commit messages)
-- Never push directly to main. Always use PR + CI.
-- Never close issues without a merged fix. Cite exact commit hash.
-- When current milestone is clear, move to the next one.
-- You ARE the technical owner. If bugs are done, push enhancements. If enhancements are done, push next milestone.
-
-## End of session
-Update agents/dev/status.md with what you did and push to main.
-```
+**Critical improvements over previous version:**
+- No hardcoded milestone versions — dynamically queries earliest open milestone
+- Cross-session continuity — checks own open PRs, addresses review feedback before new work
+- Conflict detection — checks if issue is already assigned/in-progress
+- Self-review step — reads own diff before creating PR
+- Self-driven mode — doesn't stop when issues run out, actively finds new work
+- Creates issues for problems found — compensates for no cross-session memory
 
 ### 2.4 QA Agent Prompt
 
