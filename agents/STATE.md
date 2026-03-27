@@ -19,7 +19,7 @@ gh issue list --state open --limit 100 --json milestone,number,title,labels \
 
 ## Coordination
 - Bug tracking: GitHub Issues only
-- State flow: status:in-progress -> status:done -> verified -> close
+- State flow: status:in-progress → status:done → verified → close
 - CI must be green before any merge
 
 ## Completed Releases

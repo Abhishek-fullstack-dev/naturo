@@ -58,9 +58,6 @@ The repo is public (https://github.com/AcePeak/naturo). Every developer in the w
 - Commit messages: concise and professional, worthy of the git log
 - Consistent code style matching the existing codebase
 - Spend the extra 5 minutes to do it right rather than rushing to submit
-- Review README.md after every feature advancement to keep it in sync
-- Merge each Phase to main via PR — do not stack multiple Phases on a feature branch
-- **Never push directly to main. All code goes through PR + CI green + merge.**
 
 ## Decision Authority
 

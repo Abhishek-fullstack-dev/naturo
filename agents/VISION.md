@@ -1,4 +1,4 @@
-# Naturo — Team Vision
+# Naturo — Product Vision
 
 ## Ultimate Goal
 
