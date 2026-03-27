@@ -69,9 +69,14 @@ gh issue view N --json assignees,labels --jq '{assignees: .assignees | map(.logi
 - If `status:in-progress` by someone else → pick a different issue
 - If `status:in-progress` by me from a previous session → check if PR exists, continue where I left off
 
-## Phase 1 — Execute (pick ONE issue per session)
+## Phase 1 — Execute (work through issues continuously)
 
-**Golden rule: Do ONE thing well per session. Don't start 3 things and finish 0.**
+**Work through issues by priority until session ends or turns run out.**
+- Small issues (flag fix, format change, doc update): do several per session
+- Medium issues (bug fix with tests): 2-3 per session
+- Large issues (architecture, new feature): 1 per session is fine
+- **Never leave an issue half-done.** Finish the current one before starting the next.
+- **After completing each issue, loop back to Phase 0d** to pick the next highest priority.
 
 ### Before coding
 1. Assign yourself:
@@ -199,7 +204,7 @@ git push origin main
 ```
 
 ## Absolute Rules
-- **ONE issue per session.** Depth over breadth. A half-finished fix is worse than no fix.
+- **Never leave an issue half-done.** Finish current issue before starting the next. But do as many as you can per session.
 - **Never push directly to main** (except status.md updates). All code goes through PR + CI.
 - **Never close issues** without a merged commit. Cite the exact commit hash.
 - **Never work on a later milestone** while an earlier one has open issues.
